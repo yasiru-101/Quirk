@@ -46,6 +46,9 @@ export function AuthProvider({ children }) {
       setUser(data.user);
       return data.user;
     } catch (apiErr) {
+      if (apiErr.response) {
+        throw apiErr;
+      }
       console.warn("Backend unavailable, using mock login.");
       let role = 'Admin';
       let name = 'Demo Admin';

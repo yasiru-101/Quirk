@@ -26,7 +26,7 @@ export default function BrandLogo({ size = 'md', showText = true, className }) {
   // In dark mode the canvas is dark, so we need the white text logo.
   // In light mode the canvas is light, so we need the black text logo.
   const fullLogoSrc = theme === 'dark' 
-    ? '/full logo - white.webp' 
+    ? '/full logo  - white.webp' 
     : '/full logo - black.webp';
     
   const iconSrc = '/logo icon.webp';

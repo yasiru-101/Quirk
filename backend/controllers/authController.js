@@ -28,14 +28,14 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
 
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: false, // Set false for HTTP IP access, true for HTTPS
+    secure: isProduction,
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: false, // Set false for HTTP IP access, true for HTTPS
+    secure: isProduction,
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
@@ -47,13 +47,13 @@ const clearTokenCookies = (res) => {
 
   res.clearCookie('accessToken', {
     httpOnly: true,
-    secure: false, // Set false for HTTP IP access, true for HTTPS
+    secure: isProduction,
     sameSite: 'strict',
   });
 
   res.clearCookie('refreshToken', {
     httpOnly: true,
-    secure: false, // Set false for HTTP IP access, true for HTTPS
+    secure: isProduction,
     sameSite: 'strict',
   });
 };

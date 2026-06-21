@@ -155,13 +155,13 @@ export default function LoginPage() {
               Quick Test Accounts
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.com')}>
+              <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>
                 Admin
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.com')}>
+              <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>
                 PM
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => autofill('collab@quirk.com')}>
+              <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>
                 Collab
               </Button>
             </div>

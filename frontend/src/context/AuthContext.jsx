@@ -31,6 +31,8 @@ export function AuthProvider({ children }) {
   // ── Token expiry → force logout ─────────────────────────────────────────────
   useEffect(() => {
     const handle = () => {
+      localStorage.removeItem('quirk_is_mock');
+      localStorage.removeItem('quirk_user');
       setUser(null);
     };
     window.addEventListener('auth:expired', handle);

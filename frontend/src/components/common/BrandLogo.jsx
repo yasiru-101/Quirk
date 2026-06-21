@@ -1,43 +1,44 @@
 /**
  * @file BrandLogo.jsx
- * @description Reusable logo component that renders the brand icon alongside the app name.
+ * @description Reusable logo component that renders the brand icon or full wordmark based on theme.
  */
 import React from 'react';
 import { cn } from '../../utils/helpers';
+import { useTheme } from '../context/ThemeContext';
 
 /**
- * Reusable brand mark — uses the same favicon.svg that appears in the browser tab,
- * so the icon is pixel-perfect identical everywhere on the site.
- *
- * @param {'sm'|'md'|'lg'} size  - controls icon dimensions
- * @param {boolean} showText     - whether to render the "Quirk" wordmark beside the icon
- * @param {string} className     - extra classes for the wrapper
- */
-/**
- * Renders the standard Quirk logo and text wordmark.
- * Uses the favicon file to maintain design consistency with the browser tab.
+ * Renders the Quirk logo using the provided webp assets.
+ * Flips the wordmark color depending on the active theme polarity.
  *
  * @param {'sm'|'md'|'lg'} props.size - Dimension variant of the logo
- * @param {boolean} props.showText - Toggle display of the "Quirk" name
+ * @param {boolean} props.showText - Toggle display of the full wordmark vs just the icon
  * @param {string} props.className - Extraneous style classes
  */
 export default function BrandLogo({ size = 'md', showText = true, className }) {
-  const iconSize = { sm: 'w-6 h-6', md: 'w-7 h-7', lg: 'w-9 h-9' }[size];
-  const textSize = { sm: 'text-sm',  md: 'text-sm',  lg: 'text-xl'  }[size];
+  const { theme } = useTheme();
+  
+  const heightClass = {
+    sm: 'h-6',
+    md: 'h-7',
+    lg: 'h-9'
+  }[size];
+
+  // In dark mode the canvas is dark, so we need the white text logo.
+  // In light mode the canvas is light, so we need the black text logo.
+  const fullLogoSrc = theme === 'dark' 
+    ? '/full logo - white.webp' 
+    : '/full logo - black.webp';
+    
+  const iconSrc = '/logo icon.webp';
 
   return (
-    <span className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center', className)}>
       <img
-        src="/favicon.svg"
-        alt="Quirk logo"
-        className={cn(iconSize, 'flex-shrink-0')}
+        src={showText ? fullLogoSrc : iconSrc}
+        alt="Quirk Logo"
+        className={cn(heightClass, 'w-auto object-contain flex-shrink-0')}
         draggable={false}
       />
-      {showText && (
-        <span className={cn('font-semibold text-zinc-100 tracking-tight whitespace-nowrap', textSize)}>
-          Quirk
-        </span>
-      )}
-    </span>
+    </div>
   );
 }

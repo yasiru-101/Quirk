@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+uploads/
+testDB.js
+scripts/testAzureConnection.js
+*.md
+.git
+.gitignore

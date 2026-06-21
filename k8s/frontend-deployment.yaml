@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quirk-frontend
+  namespace: quirk
+  labels:
+    app: quirk-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quirk-frontend
+  template:
+    metadata:
+      labels:
+        app: quirk-frontend
+    spec:
+      containers:
+        - name: quirk-frontend
+          image: quirkimsacr.azurecr.io/quirk-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"

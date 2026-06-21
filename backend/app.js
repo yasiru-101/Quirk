@@ -79,6 +79,11 @@ serveSwagger(app);
 // ─── Static File Serving (Local uploads fallback for development) ───────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ─── Health Check (Kubernetes readiness/liveness probe) ─────────────────────
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

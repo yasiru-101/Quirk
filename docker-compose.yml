@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Quirk TMS — Docker Compose (Local Development Only)
+# Spins up: backend, frontend, and a local PostgreSQL instance
+# Usage: docker-compose up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL (local dev DB) ───────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: quirk-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quirk_dev
+      POSTGRES_USER: quirk_admin
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quirk_admin -d quirk_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Quirk Backend (Node.js) ─────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quirk-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://quirk_admin:devpassword@db:5432/quirk_dev?sslmode=disable
+      FRONTEND_URL: http://localhost:3000
+      # Add your JWT secrets here for local dev (never commit real values)
+      JWT_SECRET: local_dev_jwt_secret_change_in_prod
+      JWT_REFRESH_SECRET: local_dev_refresh_secret_change_in_prod
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Mount source for live reload in dev (comment out for prod-like testing)
+      - ./backend:/app
+      - /app/node_modules
+
+  # ── Quirk Frontend (Vite dev server) ───────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000
+    container_name: quirk-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+    name: quirk-pgdata

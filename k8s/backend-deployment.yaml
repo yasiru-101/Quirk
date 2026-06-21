@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quirk-backend
+  namespace: quirk
+  labels:
+    app: quirk-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quirk-backend
+  template:
+    metadata:
+      labels:
+        app: quirk-backend
+    spec:
+      containers:
+        - name: quirk-backend
+          image: quirkimsacr.azurecr.io/quirk-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              name: http
+          # Load non-secret config from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: quirk-config
+          # Load secrets from Kubernetes Secret
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: JWT_SECRET
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: JWT_REFRESH_SECRET
+            - name: AZURE_BLOB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: AZURE_BLOB_CONNECTION_STRING
+            - name: AZURE_ACS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: AZURE_ACS_CONNECTION_STRING
+            - name: AZURE_ACS_SENDER_ADDRESS
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: AZURE_ACS_SENDER_ADDRESS
+          # Readiness probe — traffic only routed when healthy
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          # Liveness probe — restart container if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          # Resource limits — sized for Standard_B2s node
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

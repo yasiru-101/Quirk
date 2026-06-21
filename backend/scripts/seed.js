@@ -1,6 +1,6 @@
 /**
  * @file seed.js
- * @description Seeding script using Prisma Client with PG Driver Adapter to clear and populate PostgreSQL/Supabase database.
+ * @description Seeding script using Prisma Client with PG Driver Adapter to clear and populate PostgreSQL database.
  * Run this script using: node scripts/seed.js
  */
 
@@ -17,7 +17,7 @@ const prisma = new PrismaClient({ adapter });
 const seedUsersData = [
   {
     name: 'System Admin',
-    email: 'admin@taskflow.com',
+    email: 'admin@quirk.app',
     passwordRaw: 'AdminPass123!',
     role: 'Admin',
     mustResetPassword: false,
@@ -25,7 +25,7 @@ const seedUsersData = [
   },
   {
     name: 'Sarah Manager',
-    email: 'pm@taskflow.com',
+    email: 'pm@quirk.app',
     passwordRaw: 'ManagerPass123!',
     role: 'Project Manager',
     mustResetPassword: false,
@@ -33,7 +33,7 @@ const seedUsersData = [
   },
   {
     name: 'Alex Developer',
-    email: 'user@taskflow.com',
+    email: 'dev@quirk.app',
     passwordRaw: 'CollabPass123!',
     role: 'Collaborator',
     mustResetPassword: false,
@@ -41,7 +41,7 @@ const seedUsersData = [
   },
   {
     name: 'Emma Designer',
-    email: 'emma@taskflow.com',
+    email: 'emma@quirk.app',
     passwordRaw: 'CollabPass123!',
     role: 'Collaborator',
     mustResetPassword: true,
@@ -51,7 +51,7 @@ const seedUsersData = [
 
 const seedDatabase = async () => {
   try {
-    console.log('Connecting to PostgreSQL/Supabase...');
+    console.log('Connecting to PostgreSQL...');
     await prisma.$connect();
     console.log('Database connected.');
 
@@ -87,8 +87,8 @@ const seedDatabase = async () => {
     console.log(`Seeded ${createdUsers.length} users successfully.`);
 
     const pmUser = createdUsers.find(u => u.role === 'Project Manager');
-    const devUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'user@taskflow.com');
-    const designerUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'emma@taskflow.com');
+    const devUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'dev@quirk.app');
+    const designerUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'emma@quirk.app');
 
     // ─── 3. Create Tasks ─────────────────────────────────────────────────────
     console.log('Seeding initial tasks...');
@@ -111,7 +111,7 @@ const seedDatabase = async () => {
       },
       {
         title: 'Write User Documentation',
-        description: 'Write complete user guide for the TaskFlow application usage.',
+        description: 'Write complete user guide for the Quirk application usage.',
         createdBy: pmUser.id,
         dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
         priority: 'Low',
@@ -178,12 +178,12 @@ const seedDatabase = async () => {
     console.log('Seeded notifications.');
 
     console.log('\n=========================================');
-    console.log('PostgreSQL/Supabase Database successfully seeded!');
+    console.log('PostgreSQL Database successfully seeded!');
     console.log('Mock Accounts Available for Testing:');
-    console.log(`  Admin:         email: admin@taskflow.com  password: AdminPass123!`);
-    console.log(`  Proj. Manager: email: pm@taskflow.com     password: ManagerPass123!`);
-    console.log(`  Collaborator:  email: user@taskflow.com   password: CollabPass123!`);
-    console.log(`  Collaborator:  email: emma@taskflow.com   password: CollabPass123! (needs password reset)`);
+    console.log(`  Admin:         email: admin@quirk.app  password: AdminPass123!`);
+    console.log(`  Proj. Manager: email: pm@quirk.app     password: ManagerPass123!`);
+    console.log(`  Collaborator:  email: dev@quirk.app    password: CollabPass123!`);
+    console.log(`  Collaborator:  email: emma@quirk.app   password: CollabPass123! (needs password reset)`);
     console.log('=========================================\n');
 
   } catch (error) {

@@ -83,9 +83,8 @@ export default function LoginPage() {
         />
 
         {/* Top Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <img src="/logo icon.webp" alt="Quirk" className="w-8 h-8 object-contain" />
-          <span className="text-[var(--typography-display-sm)] font-bold text-[var(--colors-on-dark)]">Quirk</span>
+        <div className="relative z-10 mb-8">
+          <img src="/full logo  - white.webp" alt="Quirk" className="h-12 w-auto object-contain" />
         </div>
 
         {/* Center Copy */}

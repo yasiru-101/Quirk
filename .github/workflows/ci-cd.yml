@@ -87,7 +87,8 @@ jobs:
           kubectl apply -f k8s/backend-service.yaml
           kubectl apply -f k8s/frontend-deployment.yaml
           kubectl apply -f k8s/frontend-service.yaml
-          kubectl apply -f k8s/loadbalancer.yaml
+          kubectl apply -f k8s/issuer.yaml
+          kubectl apply -f k8s/ingress.yaml
 
       - name: Wait for rollout to complete
         run: |

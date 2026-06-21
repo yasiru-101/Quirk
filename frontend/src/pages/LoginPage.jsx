@@ -1,6 +1,6 @@
 /**
  * @file LoginPage.jsx
- * @description Authentication login portal with input validation and credentials cheat-sheet.
+ * @description Authentication login portal matching the Mint & Ink design system.
  */
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -63,30 +63,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'var(--bg-base)' }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--colors-canvas)]">
       {/* Subtle radial glow */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 50% at 50% 0%, var(--colors-primary-glow) 0%, transparent 70%)',
         }}
       />
 
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-sm relative z-10 animate-in">
         {/* Brand */}
         <div className="flex flex-col items-center mb-10">
           <BrandLogo size="lg" className="mb-1" />
-          <p className="text-sm text-zinc-500 mt-2">Sign in to your Quirk workspace</p>
+          <p className="text-[var(--typography-body-sm)] text-[var(--colors-body)] dark:text-[var(--colors-on-dark-body)] mt-2">Sign in to your Quirk workspace</p>
         </div>
 
         {/* Form card */}
-        <div className="card p-6 space-y-4" style={{ background: 'var(--bg-surface)' }}>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="p-8 space-y-6 rounded-[var(--radius-xl)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] shadow-lg dark:shadow-[0_0_0_2px_var(--colors-primary-glow)]">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
               id="login-email"
               label="Email address"
@@ -98,7 +95,7 @@ export default function LoginPage() {
               autoComplete="email"
               placeholder="you@company.com"
               leftIcon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
@@ -116,7 +113,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               placeholder="••••••••"
               leftIcon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
@@ -127,7 +124,7 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               loading={loading}
-              className="w-full h-10"
+              className="w-full"
             >
               Sign in
             </Button>
@@ -135,7 +132,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footnote */}
-        <p className="text-center text-[11px] text-zinc-600 mt-4">
+        <p className="text-center text-[var(--typography-caption)] text-[var(--colors-mute)] mt-6">
           First time? Your admin will provide credentials via email.
         </p>
       </div>

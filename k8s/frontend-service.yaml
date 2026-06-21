@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: quirk-frontend-svc
+  namespace: quirk
+  labels:
+    app: quirk-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: quirk-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP

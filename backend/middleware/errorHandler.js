@@ -25,36 +25,23 @@ const errorHandler = (err, req, res, next) => {
     message: err.message || 'Internal server error occurred',
   };
 
-  // --- 1. Handle Mongoose Duplicate Key Errors (MongoDB error code 11000) ---
-  // Typically occurs if a user tries to register with an email that already exists.
-  if (err.code === 11000) {
+  // --- 1. Handle Prisma Duplicate Key Errors (Unique constraint failed) ---
+  if (err.code === 'P2002') {
     statusCode = 400;
-    const field = Object.keys(err.keyValue)[0];
+    const field = err.meta && err.meta.target ? err.meta.target[0] : 'Field';
     response.message = 'Validation failed';
     response.errors = {
       [field]: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`,
     };
   }
 
-  // --- 2. Handle Mongoose Schema Validation Errors ---
-  // Occurs if data fails model-level validation/constraints during a write/save operation.
-  else if (err.name === 'ValidationError') {
-    statusCode = 400;
-    response.message = 'Validation failed';
-    response.errors = {};
-    Object.values(err.errors).forEach((error) => {
-      response.errors[error.path] = error.message;
-    });
-  }
-
-  // --- 3. Handle Mongoose CastErrors (Invalid ObjectIds) ---
-  // Occurs if a route receives a malformed MongoDB ObjectID.
-  else if (err.name === 'CastError') {
+  // --- 2. Handle Prisma Record Not Found Errors ---
+  else if (err.code === 'P2025') {
     statusCode = 404;
-    response.message = `Resource not found: Invalid ${err.path}`;
+    response.message = `Resource not found`;
   }
 
-  // --- 4. Handle Zod validation errors ---
+  // --- 3. Handle Zod validation errors ---
   // Fallback handler if a Zod schema validation throws an error directly instead of using safeParse.
   else if (err.name === 'ZodError') {
     statusCode = 400;

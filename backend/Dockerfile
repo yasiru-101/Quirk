@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY package*.json ./
 # Install only production dependencies (no devDependencies)
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # ── Stage 2: Generate Prisma client ──────────────────────────────────────────
 FROM node:22-alpine AS prisma-gen
@@ -19,7 +19,7 @@ WORKDIR /app
 
 COPY package*.json ./
 # Install all deps (including prisma CLI in devDependencies)
-RUN npm ci
+RUN npm install
 
 COPY prisma ./prisma
 # Generate Prisma client from schema

@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'TaskFlow API Documentation',
+      title: 'Quirk API Documentation',
       version: '1.0.0',
-      description: 'API documentation for the TaskFlow Task Management System',
+      description: 'API documentation for the Quirk Task Management System',
     },
     servers: [
       {

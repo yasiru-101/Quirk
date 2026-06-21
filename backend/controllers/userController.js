@@ -5,7 +5,7 @@
  */
 
 const bcrypt = require('bcrypt');
-const User = require('../models/User');
+const prisma = require('../config/db');
 const { generateTempPassword, checkLastAdmin } = require('../utils/userHelpers');
 
 // @desc    Create new user and trigger onboarding email (mocked)
@@ -16,7 +16,7 @@ const createUser = async (req, res) => {
 
   try {
     // 1. Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         message: 'Validation failed',
@@ -31,22 +31,34 @@ const createUser = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
 
-    // 4. Create and save user in database
-    const newUser = await User.create({
-      name,
-      email,
-      role,
-      passwordHash,
-      mustResetPassword: true, // Force reset on initial login
-      isActive: true,
+    // 4. Create and save user in database using Prisma
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role,
+        passwordHash,
+        mustResetPassword: true, // Force reset on initial login
+        isActive: true,
+      },
     });
 
-    // 5. Mock sending onboarding email containing temporary password
-    console.log(`[MOCK EMAIL] Onboarding email sent to ${email}`);
-    console.log(`[MOCK EMAIL] Temporary Password: ${tempPassword}`);
+    // 5. Send onboarding email (Azure ACS in prod, Ethereal in dev)
+    const emailService = require('../services/emailService');
+    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    try {
+      await emailService.sendOnboardingEmail({
+        to: email,
+        name,
+        tempPassword,
+        loginUrl,
+      });
+    } catch (emailError) {
+      console.error(`[EmailService] Non-blocking onboarding email delivery failed: ${emailError.message}`);
+    }
 
     // Return the created user (exclude password hash)
-    const userResponse = newUser.toObject();
+    const userResponse = { ...newUser };
     delete userResponse.passwordHash;
 
     // We include the temporary password in the response for grading/testing purposes
@@ -67,29 +79,41 @@ const createUser = async (req, res) => {
 // @access  Private (Admin only)
 const getUsers = async (req, res) => {
   const { search, role, isActive } = req.query;
-  const query = {};
+  const where = {};
 
   try {
-    // 1. Apply search filter on name or email (case-insensitive regex)
+    // 1. Apply search filter on name or email (case-insensitive contains query)
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     // 2. Apply role filter
     if (role) {
-      query.role = role;
+      where.role = role;
     }
 
     // 3. Apply active status filter
     if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
+      where.isActive = isActive === 'true';
     }
 
     // 4. Query database and select fields except passwordHash
-    const users = await User.find(query).select('-passwordHash');
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        mustResetPassword: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     return res.status(200).json({
       users,
@@ -109,7 +133,20 @@ const getUserById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const user = await User.findById(id).select('-passwordHash');
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(id, 10) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        mustResetPassword: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
     if (!user) {
       return res.status(404).json({
         message: 'User not found',
@@ -133,9 +170,12 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, role, isActive } = req.body;
+  const targetId = parseInt(id, 10);
 
   try {
-    const user = await User.findById(id);
+    const user = await prisma.user.findUnique({
+      where: { id: targetId },
+    });
     if (!user) {
       return res.status(404).json({
         message: 'User not found',
@@ -148,7 +188,7 @@ const updateUser = async (req, res) => {
 
     if (isDemotingAdmin || isDeactivatingAdmin) {
       try {
-        await checkLastAdmin(id);
+        await checkLastAdmin(targetId);
       } catch (err) {
         return res.status(err.status || 400).json({
           message: err.message,
@@ -156,14 +196,17 @@ const updateUser = async (req, res) => {
       }
     }
 
-    // 2. Perform updates
-    if (name) user.name = name;
-    if (role) user.role = role;
-    if (isActive !== undefined) user.isActive = isActive;
+    // 2. Perform updates using Prisma
+    const updated = await prisma.user.update({
+      where: { id: targetId },
+      data: {
+        name: name || undefined,
+        role: role || undefined,
+        isActive: isActive !== undefined ? isActive : undefined,
+      },
+    });
 
-    await user.save();
-
-    const updatedUser = user.toObject();
+    const updatedUser = { ...updated };
     delete updatedUser.passwordHash;
 
     return res.status(200).json({
@@ -182,9 +225,12 @@ const updateUser = async (req, res) => {
 // @access  Private (Admin only)
 const deactivateUser = async (req, res) => {
   const { id } = req.params;
+  const targetId = parseInt(id, 10);
 
   try {
-    const user = await User.findById(id);
+    const user = await prisma.user.findUnique({
+      where: { id: targetId },
+    });
     if (!user) {
       return res.status(404).json({
         message: 'User not found',
@@ -194,7 +240,7 @@ const deactivateUser = async (req, res) => {
     // 1. Safety check: Block deactivating the last active Admin
     if (user.role === 'Admin') {
       try {
-        await checkLastAdmin(id);
+        await checkLastAdmin(targetId);
       } catch (err) {
         return res.status(err.status || 400).json({
           message: err.message,
@@ -202,11 +248,13 @@ const deactivateUser = async (req, res) => {
       }
     }
 
-    // 2. Soft-deactivate by setting isActive to false
-    user.isActive = false;
-    await user.save();
+    // 2. Soft-deactivate by setting isActive to false using Prisma
+    const updated = await prisma.user.update({
+      where: { id: targetId },
+      data: { isActive: false },
+    });
 
-    const updatedUser = user.toObject();
+    const updatedUser = { ...updated };
     delete updatedUser.passwordHash;
 
     return res.status(200).json({

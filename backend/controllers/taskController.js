@@ -3,10 +3,7 @@
  * @description Controller handling Task CRUD, status updates, user assignments, and resource cleanups.
  */
 
-const Task = require('../models/Task');
-const TaskAssignment = require('../models/TaskAssignment');
-const Comment = require('../models/Comment');
-const User = require('../models/User');
+const prisma = require('../config/db');
 
 // @desc    Create a new task
 // @route   POST /api/tasks
@@ -15,13 +12,15 @@ const createTask = async (req, res) => {
   const { title, description, dueDate, priority, status } = req.body;
 
   try {
-    const task = await Task.create({
-      title,
-      description,
-      dueDate: dueDate || undefined,
-      priority,
-      status,
-      createdBy: req.user._id,
+    const task = await prisma.task.create({
+      data: {
+        title,
+        description,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        priority,
+        status,
+        createdBy: req.user.id,
+      },
     });
 
     return res.status(201).json({
@@ -40,19 +39,53 @@ const createTask = async (req, res) => {
 // @access  Private (PM & Collaborator)
 const getTasks = async (req, res) => {
   const { status, priority } = req.query;
-  const query = {};
+  const where = {};
 
   try {
     // Apply filters if provided
-    if (status) query.status = status;
-    if (priority) query.priority = priority;
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
 
-    const tasks = await Task.find(query)
-      .populate('createdBy', 'name email role')
-      .sort({ createdAt: -1 });
+    const tasks = await prisma.task.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        assignments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Map tasks to shape expected by frontend (createdBy as object, assignments as assignees array of users)
+    const formattedTasks = tasks.map((task) => {
+      const t = { ...task };
+      t.createdBy = task.creator;
+      t.assignees = task.assignments.map((a) => a.user);
+      delete t.creator;
+      delete t.assignments;
+      return t;
+    });
 
     return res.status(200).json({
-      tasks,
+      tasks: formattedTasks,
     });
   } catch (error) {
     console.error(`Get tasks error: ${error.message}`);
@@ -67,29 +100,66 @@ const getTasks = async (req, res) => {
 // @access  Private (PM & Collaborator)
 const getTaskById = async (req, res) => {
   const { id } = req.params;
+  const targetId = parseInt(id, 10);
 
   try {
-    // 1. Fetch the task document
-    const task = await Task.findById(id).populate('createdBy', 'name email role');
+    // Fetch the task document including relationships using Prisma
+    const task = await prisma.task.findUnique({
+      where: { id: targetId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        assignments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true,
+              },
+            },
+          },
+        },
+        comments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
       });
     }
 
-    // 2. Fetch all assignments and populate user details
-    const assignments = await TaskAssignment.find({ taskId: id })
-      .populate('userId', 'name email role isActive');
+    // Combine task details with assignments and comments for response mapped to frontend format
+    const taskObject = { ...task };
+    taskObject.createdBy = task.creator;
+    taskObject.assignees = task.assignments.map((a) => a.user);
+    
+    // Convert comment list fields if necessary (already contains .user populated by Prisma relation)
+    taskObject.comments = task.comments;
 
-    // 3. Fetch comments and populate commenter details
-    const comments = await Comment.find({ taskId: id })
-      .populate('userId', 'name email role')
-      .sort({ createdAt: 1 });
-
-    // Combine task details with assignments and comments for response
-    const taskObject = task.toObject();
-    taskObject.assignments = assignments.map(a => a.userId);
-    taskObject.comments = comments;
+    delete taskObject.creator;
+    delete taskObject.assignments;
 
     return res.status(200).json({
       task: taskObject,
@@ -108,26 +178,32 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
   const { id } = req.params;
   const { title, description, dueDate, priority, status } = req.body;
+  const targetId = parseInt(id, 10);
 
   try {
-    const task = await Task.findById(id);
+    const task = await prisma.task.findUnique({
+      where: { id: targetId },
+    });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
       });
     }
 
-    // Perform updates
-    if (title) task.title = title;
-    if (description !== undefined) task.description = description;
-    if (dueDate !== undefined) task.dueDate = dueDate || undefined;
-    if (priority) task.priority = priority;
-    if (status) task.status = status;
-
-    await task.save();
+    // Perform updates using Prisma
+    const updatedTask = await prisma.task.update({
+      where: { id: targetId },
+      data: {
+        title: title || undefined,
+        description: description !== undefined ? description : undefined,
+        dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
+        priority: priority || undefined,
+        status: status || undefined,
+      },
+    });
 
     return res.status(200).json({
-      task,
+      task: updatedTask,
     });
   } catch (error) {
     console.error(`Update task error: ${error.message}`);
@@ -143,9 +219,12 @@ const updateTask = async (req, res) => {
 const updateTaskStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const targetId = parseInt(id, 10);
 
   try {
-    const task = await Task.findById(id);
+    const task = await prisma.task.findUnique({
+      where: { id: targetId },
+    });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
@@ -154,7 +233,14 @@ const updateTaskStatus = async (req, res) => {
 
     // Safeguard: If caller is a Collaborator, check if they are assigned to this task
     if (req.user.role === 'Collaborator') {
-      const isAssigned = await TaskAssignment.findOne({ taskId: id, userId: req.user._id });
+      const isAssigned = await prisma.taskAssignment.findUnique({
+        where: {
+          taskId_userId: {
+            taskId: targetId,
+            userId: req.user.id,
+          },
+        },
+      });
       if (!isAssigned) {
         return res.status(403).json({
           message: 'Access denied: You can only update the status of tasks assigned to you.',
@@ -162,12 +248,18 @@ const updateTaskStatus = async (req, res) => {
       }
     }
 
-    // Update status
-    task.status = status;
-    await task.save();
+    // Update status using Prisma
+    const updatedTask = await prisma.task.update({
+      where: { id: targetId },
+      data: { status },
+    });
+
+    // Trigger real-time notifications
+    const notificationService = require('../services/notificationService');
+    await notificationService.notifyStatusChange(targetId, status, req.user.name, req.user.id);
 
     return res.status(200).json({
-      task,
+      task: updatedTask,
     });
   } catch (error) {
     console.error(`Patch task status error: ${error.message}`);
@@ -182,21 +274,37 @@ const updateTaskStatus = async (req, res) => {
 // @access  Private (Project Manager only)
 const deleteTask = async (req, res) => {
   const { id } = req.params;
+  const targetId = parseInt(id, 10);
 
   try {
-    const task = await Task.findById(id);
+    const task = await prisma.task.findUnique({
+      where: { id: targetId },
+    });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
       });
     }
 
-    // Delete the task document
-    await Task.deleteOne({ _id: id });
+    // Fetch assigned users to notify them before assignments are deleted
+    const assignments = await prisma.taskAssignment.findMany({
+      where: { taskId: targetId },
+    });
+    const assignedUserIds = assignments.map((a) => a.userId);
 
-    // Clean up related Mongoose documents (Cascading delete)
-    await TaskAssignment.deleteMany({ taskId: id });
-    await Comment.deleteMany({ taskId: id });
+    // Delete the task document (Prisma cascade onDelete will automatically clean up assignments, comments, attachments)
+    await prisma.task.delete({
+      where: { id: targetId },
+    });
+
+    // Notify assigned users about deletion
+    const notificationService = require('../services/notificationService');
+    for (const userId of assignedUserIds) {
+      await notificationService.notifyAdmin(
+        `Task "${task.title}" has been deleted by Project Manager ${req.user.name}`,
+        userId
+      );
+    }
 
     return res.status(200).json({
       message: 'Task deleted successfully',
@@ -215,10 +323,14 @@ const deleteTask = async (req, res) => {
 const assignUsers = async (req, res) => {
   const { id } = req.params;
   const { userIds } = req.body;
+  const targetId = parseInt(id, 10);
+  const parsedUserIds = userIds.map((uid) => parseInt(uid, 10));
 
   try {
     // 1. Verify task exists
-    const task = await Task.findById(id);
+    const task = await prisma.task.findUnique({
+      where: { id: targetId },
+    });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
@@ -226,9 +338,11 @@ const assignUsers = async (req, res) => {
     }
 
     // 2. Validate that all provided userIds belong to active, existing users
-    const validUsersCount = await User.countDocuments({
-      _id: { $in: userIds },
-      isActive: true,
+    const validUsersCount = await prisma.user.count({
+      where: {
+        id: { in: parsedUserIds },
+        isActive: true,
+      },
     });
 
     if (validUsersCount !== userIds.length) {
@@ -237,19 +351,24 @@ const assignUsers = async (req, res) => {
       });
     }
 
-    // 3. Clear existing assignments for this task
-    await TaskAssignment.deleteMany({ taskId: id });
+    // 3. Update assignments in a transaction
+    await prisma.$transaction([
+      prisma.taskAssignment.deleteMany({ where: { taskId: targetId } }),
+      prisma.taskAssignment.createMany({
+        data: parsedUserIds.map((userId) => ({
+          taskId: targetId,
+          userId,
+        })),
+      }),
+    ]);
 
-    // 4. Create new assignments
-    const newAssignments = userIds.map((userId) => ({
-      taskId: id,
-      userId,
-    }));
-    await TaskAssignment.insertMany(newAssignments);
+    // Trigger real-time notifications
+    const notificationService = require('../services/notificationService');
+    await notificationService.notifyAssignment(targetId, parsedUserIds, req.user.name);
 
     return res.status(200).json({
       message: 'Task assignments updated successfully',
-      assignedUserIds: userIds,
+      assignedUserIds: parsedUserIds,
     });
   } catch (error) {
     console.error(`Assign users error: ${error.message}`);

@@ -19,13 +19,13 @@ export default function EmptyState({ icon, title, description, action }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in">
       {icon && (
-        <div className="w-14 h-14 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl mb-5 ring-1 ring-zinc-700/50">
+        <div className="w-14 h-14 rounded-2xl bg-hairline flex items-center justify-center text-2xl mb-5 ring-1 ring-surface-pressed/50">
           {icon}
         </div>
       )}
-      <h3 className="text-sm font-semibold text-zinc-200 mb-1">{title}</h3>
+      <h3 className="text-sm font-semibold text-ink mb-1">{title}</h3>
       {description && (
-        <p className="text-xs text-zinc-500 max-w-xs leading-relaxed mb-5">{description}</p>
+        <p className="text-xs text-mute max-w-xs leading-relaxed mb-5">{description}</p>
       )}
       {action}
     </div>

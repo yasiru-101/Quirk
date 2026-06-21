@@ -7,21 +7,11 @@ import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue, c
 import { ROLES, TASK_STATUS_LIST } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 
-/**
- * Compact presentation item for individual tasks. Triggers details dialogs 
- * and contains inline quick status selection drops.
- *
- * @param {object} props.task - Main task configuration structure
- * @param {Function} props.onStatusChange - Inline status modification handler
- * @param {Function} props.onClick - Click detail popover trigger
- * @param {Function} props.onDelete - Handler to remove task item
- */
 export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
   const { role } = useAuth();
   const isPM = role === ROLES.PROJECT_MANAGER;
   const overdue = isOverdue(task.dueDate);
 
-  // Helper to render priority icon
   const renderPriorityIcon = (priority) => {
     const p = priority?.toLowerCase();
     if (p === 'urgent') return '🔥';
@@ -33,25 +23,24 @@ export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
   return (
     <div
       className={cn(
-        'p-3 space-y-3 cursor-pointer group transition-all relative',
-        'rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] dark:bg-[var(--colors-canvas-soft)]',
-        'hover:shadow-sm dark:hover:shadow-none dark:hover:shadow-[0_0_0_2px_var(--colors-primary-glow)]'
+        'p-4 space-y-4 cursor-pointer group transition-all relative',
+        'rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)]',
+        'hover:border-[var(--colors-primary)] hover:shadow-md'
       )}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
-      {/* Priority + delete */}
       <div className="flex items-center justify-between">
-        <span className={cn('text-[var(--typography-caption)] font-semibold flex items-center gap-1', getPriorityColor(task.priority))}>
-          <span aria-hidden>{renderPriorityIcon(task.priority)}</span>
+        <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full border', getPriorityColor(task.priority))}>
+          <span aria-hidden className="mr-1">{renderPriorityIcon(task.priority)}</span>
           {task.priority}
         </span>
         {isPM && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(task._id); }}
-            className="opacity-0 group-hover:opacity-100 text-[var(--colors-mute)] hover:text-[var(--colors-priority-urgent)] transition-all p-1 rounded-full hover:bg-[rgba(255,255,255,0.05)] focus-ring z-10"
+            className="opacity-0 group-hover:opacity-100 text-[var(--colors-mute)] hover:text-rose-500 transition-all p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 focus-ring z-10"
             aria-label="Delete task"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -62,57 +51,59 @@ export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
         )}
       </div>
 
-      {/* Title */}
-      <p className="text-[var(--typography-body-sm)] font-medium text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)] leading-snug line-clamp-2">
-        {task.title}
-      </p>
-
-      {/* Description */}
-      {task.description && (
-        <p className="text-[var(--typography-caption)] text-[var(--colors-body)] dark:text-[var(--colors-on-dark-body)] line-clamp-2 leading-relaxed">
-          {task.description}
+      <div>
+        <p className="text-[var(--typography-body-md-strong)] font-bold text-[var(--colors-ink)] leading-snug line-clamp-2">
+          {task.title}
         </p>
-      )}
+        {task.description && (
+          <p className="text-xs text-[var(--colors-body)] mt-1.5 line-clamp-2 leading-relaxed">
+            {task.description}
+          </p>
+        )}
+      </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-1">
-        {/* Assignees */}
-        <div className="flex -space-x-1.5">
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--colors-hairline)]">
+        <div className="flex -space-x-2">
           {(task.assignees ?? []).slice(0, 3).map((u) => (
             <div
               key={u._id}
               title={u.name}
-              className="w-6 h-6 rounded-full bg-[var(--colors-canvas-softer)] text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)] border-2 border-[var(--colors-canvas)] flex items-center justify-center text-[10px] font-semibold"
+              className="w-7 h-7 rounded-full bg-[var(--colors-canvas-softer)] text-[var(--colors-ink)] border-2 border-[var(--colors-canvas)] flex items-center justify-center text-[10px] font-bold shadow-sm"
             >
               {getInitials(u.name)}
             </div>
           ))}
         </div>
 
-        {/* Due date */}
         {task.dueDate && (
-          <span className={cn('text-[var(--typography-caption)] font-medium', overdue ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-mute)]')}>
+          <span className={cn('text-[11px] font-bold tracking-wide', overdue ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-mute)]')}>
             {overdue ? '⚠ ' : ''}
             {formatDate(task.dueDate)}
           </span>
         )}
       </div>
 
-      {/* Status chip dropdown */}
       <div onClick={(e) => e.stopPropagation()} className="mt-2">
-        <select
-          value={task.status}
-          onChange={(e) => onStatusChange?.(task._id, e.target.value)}
-          className={cn(
-            'w-full text-xs font-semibold px-2 py-1.5 rounded-full cursor-pointer focus-ring outline-none appearance-none text-center',
-            getStatusColor(task.status)
-          )}
-          aria-label="Change task status"
-        >
-          {TASK_STATUS_LIST.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={task.status}
+            onChange={(e) => onStatusChange?.(task._id, e.target.value)}
+            className={cn(
+              'w-full text-xs font-bold px-3 py-2 rounded-[var(--radius-lg)] cursor-pointer focus-ring outline-none appearance-none transition-all border',
+              getStatusColor(task.status)
+            )}
+            aria-label="Change task status"
+          >
+            {TASK_STATUS_LIST.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
       </div>
     </div>
   );

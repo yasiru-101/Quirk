@@ -8,35 +8,32 @@ import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Renders the Quirk logo using the provided webp assets.
- * Flips the wordmark color depending on the active theme polarity.
- *
- * @param {'sm'|'md'|'lg'} props.size - Dimension variant of the logo
- * @param {boolean} props.showText - Toggle display of the full wordmark vs just the icon
- * @param {string} props.className - Extraneous style classes
  */
-export default function BrandLogo({ size = 'md', showText = true, className }) {
+export default function BrandLogo({ size = 'md', showText = true, variant, className }) {
   const { theme } = useTheme();
   
   const heightClass = {
-    sm: 'h-6',
-    md: 'h-7',
-    lg: 'h-9'
-  }[size];
+    sm: 'h-8',
+    md: 'h-10',
+    lg: 'h-12',
+    xl: 'h-16',
+    '2xl': 'h-24'
+  }[size] || 'h-10';
 
-  // In dark mode the canvas is dark, so we need the white text logo.
-  // In light mode the canvas is light, so we need the black text logo.
-  const fullLogoSrc = theme === 'dark' 
+  const effectiveVariant = variant || (theme === 'dark' ? 'light' : 'dark');
+
+  const fullLogoSrc = effectiveVariant === 'light' 
     ? '/full logo  - white.webp' 
     : '/full logo - black.webp';
     
   const iconSrc = '/logo icon.webp';
 
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex items-center overflow-hidden', heightClass, className)}>
       <img
         src={showText ? fullLogoSrc : iconSrc}
         alt="Quirk Logo"
-        className={cn(heightClass, 'w-auto object-contain flex-shrink-0')}
+        className="w-auto h-[250%] object-contain object-left -ml-2"
         draggable={false}
       />
     </div>

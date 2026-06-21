@@ -45,10 +45,10 @@ export const NOTIFICATION_TYPE = {
 };
 
 // ─── API Base URL ─────────────────────────────────────────────────────────────
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // ─── Socket URL ───────────────────────────────────────────────────────────────
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '/';
 
 // ─── Password Policy ──────────────────────────────────────────────────────────
 export const PASSWORD_POLICY = {

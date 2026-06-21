@@ -102,9 +102,9 @@ export default function NotificationPanel({ open, onClose }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-100">Notifications</span>
+          <span className="text-sm font-semibold text-ink">Notifications</span>
           {unreadCount > 0 && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/30">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--colors-primary-glow)] text-[var(--colors-primary)] ring-1 ring-[var(--colors-primary)]">
               {unreadCount} new
             </span>
           )}
@@ -113,14 +113,14 @@ export default function NotificationPanel({ open, onClose }) {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="text-[11px] text-zinc-500 hover:text-indigo-400 transition-colors px-2 py-1 rounded hover:bg-zinc-800"
+              className="text-[11px] text-mute hover:text-[var(--colors-primary)] transition-colors px-2 py-1 rounded hover:bg-hairline"
             >
               Mark all read
             </button>
           )}
           <button
             onClick={onClose}
-            className="text-zinc-600 hover:text-zinc-300 p-1 rounded hover:bg-zinc-800 transition-colors"
+            className="text-mute hover:text-body p-1 rounded hover:bg-hairline transition-colors"
             aria-label="Close"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -171,25 +171,25 @@ function NotificationItem({ notification, onMarkRead }) {
   return (
     <li
       className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer
-        ${isRead ? 'opacity-60 hover:opacity-80' : 'hover:bg-zinc-800/40'}`}
+        ${isRead ? 'opacity-60 hover:opacity-80' : 'hover:bg-hairline/40'}`}
       onClick={() => !isRead && onMarkRead(_id)}
     >
       {/* Icon */}
       <div
-        className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${meta.color} bg-zinc-800`}
+        className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${meta.color} bg-hairline`}
       >
         {meta.icon}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-zinc-200 leading-relaxed">{message}</p>
-        <p className="text-[10px] text-zinc-600 mt-1">{formatRelativeTime(createdAt)}</p>
+        <p className="text-xs text-ink leading-relaxed">{message}</p>
+        <p className="text-[10px] text-mute mt-1">{formatRelativeTime(createdAt)}</p>
       </div>
 
       {/* Unread dot */}
       {!isRead && (
-        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 mt-1" aria-label="Unread" />
+        <div className="w-1.5 h-1.5 rounded-full bg-[var(--colors-primary)] flex-shrink-0 mt-1" aria-label="Unread" />
       )}
     </li>
   );

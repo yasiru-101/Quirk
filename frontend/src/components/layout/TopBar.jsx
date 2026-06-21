@@ -1,6 +1,7 @@
 /**
  * @file TopBar.jsx
  * @description Top navigation bar managing page titles, real-time user notification badges, and theme toggle.
+ * Uses glassmorphism.
  */
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -9,14 +10,11 @@ import NotificationPanel from '../notifications/NotificationPanel';
 import { useTheme } from '../../context/ThemeContext';
 
 const PAGE_TITLES = {
-  '/dashboard': 'Dashboard',
-  '/tasks':     'Task Workspace',
-  '/users':     'User Management',
+  '/dashboard': 'Overview',
+  '/tasks':     'Task Board',
+  '/users':     'Directory',
 };
 
-/**
- * Header bar component rendering the active workspace label and embedding notification panels.
- */
 export default function TopBar() {
   const { pathname } = useLocation();
   const title = PAGE_TITLES[pathname] ?? 'Quirk';
@@ -25,28 +23,28 @@ export default function TopBar() {
 
   return (
     <>
-      <header
-        className="h-[60px] flex items-center justify-between px-6 border-b sticky top-0 z-20 bg-[var(--colors-canvas)] border-[var(--colors-hairline)]"
-      >
+      <header className="h-[80px] flex items-center justify-between px-8 sticky top-0 z-30 bg-[var(--colors-canvas)] border-b border-[var(--colors-hairline)] shadow-sm slide-up">
         {/* Page title */}
-        <h1 className="text-[var(--typography-display-sm)] font-semibold text-[var(--colors-ink)]">{title}</h1>
+        <div className="flex items-center gap-4">
+          <div className="w-2 h-8 bg-[var(--colors-primary)] rounded-full shadow-[0_0_10px_var(--colors-primary-glow)]" />
+          <h1 className="text-[var(--typography-display-sm)] font-bold text-[var(--colors-ink)] tracking-tight">{title}</h1>
+        </div>
 
         {/* Right controls */}
-        <div className="flex items-center gap-4">
-          
+        <div className="flex items-center gap-5">
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition-colors focus-ring"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] hover:scale-105 active:scale-95 transition-all focus-ring shadow-sm"
             aria-label="Toggle theme"
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
               </svg>
             ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line>
                 <line x1="12" y1="21" x2="12" y2="23"></line>

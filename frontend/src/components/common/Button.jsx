@@ -1,6 +1,6 @@
 /**
  * @file Button.jsx
- * @description Modular button component matching the Quirk Mint & Ink design system.
+ * @description Modular button component matching the hybrid Mint-Uber design system.
  */
 import React from 'react';
 import { cn } from '../../utils/helpers';
@@ -27,25 +27,25 @@ export default function Button({
   ...rest
 }) {
   const base =
-    'inline-flex items-center justify-center gap-2 font-medium rounded-full transition-all focus-ring select-none disabled:opacity-40 disabled:pointer-events-none';
+    'inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-pill)] transition-all focus-ring select-none disabled:opacity-40 disabled:pointer-events-none relative overflow-hidden';
 
   const variants = {
     primary:
-      'bg-[var(--colors-primary)] text-[var(--colors-on-mint)] hover:bg-[var(--colors-primary-deep)] active:opacity-90',
+      'bg-[var(--colors-primary)] text-[var(--colors-on-primary)] hover:bg-[var(--colors-primary-deep)] hover:shadow-[0_4px_12px_var(--colors-primary-glow)] active:scale-95',
     secondary:
-      'bg-[var(--colors-canvas)] text-[var(--colors-ink)] border border-[var(--colors-hairline)] hover:bg-[var(--colors-canvas-soft)] dark:bg-[var(--colors-canvas-soft)] dark:hover:bg-[var(--colors-surface-pressed)]',
+      'bg-[var(--colors-canvas)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-[rgba(255,255,255,0.05)] active:scale-95',
     subtle:
-      'bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] dark:bg-[var(--colors-canvas-softer)] dark:text-[var(--colors-on-dark)] dark:hover:bg-[var(--colors-surface-pressed)]',
+      'bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] dark:bg-[var(--colors-canvas-softer)] dark:hover:bg-[var(--colors-surface-pressed)] active:scale-95',
     icon:
-      'bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] hover:bg-[var(--colors-canvas-softer)] dark:text-[var(--colors-on-dark)] dark:hover:shadow-[0_0_0_2px_var(--colors-primary-glow)]',
+      'bg-transparent text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] active:scale-95',
     danger:
-      'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/20',
+      'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/20 active:scale-95',
   };
 
   const sizes = {
-    sm: cn('text-sm h-7',  iconOnly ? 'w-7'  : 'px-3'),
-    md: cn('text-base h-9',  iconOnly ? 'w-9'  : 'px-4'),
-    lg: cn('text-lg h-11', iconOnly ? 'w-11' : 'px-6'),
+    sm: cn('text-sm h-8',  iconOnly ? 'w-8'  : 'px-4'),
+    md: cn('text-base h-10',  iconOnly ? 'w-10'  : 'px-6'),
+    lg: cn('text-lg h-12', iconOnly ? 'w-12' : 'px-8'),
   };
 
   const actualSize = variant === 'icon' ? 'md' : size;
@@ -57,14 +57,14 @@ export default function Button({
       disabled={disabled || loading}
       {...rest}
     >
-      {loading ? (
-        <>
-          <Spinner size={actualSize === 'lg' ? 18 : 16} />
-          {!isIconOnly && <span>Loading…</span>}
-        </>
-      ) : (
-        children
+      {loading && (
+        <span className="absolute inset-0 flex items-center justify-center bg-inherit rounded-[inherit]">
+          <Spinner size={actualSize === 'lg' ? 20 : 16} />
+        </span>
       )}
+      <span className={cn('flex items-center gap-2', loading && 'opacity-0')}>
+        {children}
+      </span>
     </button>
   );
 }

@@ -1,6 +1,7 @@
 /**
  * @file LoginPage.jsx
- * @description Authentication login portal matching the Mint & Ink design system, with a split-screen SaaS layout.
+ * @description Premium authentication portal with a split-screen layout.
+ * Strictly adheres to the Green/Uber hybrid theme without using glassmorphism.
  */
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,10 +12,6 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import BrandLogo from '../components/common/BrandLogo';
 
-/**
- * Main login page component. Checks formats, runs authorization methods.
- * Split-screen design with marketing copy on the left and login form on the right.
- */
 export default function LoginPage() {
   const { login } = useAuth();
   const { error: toastError } = useToast();
@@ -62,7 +59,6 @@ export default function LoginPage() {
     }
   };
 
-  // Helper to pre-fill credentials for quick testing
   const autofill = (email, password = 'Password@123') => {
     setForm({ email, password });
     setErrors({});
@@ -71,128 +67,108 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-[var(--colors-canvas)] animate-in">
       
-      {/* ── Left Panel (Marketing & Branding) ── */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden bg-[var(--colors-ink)] dark:bg-[var(--colors-canvas-soft)]">
-        
-        {/* Glow effect matching the Polarity Flip rhythm */}
-        <div 
-          className="absolute inset-0 pointer-events-none" 
-          style={{
-            background: 'radial-gradient(circle at top left, var(--colors-primary-glow), transparent 60%)'
-          }}
+      {/* ── Left Panel (Brand Image) ── */}
+      <div className="hidden lg:flex w-[45%] xl:w-1/2 relative bg-[var(--colors-ink)]">
+        <img
+          src="/login screen.webp"
+          alt="Workspace Preview"
+          className="absolute inset-0 w-full h-full object-cover opacity-90"
+          draggable={false}
         />
-
-        {/* Top Logo */}
-        <div className="relative z-10 mb-8">
-          <img src="/full logo  - white.webp" alt="Quirk" className="h-12 w-auto object-contain" />
-        </div>
-
-        {/* Center Copy */}
-        <div className="relative z-10 max-w-md">
-          <h1 className="text-[var(--typography-display-xl)] font-bold text-[var(--colors-on-dark)] leading-tight tracking-tight">
-            The operating layer for your team.
-          </h1>
-          <p className="mt-6 text-[var(--typography-body-lg)] text-[var(--colors-on-dark-body)] leading-relaxed">
-            Collaborate, organize, and track tasks in real time. Experience the clarity of a unified workspace designed for modern teams.
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div className="relative z-10">
-          <p className="text-[var(--typography-caption)] text-[var(--colors-on-dark-mute)] font-medium tracking-wide uppercase">
-            © 2026 Quirk Systems
+        {/* Subtle gradient overlay to ensure the image feels integrated but not obscured */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,0.6)] via-transparent to-[rgba(0,0,0,0.2)] mix-blend-multiply" />
+        
+        <div className="absolute bottom-12 left-12 right-12 text-white">
+          <h2 className="text-3xl xl:text-4xl font-bold tracking-tight mb-4 drop-shadow-md">
+            Supercharge your workflow.
+          </h2>
+          <p className="text-lg text-[rgba(255,255,255,0.8)] max-w-md drop-shadow-sm">
+            Everything your team needs to plan, track, and execute projects flawlessly in one beautifully crafted workspace.
           </p>
         </div>
       </div>
 
       {/* ── Right Panel (Login Form) ── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+      <div className="flex-1 flex flex-col justify-center p-8 sm:p-12 lg:p-16 xl:p-24 relative overflow-y-auto">
         
-        <div className="w-full max-w-[400px]">
-          {/* Mobile Logo Fallback */}
-          <div className="lg:hidden flex justify-center mb-10">
-            <BrandLogo size="lg" />
-          </div>
-
-          <div className="mb-8 text-center lg:text-left">
-            <h2 className="text-[var(--typography-display-lg)] font-bold text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)]">
-              Welcome back
-            </h2>
-            <p className="mt-2 text-[var(--typography-body-md)] text-[var(--colors-body)] dark:text-[var(--colors-on-dark-body)]">
-              Please enter your credentials to access your workspace.
+        <div className="w-full max-w-[420px] mx-auto slide-up">
+          <div className="mb-10">
+            <BrandLogo size="xl" className="-ml-2 mb-2" />
+            <h1 className="text-[var(--typography-display-lg)] font-bold text-[var(--colors-ink)] tracking-tight">
+              Sign in
+            </h1>
+            <p className="mt-3 text-[var(--typography-body-lg)] text-[var(--colors-body)]">
+              Welcome back! Please enter your details.
             </p>
           </div>
 
-          <div className="p-8 space-y-6 rounded-[var(--radius-xl)] bg-[var(--colors-canvas-soft)] dark:bg-[var(--colors-canvas)] border border-[var(--colors-hairline)] shadow-lg dark:shadow-[0_0_0_2px_var(--colors-primary-glow)]">
-            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-              <Input
-                id="login-email"
-                label="Email address"
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                error={errors.email}
-                autoComplete="email"
-                placeholder="you@company.com"
-                leftIcon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                }
-              />
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <Input
+              id="login-email"
+              label="Email address"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              error={errors.email}
+              autoComplete="email"
+              placeholder="Enter your email"
+              leftIcon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              }
+            />
 
-              <Input
-                id="login-password"
-                label="Password"
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                error={errors.password}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                leftIcon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                }
-              />
+            <Input
+              id="login-password"
+              label="Password"
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              error={errors.password}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              leftIcon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              }
+            />
 
-              <Button
-                type="submit"
-                variant="primary"
-                loading={loading}
-                className="w-full h-11"
-              >
-                Sign in
-              </Button>
-            </form>
-          </div>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+              className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
+            >
+              Sign in
+            </Button>
+          </form>
 
           {/* Quick Login Cheat-sheet */}
-          <div className="mt-8 p-4 rounded-xl border border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] text-center">
-            <p className="text-[11px] font-semibold text-[var(--colors-body)] dark:text-[var(--colors-on-dark-body)] uppercase tracking-wider mb-3">
-              Quick Login Demo Credentials
+          <div className="mt-12 pt-8 border-t border-[var(--colors-hairline)]">
+            <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest mb-4">
+              Quick Test Accounts
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="subtle" size="sm" onClick={() => autofill('admin@quirk.com')}>
+            <div className="grid grid-cols-3 gap-3">
+              <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.com')}>
                 Admin
               </Button>
-              <Button variant="subtle" size="sm" onClick={() => autofill('pm@quirk.com')}>
-                Project Manager
+              <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.com')}>
+                PM
               </Button>
-              <Button variant="subtle" size="sm" onClick={() => autofill('collab@quirk.com')}>
-                Collaborator
+              <Button variant="secondary" size="sm" onClick={() => autofill('collab@quirk.com')}>
+                Collab
               </Button>
             </div>
           </div>
-
         </div>
-      </div>
 
+      </div>
     </div>
   );
 }

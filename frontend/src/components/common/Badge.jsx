@@ -22,7 +22,7 @@ export default function Badge({ children, variant = 'custom', style: customStyle
 
   const resolved = variant === 'role'
     ? cn(base, getRoleBadgeStyle(children), className)
-    : cn(base, 'text-zinc-400 bg-zinc-400/10 ring-zinc-400/20', className);
+    : cn(base, 'text-body bg-body/10 ring-body/20', className);
 
   return (
     <span className={resolved} style={customStyle}>

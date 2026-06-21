@@ -1,196 +1,313 @@
-# Quirk Design System: Multi-Mode Specification (Light & Dark)
-
 ## Overview
 
-Quirk is a task-management system — boards, lists, timelines, the daily operating layer for a team — and its interface signals clarity through one disciplined move: a single living brand hue carries every signal in the product. Where legacy platforms run a simple black-and-white duet, Quirk runs a **mint-and-ink duet**: `{colors.primary}` mint green `#75EE8F` is the brand's one true accent — every primary CTA pill, every active nav state, the logo mark itself — and `{colors.ink}` near-black `#0D120F` carries structure, headlines, and the dark polarity-flip surfaces. Status and priority signals borrow controlled neighbours of that same hue family rather than reaching for arbitrary traffic-light colours, so the product never feels like five competing brands stapled together.
+Uber is a transportation-and-delivery super-app — ride, eats, freight, the whole urban logistics layer — and the brand's web surface signals that scale through restraint: no third colour, no accent palette, no illustration that fights the headline. The page is structurally a black-and-white duet, where black `{colors.primary}` is the conversion anchor (every CTA pill, every nav login button, the footer fill) and `{colors.canvas}` white carries everything else. The only consistent decoration is a body of editorial 4:3 illustrations — riders, drivers, parking lots, cars-on-highway — that ground the marketing without leaking accent colour into the system.
 
-The logo is the literal source of truth: a rounded speech-bubble badge in mint `#75EE8F` with a deeper mint tail `#66EF87` for depth, a pure white `#FFFFFF` checkmark, and a near-white mint ghost `#F0FFF6` for the wordmark. Every colour in this system is mathematically derived from that one seed hue (132.9° in HSL) — tints, shades, and the full status/priority ramp all sit on the same colour wheel position, just at different lightness and saturation. This is what makes the palette feel inevitable rather than decorated on.
+Type is the second decisive voice. Two custom faces carry every page: `UberMove` at weight 700 for headlines (32 – 52 px display sizes with tight 1.22 – 1.25 line-height, never letter-spaced), and `UberMoveText` at weights 400 / 500 for body, button, and link. The pairing reads as engineering-grade — no italic, no decorative weight, no tracking flourish. Headlines are sentence-case; eyebrows are uppercase only when used as the section eyebrow ("WHY BECOME"); buttons are sentence-case.
 
-### The Polarity Shifting Ecosystem
-* **In Light Mode:** Mint sits on crisp white and ink is reserved for text and rare polarity-flip bands. 
-* **In Dark Mode:** That relationship reverses — **mint becomes the glow**, sitting on a deep charcoal-green canvas, reading as more luminous here than anywhere in the light system. Dark mode is where Quirk's brand colour gets to be the brightest thing on screen, the same way the logo's mint bubble stands out against the white app icon background. The canvas itself is not pure black; it carries a faint cool-green undertone (`#0F1512`) derived from the same 132.9° brand hue at very low lightness/saturation so that every surface traces back to the seed colour.
+The single shape signature is the pill. Every interactive element rounds to `{rounded.pill}` 999 px — primary CTA, secondary CTA, subtle gray pill, white floating pill, category chip, app-download badge. Cards and surfaces round to `{rounded.xl}` 16 px; the larger "Go Get 2026" annual-showcase card uses the same 16 px shape, just at scale. The tab-toggle on the hero ride-request form uses an off-shape `{rounded.pill-tab}` 36 px — barely-pill, deliberately tighter than the canonical 999 px pill.
 
----
-
-## Key Characteristics & Principles
-
-* **Two-Colour CTA Hierarchy:** Mint `{colors.primary}` pill for primary conversion (Create task, Save, Invite); ink `{colors.ink}` pill (or light near-white `{colors.on-dark}` pill in Dark Mode) for high-emphasis secondary actions that need to feel weighty without competing with mint; soft `{colors.canvas-soft}` pill for tertiary/chip actions.
-* **Shape Signature:** The pill is the single signature shape on every interactive control; every interactive element rounds to `{rounded.pill}` 999px. Cards and surfaces round to `{rounded.lg}` 12px because task cards in a dense board need a crisper edge than marketing promo cards. Modal and onboarding surfaces use `{rounded.xl}` 16px to read as more generous and less dense.
-* **Typography Base:** **Poppins** carries the entire system across two weight roles: 600/700 for display and headline roles (sentence-case, no all-caps display), and 400/500 for body, button, and label roles. Poppins' geometric, rounded-terminal character echoes the logo's soft speech-bubble geometry.
-* **Semantic Ramps:** A 5-step status ramp (Backlog → To do → In progress → In review → Done) and a 4-step priority ramp (Low → Medium → High → Urgent) are the only two semantic colour families outside mint/ink. They are built from controlled hue rotations around the brand's mint seed, never arbitrary, and they never share a hue path so they stay legible when placed together on a single card.
-* **Polarity-Flip Rhythm:** * *Light Mode:* Light surface → dark ink promo/empty-state band → light surface. The dark band is where mint gets to glow against true near-black, creating the single highest-contrast moment in the UI.
-    * *Dark Mode:* The rhythm reverses. The rare "flip band" is a light mint-tinted card used for the most important empty-state or upsell moments.
-* **Brand Iconography:** The checkmark from the logo recurs as the system's "done" glyph everywhere — task completion, onboarding steps, confirmation toasts — rather than a generic checkmark icon, tying every completion state back to the brand mark.
-* **Elevation Language:** Light mode uses flat layouts with subtle elevation shadows on hover/drag. Because shadows do not read against a dark background, Dark mode replaces shadows entirely with a 1px hairline border plus a translucent mint-tinted outer glow (`{colors.primary-glow}`) on hover/active states.
-
----
+**Key Characteristics:**
+- A two-colour CTA hierarchy: black `{colors.primary}` pill for primary conversion targets; white `{colors.canvas}` pill (sometimes with a soft drop shadow) for secondary; subtle gray `{colors.canvas-soft}` pill for tertiary or chip variants.
+- The pill is the single signature shape — `{rounded.pill}` 999 px on every interactive element except the tab-toggle (`{rounded.pill-tab}` 36 px) and the larger product cards (`{rounded.xl}` 16 px).
+- Every headline is sentence-case in `{typography.display-xl}` / `{typography.display-xxl}` weight 700; no all-caps display.
+- Editorial 4:3 illustrations of riders / drivers / cars are the only consistent decorative system; no gradients, no atmospheric backdrops, no shadows that aren't card-elevation hints.
+- A signature alternating-band rhythm: white feature card → black promo card (with white text and white CTA) → white feature card → black footer. The black bands are NOT hero-only; they appear mid-page as promo callouts.
+- A signature ride-request form card on the hero: pickup pin input + destination input + date/time chip + black "See prices" pill, all stacked inside a `{rounded.xl}` shadowed card.
 
 ## Colors
 
-### 1. Brand & Accent
+### Brand & Accent
+- **Ink Black** (`{colors.primary}` — `#000000`): The brand's only conversion colour. Every primary CTA pill, the footer fill, every dark promo band, every nav login button. The system has no secondary accent.
+- **Surface Pressed** (`{colors.surface-pressed}` — `#e2e2e2`): The pressed-state fill for white pills — a soft grey that's used only in active / pressed states.
+- **Black Elevated** (`{colors.black-elevated}` — `#282828`): A near-black used on hover for the translucent white tab-toggle pill. Documented as a system colour because it appears on a recurring brand control.
 
-| Token | Light Mode Hex | Dark Mode Hex | Description |
-| :--- | :--- | :--- | :--- |
-| `{colors.primary}` | `#75EE8F` | `#75EE8F` | **Mint.** The brand's one constant true accent. Every primary CTA pill, active nav indicator, focus ring, and logo mark. |
-| `{colors.primary-deep}` | `#66EF87` | `#66EF87` | **Mint Deep.** Logo tail/shadow tone. Used for hover/pressed states on mint surfaces and two-tone brand moments. |
-| `{colors.primary-tint}` | `#F0FFF6` | — | **Mint Tint.** Logo ghost-wordmark tone. Near-invisible brand wash for selected rows or sidebar item hovers. |
-| `{colors.primary-glow}` | — | `rgba(117,238,143,0.18)` | **Mint Glow.** Dark-mode-only translucent wash used as an outer glow on hover/active states to replace shadows. |
-| `{colors.ink-elevated}` | `#171C1A` | `#1D2621` | **Ink Elevated.** Near-black/deep-charcoal used for elevated surfaces inside dark/translucent panel layouts. |
+### Surface
+- **Canvas** (`{colors.canvas}` — `#ffffff`): The default page background.
+- **Canvas Soft** (`{colors.canvas-soft}` — `#efefef`): The soft gray fill for category chips, form-input rows inside the ride-request card, and subtle pill buttons.
+- **Canvas Softer** (`{colors.canvas-softer}` — `#f3f3f3`): A slightly lighter gray used as a nested-input fill on white surfaces.
 
-### 2. Surface Stack
+### Text
+- **Ink** (`{colors.ink}` — `#000000`): Every heading and body paragraph on light surfaces.
+- **Body** (`{colors.body}` — `#5e5e5e`): Secondary text — captions, sub-headings, supporting copy.
+- **Hairline Mid** (`{colors.hairline-mid}` — `#4b4b4b`): A mid-gray used for muted link text inside footer columns and breadcrumb-style nav.
+- **Mute** (`{colors.mute}` — `#afafaf`): The lightest text role — placeholder text, fine print, low-priority metadata.
+- **On Dark** (`{colors.on-dark}` — `#ffffff`): All text on `{colors.ink}` surfaces (footer, dark promo bands).
 
-| Token | Light Mode Hex | Dark Mode Hex | Description & Mode Rules |
-| :--- | :--- | :--- | :--- |
-| `{colors.canvas}` | `#FFFFFF` | `#0F1512` | Default page background. Dark canvas is brand-tinted near-black, never pure `#000000`. |
-| `{colors.canvas-soft}` | `#FAFEFB` | `#151E1A` | **Card & Panel Fill.** Light mode optimized to an ultra-light, near-white brand tint. Dark mode steps one layer up from canvas. |
-| `{colors.canvas-softer}` | `#F4FDF6` | `#1D2621` | **Nested Fill & Column Fill.** Light mode uses a highly-diluted mint-gray. Dark mode uses it for nested inputs/board backgrounds. |
-| `{colors.surface-pressed}`| `#D3FCDD` | `#242E29` | Pressed-state fill for soft pills, chips, and subtle buttons. |
-| `{colors.hairline}` | `#E2EFE5` | `#2A3530` | Border colour for card edges, dividers, and input outlines. |
-
-### 3. Text Roles
-
-| Token | Light Mode Hex | Dark Mode Hex | Description |
-| :--- | :--- | :--- | :--- |
-| `{colors.ink}` | `#0D120F` | `#0D120F` | Primary text in Light Mode. In Dark Mode, reserved *exclusively* for text placed on top of light/mint surfaces (e.g., primary buttons). |
-| `{colors.on-dark}` | `#FFFFFF` | `#F4FBF6` | All text on dark surfaces. Dark mode hex is a whisper-warm near-white carrying the mint undertone. |
-| `{colors.body}` / `{colors.on-dark-body}` | `#5E5E5A` | `#A9B6AD` | Secondary text — captions, sub-headings, supporting copy. |
-| `{colors.hairline-mid}` | `#4B4B47` | — | Mid-gray for muted link text inside footer columns and breadcrumbs (Light Mode). |
-| `{colors.mute}` / `{colors.on-dark-mute}` | `#A3A39C` | `#6B756E` | Lightest text role — placeholder text, fine print, low-priority metadata, disabled states. |
-| `{colors.on-mint}` | `#0D120F` | `#0D120F` | Text and icons placed directly on mint-filled surfaces. Ink, not white, to pass contrast. |
-
-### 4. Semantic — Status (5-step ramp)
-A single ordered ramp walking from a cool neutral through the brand hue to a settled deep green — so "done" always reads as the most resolved, saturated state.
-
-* **Light Mode Statuses (Text on Tint):**
-    * **Backlog (`{colors.status-backlog}`):** `#A3A39C` on `#F1F1EE`
-    * **To do (`{colors.status-todo}`):** `#4B4B47` on `#EDEDE9`
-    * **In progress (`{colors.status-progress}`):** `#1AD141` on `#E8FBEC` (Brand hue at working saturation)
-    * **In review (`{colors.status-review}`):** `#15AD36` on `#DFF7E5`
-    * **Done (`{colors.status-done}`):** `#0C641F` on `#D8F3DD` (Deepest point, echoing logo checkmark)
-* **Dark Mode Statuses (Luminous Text on Deep Tint):**
-    * **Backlog (`{colors.status-backlog}`):** `#9CA89E` on `#1B2420`
-    * **To do (`{colors.status-todo}`):** `#C7D0C9` on `#1D2A20`
-    * **In progress (`{colors.status-progress}`):** `#63E980` on `#163B1E`
-    * **In review (`{colors.status-review}`):** `#3CDD5E` on `#18391F`
-    * **Done (`{colors.status-done}`):** `#75EE8F` on `#163B1E` (Mint at full brand brightness)
-
-### 5. Semantic — Priority (4-step ramp)
-Priority never shares a hue with status, running warm-to-cool instead of light-to-dark.
-
-* **Urgent (`{colors.priority-urgent}`):** Light Mode: `#E0451C` \| Dark Mode: `#FF6B42`. Warm flame-orange-red. The only warm colour in the entire system, reserved exclusively for urgency so its rarity carries real signal.
-* **High (`{colors.priority-high}`):** Light Mode: `#C77D17` \| Dark Mode: `#E5A33D`. Amber.
-* **Medium (`{colors.priority-medium}`):** Light Mode: `#2563AC` \| Dark Mode: `#5B9AE0`. Cool blue — reads as "default/neutral priority" against warm tones.
-* **Low (`{colors.priority-low}`):** Light Mode: `#7A7A74` \| Dark Mode: `#8C8C85`. Neutral gray, lowest visual weight.
-
-### 6. Interactive Links
-* **Link (`{colors.link}`):** Light Mode: `#15AD36` \| Dark Mode: `#63E980`. Uses the brand ramp's "in review/luminous" tone rather than standard browser blue.
-
-### 7. User-Created Tag & Label Palette
-A 6-colour rotation built around the brand hue plus controlled neighbours, used as tint-background + saturated-text:
-
-| Tag Family | Light Mode (Text on Tint Background) | Dark Mode (Text on Deep Tint Background) |
-| :--- | :--- | :--- |
-| **Mint** | `#15AD36` on `#DFF7E5` | `#63E980` on `#163B1E` |
-| **Teal** | `#0E7C7B` on `#E1F4F3` | `#4DC9C7` on `#13302F` |
-| **Blue** | `#2563AC` on `#EAF1FB` | `#5B9AE0` on `#162A3D` |
-| **Violet** | `#6D43D6` on `#F0EBFC` | `#9B7FE8` on `#251D3D` |
-| **Amber** | `#C77D17` on `#FBF1E3` | `#E5A33D` on `#332714` |
-| **Coral** | `#E0451C` on `#FCEAE3` | `#FF6B42` on `#3D1F14` |
-
----
+### Semantic
+The brand does not maintain a separate error / success / warning palette in its public marketing surface. Validation cues come from the primary black or from the brand's editorial illustrations. The `#0000ee` link colour is the system's only chromatic — it's the browser-default link blue, appearing in body-copy inline links inside legal / footer text.
 
 ## Typography
 
 ### Font Family
-One typeface, two weight bands, carries the entire system. Poppins is loaded via Google Fonts. Fallback stack: `'Poppins', 'Inter', -apple-system, sans-serif`.
-1.  **Poppins (600/700):** Display and headline roles. Sizes 20px (`display-sm`) to 52px (`display-xxl`). Tight 1.2 – 1.25 line heights.
-2.  **Poppins (400/500):** Body, button, label, and small headings (12px – 18px). Tracking is always neutral.
+Two custom faces carry the entire system:
 
-> **Dark Mode Legibility Rule:** Poppins 400 can feel thin against a dark canvas at small sizes. Where `body-sm` (14px/400) text sits directly on `{colors.canvas}` rather than an elevated card surface, step up to weight **500** to preserve legibility.
+1. **A custom geometric display sans** (extracted as `UberMove`) for every headline. Weight 700 only; no italic; no tracking variation. Sizes range from `display-sm` 20 px up to `display-xxl` 52 px on the hero. Line-heights tighten to 1.22 – 1.25 at display sizes for a poured-on-the-page look.
+2. **A custom text sans** (extracted as `UberMoveText`) for body, button, link, and small headings. Weights 400 and 500 are the working pair. Used at 12 – 18 px; 24 px maximum for ride-request form labels. Tracking is always neutral.
 
-### Hierarchy Table
+The two faces share a family DNA but never overlap roles — the display face never carries a body paragraph; the text face never carries a hero headline.
 
-| Token | Size | Weight | Line Height | Use Cases |
-| :--- | :--- | :--- | :--- | :--- |
-| `{typography.display-xxl}` | 52px | 700 | 64px | Marketing hero headlines. |
-| `{typography.display-xl}` | 36px | 700 | 44px | Page section headlines, onboarding titles. |
-| `{typography.display-lg}` | 32px | 700 | 40px | Promo-card headlines, empty-state titles. |
-| `{typography.display-md}` | 24px | 600 | 32px | Card titles, modal headings. |
-| `{typography.display-sm}` | 20px | 600 | 28px | Sub-card headings, column titles. |
+### Hierarchy
+
+| Token | Size | Weight | Line Height | Use |
+|---|---|---|---|---|
+| `{typography.display-xxl}` | 52px | 700 | 64px | Hero headline ("Go anywhere with Uber", "Drive when you want"). |
+| `{typography.display-xl}` | 36px | 700 | 44px | Page section headlines ("Plan for later", "Safety, simplified"). |
+| `{typography.display-lg}` | 32px | 700 | 40px | Promo-card headlines. |
+| `{typography.display-md}` | 24px | 700 | 32px | Card titles, illustrated-promo headlines. |
+| `{typography.display-sm}` | 20px | 700 | 28px | Sub-card headings. |
 | `{typography.body-lg}` | 18px | 500 | 24px | Lead paragraphs and larger body. |
 | `{typography.body-md}` | 16px | 400 | 24px | Default paragraph body. |
-| `{typography.body-md-strong}`| 16px | 500 | 20px | Bolded inline body and most button labels. |
-| `{typography.body-sm}` | 14px | 400 | 20px | Captions, secondary metadata, task card body. |
-| `{typography.body-sm-strong}`| 14px | 500 | 16px | Bold caption / chip labels / status pills. |
-| `{typography.caption}` | 12px | 400 | 16px | Fine print, task IDs, timestamps. |
-| `{typography.button-large}` | 18px | 500 | 24px | Large rounded buttons inside onboarding/auth flows. |
-| `{typography.button-md}` | 16px | 500 | 20px | Default button labels. |
+| `{typography.body-md-strong}` | 16px | 500 | 20px | Bolded inline body and most button labels. |
+| `{typography.body-sm}` | 14px | 400 | 20px | Captions, secondary metadata. |
+| `{typography.body-sm-strong}` | 14px | 500 | 16px | Bold caption / chip labels. |
+| `{typography.caption}` | 12px | 400 | 20px | Fine print, footer secondary lines. |
+| `{typography.button-large}` | 18px | 500 | 24px | Large rounded buttons inside the ride-request form. |
+| `{typography.button-md}` | 16px | 500 | 20px | Default button label. |
 
----
+### Principles
+- **Sentence-case is the voice.** No all-caps headlines. Eyebrow tags ("WHY BECOME") are the rare exception.
+- **Weight 700 is for headlines; weight 500 is for buttons and emphasis.** Don't promote button labels to 700.
+- **No tracking flourish.** The display face is never letter-spaced, positive or negative.
+- **Two faces, two roles.** UberMove for display; UberMoveText for everything else. Never cross the streams.
 
-## Layout & Spacing
+### Note on Font Substitutes
+The two faces are proprietary. Open-source substitutes:
+- **Display sans** — *Inter* weight 700 with `font-feature-settings: "ss01"` enabled comes closest. *Geist* weight 700 is the second-best option.
+- **Text sans** — *Inter* weights 400 / 500 match the geometric width and x-height. *Plus Jakarta Sans* is a softer alternative if the brand wants a less neutral feel.
 
-* **Base Spacing Unit:** 4px.
-    * `{spacing.xxs}`: 4px · `{spacing.xs}`: 6px · `{spacing.sm}`: 8px · `{spacing.md}`: 12px · `{spacing.lg}`: 16px · `{spacing.xl}`: 20px · `{spacing.2xl}`: 24px · `{spacing.3xl}`: 32px.
-* **Padding Rules:**
-    * *App Shell Bands:* `{spacing.2xl}` 24px (onboarding/marketing steps up to `{spacing.3xl}` 32px).
-    * *Task Card Interior:* `{spacing.md}` 12px to keep board layouts dense and scannable.
-    * *Modal/Onboarding Interior:* `{spacing.2xl}` 24px for a more generous feel.
-* **Gaps:** Button rows, chip rows, avatar stacks use `{spacing.sm}` 8px layout gaps. Board columns use `{spacing.lg}` 16px gaps.
-* **Sizing Constraints:**
-    * *Sidebar:* Fixed 248px on desktop (collapses to 64px or hides below 900px).
-    * *Board Columns:* Fixed 296px width, unconstrained horizontal scroll layout patterns.
-    * *Max Content Width:* ~1200px for list/timeline views.
+## Layout
 
----
+### Spacing System
+- **Base unit**: 4 px. Most captured values are multiples of 4 with a few 6-px sub-multiples (10, 14) inside button padding.
+- **Tokens**: `{spacing.xxs}` 4 px · `{spacing.xs}` 6 px · `{spacing.sm}` 8 px · `{spacing.md}` 12 px · `{spacing.lg}` 16 px · `{spacing.xl}` 20 px · `{spacing.2xl}` 24 px · `{spacing.3xl}` 32 px.
+- **Section padding**: marketing bands sit at `{spacing.3xl}` 32 px top/bottom on tighter pages and `{spacing.3xl} {spacing.3xl}` for hero bands; promo cards inset at `{spacing.2xl}` 24 px.
+- **Card interior padding**: content cards sit at `{spacing.2xl}` 24 px; the ride-request form uses `{spacing.lg}` 16 px to keep the form compact.
+- **Inline gap**: button rows, category chip rows, app-store pill rows use `{spacing.md}` 12 px between siblings.
+
+### Grid & Container
+- **Max width**: ~1200 px container; centred with horizontal gutters of `{spacing.3xl}` 32 px on desktop, `{spacing.lg}` 16 px on mobile.
+- **Column patterns**:
+  - Promo-card rows: 2-up at desktop (image left + content right, alternating sides), 1-up at mobile.
+  - Category chips: horizontal flex with wrap.
+  - FAQ rows: full-width single-column.
+  - App-download pills: 2-up at desktop (Rider + Driver), 1-up at mobile.
+
+### Whitespace Philosophy
+Card-to-card spacing carries the rhythm — between two stacked promo cards there's roughly a full `{spacing.3xl}` 32 px gutter; inside a card the headline / paragraph / CTA stack is tight (`{spacing.sm}` 8 px between siblings). The black promo bands and the footer have no internal hairlines — content sits on flat ink with white text.
+
+### Responsive Strategy
+
+#### Breakpoints
+
+| Name | Width | Key Changes |
+|---|---|---|
+| Mobile | < 600px | Nav collapses to hamburger; promo cards stack; ride-request form becomes full-width. |
+| Mobile-Large | 600–767px | Same as Mobile; chip rows enable horizontal scroll. |
+| Tablet | 768–1119px | 2-up promo grid at upper widths; nav stays horizontal until ≥ 1120 px. |
+| Desktop | 1120–1135px | Full nav row visible; promo cards 2-up. |
+| Desktop-Large | ≥ 1136px | Container caps at ~1200 px; bands stay edge-to-edge while content centres. |
+
+#### Touch Targets
+The pill `button-primary` renders at ~44 px tall (10 px vertical padding + 24 px label line-height); the larger `button-large-rounded` at ~56 px. Both meet WCAG AAA at all breakpoints. Category chips inflate to ≥ 44 px tall through extra padding on touch viewports.
+
+#### Collapsing Strategy
+- **Nav**: full link row + Help / Log in / Sign up pills at desktop. Collapses to logo + hamburger at mobile; menu overlays full-screen with the same link list stacked.
+- **Ride-request form card**: at desktop, the form sits inside a max-490-px `{rounded.xl}` card with shadow. At mobile, full-width with edge-to-edge.
+- **Promo cards**: at desktop, image-left + content-right (or alternating). At mobile, image always above content.
+- **Annual showcase card**: scales from a 2:3 desktop frame to a 4:3 mobile frame; date text resizes proportionally.
+
+#### Image Behavior
+- **Editorial illustrations**: 4:3 or 16:9 hard-edge rectangles; never cropped to a circle, never tilted. Aspect preserved.
+- **Photography**: same — square or landscape; framed inside `{rounded.xl}` card chrome.
+- **Maps in ride-request flow**: full-bleed inside a card; rounded corners follow the parent card.
+- **Logo bar**: SVG vector, monochrome, consistent height.
+
+## Elevation & Depth
+
+| Level | Treatment | Use |
+|---|---|---|
+| Level 0 — Flat | No shadow, no border. | Default — most cards and surfaces lean on hairline-of-canvas contrast. |
+| Level 1 — Subtle Drop | `rgba(0, 0, 0, 0.12) 0px 4px 16px 0px` | Card-elevated frames around promo cards on light bands. |
+| Level 2 — Card Drop | `rgba(0, 0, 0, 0.16) 0px 4px 16px 0px` | The ride-request form card on the hero; large content cards with embedded forms. |
+| Level 3 — Pill Float | `rgba(0, 0, 0, 0.16) 0px 2px 8px 0px` | The floating white pill button (the one that floats over hero photography). |
+
+### Decorative Depth
+- **Black bands as polarity-flip depth**: the brand uses pure black `{colors.primary}` mid-page bands to break the white-on-white rhythm. The polarity shift IS the depth cue.
+- **Editorial illustrations as in-card depth**: every promo card has a single 4:3 illustration as its left or right column. The illustration's visual weight is part of the card's elevation read.
+- **Pill geometry as micro-depth**: `{rounded.pill}` 999 px applied at varying button heights creates a stack of nested pills that reads as visual hierarchy.
+
+## Shapes
+
+### Border Radius Scale
+
+| Token | Value | Use |
+|---|---|---|
+| `{rounded.none}` | 0px | Full-bleed hero bands, footer fill, raw image edges. |
+| `{rounded.md}` | 8px | Form-input fields inside the ride-request card. |
+| `{rounded.lg}` | 12px | Smaller secondary card chrome. |
+| `{rounded.xl}` | 16px | Canonical card radius — promo cards, content cards, ride-request form card, annual-showcase card, large rounded buttons. |
+| `{rounded.pill}` | 999px | The brand's signature interactive shape — every pill button, category chip, app-download pill, icon button. |
+| `{rounded.pill-tab}` | 36px | The translucent-white tab-toggle pill on the hero (Ride / Drive). |
+| `{rounded.full}` | 9999px | Identical effect to `{rounded.pill}` for circular icon containers. |
+
+### Photography Geometry
+- **Editorial illustrations**: 4:3 landscape inside promo cards; 16:9 for full-width showcase frames.
+- **Driver / rider portraits**: 4:5 portrait crop; framed by `{rounded.xl}` 16 px card chrome.
+- **Annual showcase image**: 2:3 portrait at desktop, scaling to 4:3 at mobile. The image fills the card; the headline overlays the bottom.
+- **Logo bar**: monochrome SVG vectors at consistent ~24 px height.
+- **Avatars** (where used): square or `{rounded.full}` circle, never `{rounded.lg}` rounded-square.
 
 ## Components
 
-### 1. Buttons
-* **`button-primary`** — Mint fill, ink text. `{colors.primary}` background, `{colors.on-mint}` text, `{rounded.pill}`, `{typography.button-md}`. Hover transitions to `{colors.primary-deep}`. High contrast element by design in both modes.
-* **`button-secondary-contextual`** — High-emphasis secondary action that shouldn't compete with mint (e.g. "Delete project" confirmation).
-    * *Light Mode (`button-secondary-dark`):* `{colors.ink}` background, `{colors.on-dark}` white text, `{rounded.pill}`.
-    * *Dark Mode (`button-secondary-light`):* `{colors.on-dark}` near-white background, `{colors.ink}` text, `{rounded.pill}`.
-* **`button-secondary`** — In Light Mode: `{colors.canvas}` fill, 1px `{colors.hairline}` border. In Dark Mode: `{colors.canvas-soft}` fill, 1px `{colors.hairline}` border. Combined with `{colors.on-dark}` text and `{rounded.pill}`.
-* **`button-subtle`** — Soft background button.
-    * *Light Mode:* `{colors.canvas-soft}` background, `{colors.ink}` text.
-    * *Dark Mode:* `{colors.canvas-softer}` background, `{colors.on-dark}` text.
-    * *Pressed State:* Steps up to `{colors.surface-pressed}` in both modes.
-* **`button-icon`** — Circular icon-only control. 34px square, `{rounded.full}`. `{colors.canvas-soft}` background base. Light mode hover transitions to `{colors.canvas-softer}`. Dark mode hover adds a `{colors.primary-glow}` outer ring.
+### Buttons
 
-### 2. Status & Priority Chips
-* **`status-chip`** — Text and background paired directly from the respective mode's status ramp. Always `{rounded.pill}`, `{typography.body-sm-strong}`, configured with `{spacing.xxs} {spacing.sm}` padding.
-* **`priority-flag`** — Icon + label pair with no background fill. Text-only execution using the respective priority ramp color, paired with a small glyph (flame for urgent; bars for high/medium/low). Set to `{typography.caption}` weight 600.
+**`button-primary`** — the canonical black pill, the brand's conversion target.
+- Background `{colors.primary}`, text `{colors.on-primary}`, label set in `{typography.button-md}`, padding `{spacing.md} {spacing.md}`, shape `{rounded.pill}` 999 px.
 
-### 3. Cards
-* **`task-card`** — Configured to `{rounded.lg}` 12px with a 1px `{colors.hairline}` border. 
-    * *Light Mode:* `{colors.canvas}` background. Level-0 flat by default, Level-1 shadow on hover/drag. Interior padding `{spacing.md}`.
-    * *Dark Mode:* `{colors.canvas-soft}` background. Drop shadows are omitted; hover/drag interactions apply `{colors.primary-glow}` as an outer halo.
-* **`empty-state-card` (Polarity-Flipped Core)** — A card that flips the standard interface polarity. Uses `{rounded.xl}` 16px. Large mint checkmark glyph centered inside.
-    * *Light Mode:* `{colors.ink}` background, `{colors.on-dark}` text.
-    * *Dark Mode:* `{colors.on-dark}` near-white background, `{colors.ink}` text, with the checkmark rendered in `{colors.primary-deep}`.
+**`button-secondary`** — the white pill paired with the black primary.
+- Background `{colors.canvas}`, text `{colors.ink}`, same label and padding as `button-primary`, shape `{rounded.pill}`.
 
-### 4. Navigation Layouts
-* **`sidebar`** — Left-hand core app navigation.
-    * *Light Mode (`sidebar-dark`):* Uses a dark polarity-flip style. `{colors.ink}` background, `{colors.on-dark}` text, `{colors.on-dark-mute}` for inactive items. Active nav items flip to a white background with ink text.
-    * *Dark Mode:* Inherits the standard canvas style. `{colors.canvas-soft}` background, `{colors.on-dark}` text, `{colors.on-dark-mute}` for inactive items. Active nav items transition to a full `{colors.primary}` mint background with `{colors.on-mint}` ink text.
-* **`nav-dot`** — 8px circular swatch preceding project profiles in nav panels, drawing from a rotating set of brand-adjacent tag colors.
+**`button-subtle`** — the gray secondary pill used for tertiary actions inside cards (e.g., "Learn more" / "Use Reserve").
+- Background `{colors.canvas-soft}` (`#efefef`), text `{colors.ink}`, label in `{typography.button-md}`, padding `{spacing.md} {spacing.lg}`, shape `{rounded.pill}`.
 
----
+**`button-floating`** — the white pill with a subtle drop-shadow that floats over a dark or photographic surface.
+- Background `{colors.canvas}`, text `{colors.ink}`, padding `{spacing.md}`, shape `{rounded.pill}`. Carries a Level 3 pill-float shadow.
+
+**`button-large-rounded`** — the bigger black call-to-action used inside the ride-request flow ("Yes, help me").
+- Background `{colors.primary}`, text `{colors.on-primary}`, label in `{typography.button-large}`, padding `{spacing.lg} {spacing.xl}`, shape `{rounded.xl}` 16 px (not pill — the only black CTA that breaks the pill rule, used in the larger form context).
+
+**`button-tab-translucent`** — the tab-toggle on the hero ride-request form (Ride / Drive).
+- Background `{colors.canvas}`, text `{colors.ink}`, label in `{typography.body-md-strong}`, shape `{rounded.pill-tab}` 36 px (off-shape, deliberately tighter than the canonical 999 px pill).
+
+### Cards & Containers
+
+**`card-content`** — the canonical content card.
+- Background `{colors.canvas}`, text `{colors.ink}`, padding `{spacing.2xl}`, shape `{rounded.xl}` 16 px. No shadow on the default state.
+
+**`card-elevated`** — the content card with Level 1 subtle drop.
+- Background `{colors.canvas}`, text `{colors.ink}`, same padding + shape as `card-content`. Shadow at Level 1.
+
+**`card-soft-tinted`** — the gray-tinted card used as a sub-region inside the page (e.g., "Plan for later" callout).
+- Background `{colors.canvas-soft}`, text `{colors.ink}`, padding `{spacing.2xl}`, shape `{rounded.xl}`.
+
+**`promo-card-illustrated`** — the 2-column promo card with illustration on one side and copy on the other.
+- Background `{colors.canvas}`, text `{colors.ink}`, padding `{spacing.2xl}`, shape `{rounded.xl}`. Headline in `{typography.display-md}` or larger.
+
+**`promo-card-on-dark`** — the polarity-flipped promo card in black.
+- Background `{colors.ink}`, text `{colors.on-dark}`, padding `{spacing.2xl}`, shape `{rounded.xl}`. Used for the "Drive with Uber" mid-page band.
+
+**`request-form-card`** — the hero ride-request form chrome.
+- Background `{colors.canvas}`, text `{colors.ink}`, padding `{spacing.lg}`, shape `{rounded.xl}`. Carries Level 2 card drop shadow.
+
+**`request-form-input-row`** — the per-field row inside the request-form card.
+- Background `{colors.canvas-soft}`, text `{colors.ink}`, padding `{spacing.lg}`, shape `{rounded.md}` 8 px. Hosts an icon + label + value.
+
+**`showcase-image-card`** — the giant "GO•GET 2026" annual showcase card.
+- Background `{colors.ink}`, text `{colors.on-dark}` overlay, padding `{spacing.3xl}`, shape `{rounded.xl}`. Display-xxl headline overlays the bottom of the image.
+
+### Inputs & Forms
+
+**`text-input`** — the canonical text input.
+- Background `{colors.canvas-soft}`, text `{colors.ink}`, body in `{typography.body-md}`, padding `{spacing.lg}`, shape `{rounded.md}` 8 px.
+
+**`text-input-on-soft`** — the nested input on a white card (slightly lighter fill).
+- Background `{colors.canvas-softer}`, otherwise identical to `text-input`.
+
+### Navigation
+
+**`nav-bar`** — the sticky top nav.
+- Background `{colors.canvas}` on light pages, switches to `{colors.ink}` on the rare dark page (e.g., Uber Eats hero). Padding `{spacing.lg} {spacing.3xl}`.
+
+**`nav-link`** — the link row inside `nav-bar`.
+- Text `{colors.ink}`, set in `{typography.body-md-strong}` 500 weight.
+
+**`footer`** — the deep-black footer band.
+- Background `{colors.primary}` (the brand's only true black surface), text `{colors.on-dark}`, padding `{spacing.3xl} {spacing.3xl}`. Body in `{typography.body-sm}`; column eyebrows in `{typography.body-md-strong}`.
+
+### Signature Components
+
+**`hero-band-light`** — the white hero with the ride-request card.
+- Background `{colors.canvas}`, text `{colors.ink}`, padding `{spacing.3xl} {spacing.3xl}`. Headline in `{typography.display-xxl}` (52 px / 700) on the left; `request-form-card` on the right.
+
+**`hero-band-dark`** — the rare black hero (used on Uber Eats and Drive landing).
+- Background `{colors.ink}`, text `{colors.on-dark}`, padding `{spacing.3xl} {spacing.3xl}`. Same display-xxl headline scale; CTA inverts to `button-secondary` white pill.
+
+**`category-button`** — the horizontal-scroll category row ("Reserve / Rentals / Teens / Group rides").
+- Background `{colors.canvas-soft}`, text `{colors.ink}`, label in `{typography.body-sm-strong}`, padding `{spacing.sm} {spacing.lg}`, shape `{rounded.pill}`. An icon precedes the label.
+
+**`faq-row`** — the FAQ accordion item.
+- Background `{colors.canvas}`, text `{colors.ink}`, question in `{typography.body-md-strong}`, padding `{spacing.lg}` 0. No card chrome — hairline dividers between rows.
+
+**`app-download-pill`** — the "Download the Rider app" / "Download the Driver app" pill.
+- Background `{colors.ink}`, text `{colors.on-dark}`, label in `{typography.body-md-strong}`, padding `{spacing.md} {spacing.xl}`, shape `{rounded.pill}`.
+
+**`icon-button-circular`** — the round icon container used in the nav and inside the ride-request card.
+- Background `{colors.canvas-soft}`, dark icon, shape `{rounded.full}`. No label.
+
+### Links
+
+**`link-blue`** — the system-default browser-blue link inside legal / footer fine print.
+- Text `{colors.link}` (`#0000ee`), body in `{typography.body-md}`.
+
+**`link-on-dark`** — the white link inside dark bands.
+- Text `{colors.on-dark}`, body in `{typography.body-md}`.
+
+**`link-mute`** — the muted gray link inside footer columns.
+- Text `{colors.hairline-mid}`, body in `{typography.body-md}`.
+
+**`link-mute-soft`** — the lightest gray link, used for low-priority secondary text on dark surfaces.
+- Text `{colors.mute}`, body in `{typography.body-md}`.
+
+### Examples (illustrative)
+
+> Auto-derived kit-mirror demonstration surfaces (`scripts/derive-examples-block.mjs`). Each `ex-*` entry references brand-native primitives so downstream consumers (`/preview-design`, `/generate-kit`) re-skin the same 10 surfaces consistently. `TO_FILL` markers indicate missing primitives — resolve in the LLM judgment pass.
+
+**`ex-pricing-tier`** — Default Pricing tier card. Re-uses feature-card chrome with brand canvas-soft surface.
+- Properties: `backgroundColor`, `textColor`, `borderColor`, `rounded`, `padding`
+
+**`ex-pricing-tier-featured`** — Featured/highlighted tier — polarity-flipped surface (dark fill + light text in light mode, light fill + dark text in dark mode).
+- Properties: `backgroundColor`, `textColor`, `rounded`, `padding`
+
+**`ex-product-selector`** — What's Included summary card — re-purposed for SaaS / B2B verticals (NOT a literal product gallery).
+- Properties: `backgroundColor`, `rounded`, `padding`
+
+**`ex-cart-drawer`** — Subscription summary — re-purposed for SaaS / B2B (line items per add-on, not literal cart).
+- Properties: `backgroundColor`, `rounded`, `padding`, `item-divider`
+
+**`ex-app-shell-row`** — Sidebar nav row inside the App Shell example. Active state uses brand primary as the indicator.
+- Properties: `backgroundColor`, `activeIndicator`, `rounded`, `padding`
+
+**`ex-data-table-cell`** — Default data-table th + td chrome. Header uses mono-caps eyebrow typography; body uses body-sm.
+- Properties: `headerBackground`, `headerTypography`, `bodyTypography`, `cellPadding`, `rowBorder`
+
+**`ex-auth-form-card`** — Sign-in / sign-up card. Re-uses feature-card chrome with text-input primitives inside.
+- Properties: `backgroundColor`, `rounded`, `padding`
+
+**`ex-modal-card`** — Modal dialog surface — same chrome as feature-card with elevated shadow.
+- Properties: `backgroundColor`, `rounded`, `padding`
+
+**`ex-empty-state-card`** — Empty-state illustration frame.
+- Properties: `backgroundColor`, `rounded`, `padding`, `captionTypography`
+
+**`ex-toast`** — Toast notification surface — feature-card shape + medium shadow.
+- Properties: `backgroundColor`, `rounded`, `padding`, `typography`
+
 
 ## Do's and Don'ts
 
 ### Do
-* **Do** reserve `{colors.primary}` mint for the single highest-emphasis action per view. One mint pill per visible viewport maintains clear action hierarchy.
-* **Do** keep status and priority on their separate ramps — never reuse a status colour for priority or vice versa, ensuring the two systems stay independently legible on the same card.
-* **Do** use the polarity-flip rules for empty states and high-stakes confirmations — this produces the optimal contrast moments for the brand.
-* **Do** step `body-sm` text to 500 weight in dark mode when it sits directly on the core canvas layer to maintain readable rendering.
-* **Do** ensure that the dark canvas carries its faint brand-green undertone (`#0F1512`) rather than defaulting to generic deep blacks.
+- Reserve `{colors.primary}` (`#000000`) for every primary CTA pill. One black pill per visible viewport is the brand's whole conversion story.
+- Use `{rounded.pill}` 999 px on every interactive element (buttons, chips, app pills). The pill IS the brand's geometric signature.
+- Render cards in `{rounded.xl}` 16 px — promo cards, content cards, the ride-request form card, the annual-showcase card all share this radius.
+- Set every headline in `{typography.display-*}` weight 700 in sentence-case. The display face never carries body copy.
+- Use polarity-flipped black promo bands mid-page to break up white-on-white rhythm. The polarity shift IS the depth cue.
+- Anchor every promo card with a 4:3 editorial illustration; never use generic stock imagery.
 
 ### Don't
-* **Don't** use white text on mint fills — `{colors.on-mint}` is always ink. Mint at `#75EE8F` is too light for white text to clear comfortable contrast guidelines.
-* **Don't** mathematically invert light-mode hex values to generate dark-mode colors. The dark-mode ramp has been re-tuned for true contrast readability.
-* **Don't** introduce pure `#000000` anywhere in the dark surface layout stack.
-* **Don't** apply standard drop shadows to dark-mode cards. Use the hairline border + glow pattern instead.
-* **Don't** drop Poppins below weight 400 for body text or above 700 for display layers — the system contains no light or black-weight roles.
-* **Don't** render task cards at `{rounded.xl}` 16px — that radius is reserved for modal/onboarding surfaces so the density difference between "board" and "focused flow" stays visually legible.
+- Don't introduce a second brand accent colour (orange, blue, green). The brand's entire UI is black-and-white plus grayscale; new accents flatten the system.
+- Don't render the primary CTA as a `{rounded.xl}` rectangle except inside the larger ride-request flow (where `button-large-rounded` is the documented exception).
+- Don't use all-caps display headlines. Sentence-case is the voice; uppercase is restricted to rare eyebrow tags.
+- Don't drop a soft drop-shadow on every card. The brand uses Level 0 flat as the default; shadow is reserved for the floating pill and the ride-request form.
+- Don't reduce the brand to its illustration system alone. The pill geometry + black/white duet carries the brand even without illustrations.
+- Don't tighten or loosen letter-spacing on the display face. The brand never letter-spaces; default tracking is part of the voice.
+- Don't use `{rounded.full}` 9999 px for square cards — the pill 999 px and full 9999 px effects are identical for interactive elements, but cards stay at `{rounded.xl}` 16 px.

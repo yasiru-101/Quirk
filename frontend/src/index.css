@@ -3,71 +3,140 @@
 /* ── Google Font ─────────────────────────────────────────────────────────── */
 @layer base {
   :root {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
 
-  /* ── Dark-mode Design Tokens ────────────────────────────────────────────── */
-  :root {
-    --bg-base:      #09090b;   /* zinc-950 */
-    --bg-surface:   #18181b;   /* zinc-900 */
-    --bg-elevated:  #27272a;   /* zinc-800 */
-    --bg-hover:     #3f3f46;   /* zinc-700 */
+    /* ── Light-mode Design Tokens ────────────────────────────────────────────── */
+    --colors-primary: #75EE8F;
+    --colors-primary-deep: #66EF87;
+    --colors-primary-tint: #F0FFF6;
+    --colors-primary-glow: transparent;
 
-    --border:       rgba(63, 63, 70, 0.5);  /* zinc-700/50 */
-    --border-light: rgba(39, 39, 42, 0.7);  /* zinc-800/70 */
+    --colors-canvas: #FFFFFF;
+    --colors-canvas-soft: #FAFEFB;
+    --colors-canvas-softer: #F4FDF6;
+    --colors-surface-pressed: #D3FCDD;
+    --colors-hairline: #E2EFE5;
 
-    --text-primary:   #fafafa;  /* zinc-50 */
-    --text-secondary: #a1a1aa;  /* zinc-400 */
-    --text-muted:     #71717a;  /* zinc-500 */
+    --colors-ink: #0D120F;
+    --colors-on-dark: #FFFFFF;
+    --colors-body: #5E5E5A;
+    --colors-on-dark-body: #A9B6AD;
+    --colors-hairline-mid: #4B4B47;
+    --colors-mute: #A3A39C;
+    --colors-on-dark-mute: #6B756E;
+    --colors-on-mint: #0D120F;
 
-    --accent:         #6366f1;  /* indigo-500 */
-    --accent-hover:   #4f46e5;  /* indigo-600 */
-    --accent-muted:   rgba(99, 102, 241, 0.1);
+    --colors-ink-elevated: #171C1A;
 
-    --success:  #10b981;  /* emerald-500 */
-    --warning:  #f59e0b;  /* amber-500 */
-    --danger:   #ef4444;  /* red-500 */
-    --info:     #3b82f6;  /* blue-500 */
+    /* ── Status Ramps (Light) ──────────────────────────────────────────────── */
+    --colors-status-backlog-bg: #F1F1EE;
+    --colors-status-backlog-text: #A3A39C;
+    
+    --colors-status-todo-bg: #EDEDE9;
+    --colors-status-todo-text: #4B4B47;
+    
+    --colors-status-progress-bg: #E8FBEC;
+    --colors-status-progress-text: #1AD141;
+    
+    --colors-status-review-bg: #DFF7E5;
+    --colors-status-review-text: #15AD36;
+    
+    --colors-status-done-bg: #D8F3DD;
+    --colors-status-done-text: #0C641F;
 
+    /* ── Priority Ramps (Light) ────────────────────────────────────────────── */
+    --colors-priority-urgent: #E0451C;
+    --colors-priority-high: #C77D17;
+    --colors-priority-medium: #2563AC;
+    --colors-priority-low: #7A7A74;
+
+    --colors-link: #15AD36;
+
+    /* ── Spacing & Geometry ────────────────────────────────────────────────── */
     --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 16px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill: 999px;
 
-    --sidebar-width: 240px;
-    --topbar-height: 60px;
-
-    --shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
-    --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
-    --shadow-lg:  0 12px 40px rgba(0,0,0,0.6);
+    --sidebar-width: 248px;
+    --board-col-width: 296px;
 
     --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* ── Dark-mode Design Tokens ────────────────────────────────────────────── */
+    --colors-primary: #75EE8F;
+    --colors-primary-deep: #66EF87;
+    --colors-primary-tint: transparent; /* unused in dark mode */
+    --colors-primary-glow: rgba(117, 238, 143, 0.18);
+
+    --colors-canvas: #0F1512;
+    --colors-canvas-soft: #151E1A;
+    --colors-canvas-softer: #1D2621;
+    --colors-surface-pressed: #242E29;
+    --colors-hairline: #2A3530;
+
+    --colors-ink: #FFFFFF; /* Flipped for text inside buttons */
+    --colors-on-dark: #F4FBF6;
+    --colors-body: #A9B6AD;
+    --colors-hairline-mid: #4B4B47;
+    --colors-mute: #6B756E;
+    --colors-on-mint: #0D120F;
+
+    --colors-ink-elevated: #1D2621;
+
+    /* ── Status Ramps (Dark) ──────────────────────────────────────────────── */
+    --colors-status-backlog-bg: #1B2420;
+    --colors-status-backlog-text: #9CA89E;
+    
+    --colors-status-todo-bg: #1D2A20;
+    --colors-status-todo-text: #C7D0C9;
+    
+    --colors-status-progress-bg: #163B1E;
+    --colors-status-progress-text: #63E980;
+    
+    --colors-status-review-bg: #18391F;
+    --colors-status-review-text: #3CDD5E;
+    
+    --colors-status-done-bg: #163B1E;
+    --colors-status-done-text: #75EE8F;
+
+    /* ── Priority Ramps (Dark) ────────────────────────────────────────────── */
+    --colors-priority-urgent: #FF6B42;
+    --colors-priority-high: #E5A33D;
+    --colors-priority-medium: #5B9AE0;
+    --colors-priority-low: #8C8C85;
+
+    --colors-link: #63E980;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body, #root {
     height: 100%;
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+    background-color: var(--colors-canvas);
+    color: var(--colors-ink);
   }
 
   ::selection {
-    background-color: var(--accent-muted);
-    color: var(--text-primary);
+    background-color: var(--colors-primary-glow);
+    color: var(--colors-primary);
   }
 
   /* ── Scrollbar ──────────────────────────────────────────────────────────── */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  ::-webkit-scrollbar-thumb { background: var(--colors-hairline); border-radius: var(--radius-pill); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--colors-mute); }
 
   a { color: inherit; text-decoration: none; }
 }
 
-/* ── Animations ──────────────────────────────────────────────────────────── */
+/* ── Utilities ───────────────────────────────────────────────────────────── */
 @layer utilities {
   .animate-in { animation: fadeIn 0.2s ease forwards; }
   .slide-up   { animation: slideUp 0.25s ease forwards; }
@@ -89,10 +158,6 @@
     0%   { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
   @keyframes toastIn {
     from { opacity: 0; transform: translateX(100%); }
     to   { opacity: 1; transform: translateX(0); }
@@ -102,42 +167,32 @@
     to   { opacity: 0; transform: translateX(100%); }
   }
 
-  /* ── Skeleton Loader ───────────────────────────────────────────────────── */
+  /* ── Card/Glass surfaces ──────────────────────────────────────────────── */
   .skeleton {
     background: linear-gradient(
       90deg,
-      var(--bg-elevated) 25%,
-      var(--bg-hover) 50%,
-      var(--bg-elevated) 75%
+      var(--colors-canvas-softer) 25%,
+      var(--colors-hairline) 50%,
+      var(--colors-canvas-softer) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
   }
 
-  /* ── Glass surface ─────────────────────────────────────────────────────── */
   .glass {
-    background: rgba(24, 24, 27, 0.8);
+    background: rgba(15, 21, 18, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
+    border: 1px solid var(--colors-hairline);
+  }
+  
+  .dark .glass {
+    background: rgba(21, 30, 26, 0.8);
   }
 
-  /* ── Card surface ──────────────────────────────────────────────────────── */
-  .card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    transition: border-color var(--transition), box-shadow var(--transition);
-  }
-  .card:hover {
-    border-color: var(--bg-hover);
-    box-shadow: var(--shadow-sm);
-  }
-
-  /* ── Focus ring ────────────────────────────────────────────────────────── */
   .focus-ring:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--colors-primary);
     outline-offset: 2px;
   }
 }

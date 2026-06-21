@@ -7,6 +7,7 @@ import TaskCard from './TaskCard';
 import EmptyState from '../common/EmptyState';
 import { ROLES } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
+import { InboxIcon, SparklesIcon } from '../common/Icons';
 
 const COLUMN_META = {
   'Backlog':     { colorVar: 'var(--colors-mute)' },
@@ -47,7 +48,7 @@ export default function KanbanColumn({ status, tasks, onStatusChange, onCardClic
         {tasks.length === 0 ? (
           <div className="pt-4">
             <EmptyState
-              icon={status === 'Completed' ? '🎉' : '📭'}
+              icon={status === 'Completed' ? <SparklesIcon className="w-6 h-6 text-[var(--colors-mute)]" /> : <InboxIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
               title={status === 'Completed' ? 'Nothing done yet' : 'Empty column'}
               description={
                 status === 'To Do' || status === 'Backlog'

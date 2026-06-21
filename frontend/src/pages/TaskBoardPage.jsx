@@ -13,6 +13,7 @@ import { taskService } from '../services/taskService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { LayoutIcon, ListIcon } from '../components/common/Icons';
 import { ROLES } from '../utils/constants';
 import { cn, isOverdue } from '../utils/helpers';
 
@@ -118,8 +119,8 @@ export default function TaskBoardPage() {
         <div className="flex items-center gap-3 ml-auto">
           <div className="flex items-center bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] rounded-lg p-1 shadow-sm">
             {[
-              { id: 'kanban', icon: '⊞', label: 'Kanban' },
-              { id: 'table',  icon: '≡', label: 'Table' },
+              { id: 'kanban', icon: <LayoutIcon className="w-4 h-4" />, label: 'Kanban' },
+              { id: 'table',  icon: <ListIcon className="w-4 h-4" />, label: 'Table' },
             ].map(({ id, icon, label }) => (
               <button
                 key={id}
@@ -132,7 +133,7 @@ export default function TaskBoardPage() {
                 )}
                 aria-pressed={view === id}
               >
-                <span aria-hidden>{icon}</span> {label}
+                {icon} {label}
               </button>
             ))}
           </div>

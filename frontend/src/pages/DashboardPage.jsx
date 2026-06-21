@@ -8,17 +8,28 @@ import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
 import { ROLES } from '../utils/constants';
 import { getPriorityColor, getStatusColor, formatDate, isOverdue, cn } from '../utils/helpers';
+import {
+  UsersIcon,
+  CheckIcon,
+  PauseIcon,
+  LockIcon,
+  ClipboardIcon,
+  ActivityIcon,
+  AlertTriangleIcon,
+  CalendarIcon,
+  InboxIcon
+} from '../components/common/Icons';
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, colorClass, loading }) {
+function StatCard({ label, value, icon: Icon, colorClass, loading }) {
   return (
     <div className="card p-6 flex flex-col justify-between h-32 group hover:border-[var(--colors-primary)] transition-all overflow-hidden relative">
-      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <span className="text-6xl">{icon}</span>
+      <div className="absolute top-2 right-2 p-2 opacity-5 group-hover:opacity-10 transition-opacity text-current">
+        <Icon className="w-16 h-16" />
       </div>
       <div className="flex items-center gap-3">
-        <div className={cn('w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm', colorClass)}>
-          {icon}
+        <div className={cn('w-10 h-10 rounded-full flex items-center justify-center shadow-sm', colorClass)}>
+          <Icon className="w-5 h-5" />
         </div>
         <p className="text-[var(--typography-body-sm-strong)] font-semibold text-[var(--colors-body)] tracking-wide">{label}</p>
       </div>
@@ -50,7 +61,7 @@ export default function DashboardPage() {
 
     if (role === ROLES.ADMIN) {
       userService
-        .getUsers()
+          .getUsers()
         .then(({ data }) => {
           const users = data.users ?? [];
           const total    = users.length;
@@ -58,10 +69,10 @@ export default function DashboardPage() {
           const inactive = total - active;
           const pending  = users.filter((u) => u.mustResetPassword && u.isActive).length;
           setStats([
-            { label: 'Total Users',    value: total,    icon: '👥', colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-            { label: 'Active',         value: active,   icon: '✓',  colorClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-            { label: 'Inactive',       value: inactive, icon: '⏸',  colorClass: 'bg-[var(--colors-canvas-softer)] text-[var(--colors-body)]' },
-            { label: 'Pending Resets', value: pending,  icon: '🔐', colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+            { label: 'Total Users',    value: total,    icon: UsersIcon, colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+            { label: 'Active',         value: active,   icon: CheckIcon,  colorClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+            { label: 'Inactive',       value: inactive, icon: PauseIcon,  colorClass: 'bg-[var(--colors-canvas-softer)] text-[var(--colors-body)]' },
+            { label: 'Pending Resets', value: pending,  icon: LockIcon, colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
           ]);
         })
         .catch(() => setStats([]))
@@ -78,10 +89,10 @@ export default function DashboardPage() {
 
           if (role === ROLES.PROJECT_MANAGER) {
             setStats([
-              { label: 'Total Tasks',  value: total,  icon: '📋', colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-              { label: 'In Progress',  value: inProg, icon: '⚡', colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-              { label: 'Completed',    value: done,   icon: '✓',  colorClass: 'bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)]' },
-              { label: 'Overdue',      value: overdue,icon: '⚠',  colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
+              { label: 'Total Tasks',  value: total,  icon: ClipboardIcon, colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+              { label: 'In Progress',  value: inProg, icon: ActivityIcon, colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+              { label: 'Completed',    value: done,   icon: CheckIcon,  colorClass: 'bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)]' },
+              { label: 'Overdue',      value: overdue,icon: AlertTriangleIcon,  colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
             ]);
           } else {
             const myTasks    = tasks;
@@ -93,10 +104,10 @@ export default function DashboardPage() {
               return diff >= 0 && diff <= 7;
             }).length;
             setStats([
-              { label: 'My Tasks',      value: myTasks.length, icon: '📋', colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-              { label: 'In Progress',   value: inProg,         icon: '⚡', colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-              { label: 'Completed',     value: done,           icon: '✓',  colorClass: 'bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)]' },
-              { label: 'Due This Week', value: dueThisWeek,    icon: '📅', colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
+              { label: 'My Tasks',      value: myTasks.length, icon: ClipboardIcon, colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+              { label: 'In Progress',   value: inProg,         icon: ActivityIcon,         colorClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+              { label: 'Completed',     value: done,           icon: CheckIcon,  colorClass: 'bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)]' },
+              { label: 'Due This Week', value: dueThisWeek,    icon: CalendarIcon, colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
             ]);
           }
         })
@@ -166,7 +177,7 @@ export default function DashboardPage() {
             </div>
           ) : recentTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
-              <span className="text-4xl mb-4">📭</span>
+              <InboxIcon className="w-10 h-10 text-[var(--colors-body)] opacity-50 mb-4" />
               <p className="text-sm font-medium text-[var(--colors-body)]">No tasks assigned yet.</p>
             </div>
           ) : (
@@ -202,7 +213,10 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className={cn('px-6 py-4 text-sm font-medium', isOverdue(t.dueDate) && t.status !== 'Completed' ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-body)]')}>
-                        {isOverdue(t.dueDate) && t.status !== 'Completed' && '⚠ '}{formatDate(t.dueDate)}
+                        {isOverdue(t.dueDate) && t.status !== 'Completed' && (
+                          <AlertTriangleIcon className="inline-block w-4 h-4 mr-1 text-[var(--colors-priority-urgent)] align-middle" />
+                        )}
+                        {formatDate(t.dueDate)}
                       </td>
                     </tr>
                   ))}

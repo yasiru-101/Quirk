@@ -11,6 +11,7 @@ import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import EmptyState from '../common/EmptyState';
+import { MailIcon, UsersIcon } from '../common/Icons';
 import { normalizeError } from '../../services/api';
 
 const ROLE_LIST = [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR];
@@ -133,9 +134,9 @@ function UserFormModal({ open, onClose, user = null, onSaved }) {
           </div>
           {errors.role && <p className="text-xs text-[var(--colors-priority-urgent)] mt-1 font-medium">⚠ {errors.role}</p>}
         </div>
-        {!isEdit && (
+         {!isEdit && (
           <div className="flex items-start gap-3 bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] rounded-lg p-4 mt-2">
-            <div className="text-[var(--colors-primary)] text-lg">📧</div>
+            <MailIcon className="w-5 h-5 text-[var(--colors-primary)] mt-0.5" />
             <p className="text-xs text-[var(--colors-body)] leading-relaxed font-medium">
               A temporary password will be emailed to the user. They will be required to change it on their first login.
             </p>
@@ -200,11 +201,11 @@ export default function UserTable({ search }) {
     );
   }
 
-  if (filtered.length === 0) {
+   if (filtered.length === 0) {
     return (
       <div className="py-10">
         <EmptyState
-          icon="👥"
+          icon={<UsersIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
           title={search ? 'No users match your search' : 'No users yet'}
           description={search ? 'Try a different name, email, or role.' : 'Invite your first team member.'}
         />

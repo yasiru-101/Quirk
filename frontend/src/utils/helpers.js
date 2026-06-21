@@ -54,12 +54,12 @@ export const getStatusColor = (status) => {
 // ─── Notification Icon Helper ─────────────────────────────────────────────────
 export const getNotificationMeta = (type) => {
   switch (type) {
-    case NOTIFICATION_TYPE.ASSIGNMENT:    return { icon: '👤', label: 'Assigned', color: 'text-indigo-400' };
-    case NOTIFICATION_TYPE.STATUS_CHANGE: return { icon: '🔄', label: 'Status Update', color: 'text-amber-400' };
-    case NOTIFICATION_TYPE.COMMENT:       return { icon: '💬', label: 'Comment', color: 'text-sky-400' };
-    case NOTIFICATION_TYPE.DEADLINE:      return { icon: '⏰', label: 'Deadline', color: 'text-rose-400' };
-    case NOTIFICATION_TYPE.ADMIN:         return { icon: '🛡️', label: 'Admin', color: 'text-violet-400' };
-    default: return { icon: '📢', label: 'Notification', color: 'text-zinc-400' };
+    case NOTIFICATION_TYPE.ASSIGNMENT:    return { iconType: 'assignment', label: 'Assigned', color: 'text-indigo-400' };
+    case NOTIFICATION_TYPE.STATUS_CHANGE: return { iconType: 'status_change', label: 'Status Update', color: 'text-amber-400' };
+    case NOTIFICATION_TYPE.COMMENT:       return { iconType: 'comment', label: 'Comment', color: 'text-sky-400' };
+    case NOTIFICATION_TYPE.DEADLINE:      return { iconType: 'deadline', label: 'Deadline', color: 'text-rose-400' };
+    case NOTIFICATION_TYPE.ADMIN:         return { iconType: 'admin', label: 'Admin', color: 'text-violet-400' };
+    default: return { iconType: 'notification', label: 'Notification', color: 'text-zinc-400' };
   }
 };
 

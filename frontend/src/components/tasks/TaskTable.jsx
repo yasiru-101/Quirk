@@ -8,6 +8,7 @@ import { ROLES, TASK_STATUS_LIST } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
+import { ClipboardIcon, FlameIcon, ArrowUpIcon, ArrowDownIcon } from '../common/Icons';
 
 export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onCreateNew }) {
   const { role } = useAuth();
@@ -16,7 +17,7 @@ export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onC
   if (tasks.length === 0) {
     return (
       <EmptyState
-        icon="📋"
+        icon={<ClipboardIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
         title="No tasks found"
         description={isPM ? 'Create your first task to get the team moving.' : 'No tasks have been assigned to you yet.'}
         action={
@@ -32,10 +33,10 @@ export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onC
 
   const renderPriorityIcon = (priority) => {
     const p = priority?.toLowerCase();
-    if (p === 'urgent') return '🔥';
-    if (p === 'high') return '↑';
-    if (p === 'low') return '↓';
-    return '•'; // Medium
+    if (p === 'urgent') return <FlameIcon className="w-3.5 h-3.5" />;
+    if (p === 'high') return <ArrowUpIcon className="w-3.5 h-3.5" />;
+    if (p === 'low') return <ArrowDownIcon className="w-3.5 h-3.5" />;
+    return <span className="w-1.5 h-1.5 rounded-full bg-current" />; // Medium
   };
 
   return (

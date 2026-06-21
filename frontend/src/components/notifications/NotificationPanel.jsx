@@ -9,6 +9,7 @@ import { useSocket } from '../../context/SocketContext';
 import { getNotificationMeta, formatRelativeTime } from '../../utils/helpers';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
+import { BellIcon, UserIcon, RefreshCwIcon, MessageSquareIcon, ClockIcon, ShieldIcon } from '../common/Icons';
 
 /**
  * Dialogue side container rendering notification lists. Integrates web-socket events
@@ -146,7 +147,7 @@ export default function NotificationPanel({ open, onClose }) {
           </div>
         ) : notifications.length === 0 ? (
           <EmptyState
-            icon="🔔"
+            icon={<BellIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
             title="All caught up!"
             description="You have no notifications right now. New ones will appear here."
           />
@@ -168,6 +169,17 @@ function NotificationItem({ notification, onMarkRead }) {
   const { _id, type, message, isRead, createdAt } = notification;
   const meta = getNotificationMeta(type);
 
+  const renderIcon = () => {
+    switch (meta.iconType) {
+      case 'assignment':    return <UserIcon className="w-4 h-4" />;
+      case 'status_change': return <RefreshCwIcon className="w-4 h-4" />;
+      case 'comment':       return <MessageSquareIcon className="w-4 h-4" />;
+      case 'deadline':      return <ClockIcon className="w-4 h-4" />;
+      case 'admin':         return <ShieldIcon className="w-4 h-4" />;
+      default:              return <BellIcon className="w-4 h-4" />;
+    }
+  };
+
   return (
     <li
       className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer
@@ -178,7 +190,7 @@ function NotificationItem({ notification, onMarkRead }) {
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${meta.color} bg-hairline`}
       >
-        {meta.icon}
+        {renderIcon()}
       </div>
 
       {/* Content */}

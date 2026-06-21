@@ -21,6 +21,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: quirk-frontend
+                name: quirk-frontend-svc
                 port:
                   number: 80

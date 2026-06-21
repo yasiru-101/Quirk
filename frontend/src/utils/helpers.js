@@ -29,21 +29,25 @@ export const getDueDateLabel = (date) => {
 
 // ─── Priority Helpers ─────────────────────────────────────────────────────────
 export const getPriorityColor = (priority) => {
-  switch (priority) {
-    case TASK_PRIORITY.HIGH:   return 'text-rose-400 bg-rose-400/10';
-    case TASK_PRIORITY.MEDIUM: return 'text-amber-400 bg-amber-400/10';
-    case TASK_PRIORITY.LOW:    return 'text-emerald-400 bg-emerald-400/10';
-    default: return 'text-zinc-400 bg-zinc-400/10';
+  switch (priority?.toLowerCase()) {
+    case 'urgent': return 'text-[var(--colors-priority-urgent)]';
+    case 'high':   return 'text-[var(--colors-priority-high)]';
+    case 'medium': return 'text-[var(--colors-priority-medium)]';
+    case 'low':    return 'text-[var(--colors-priority-low)]';
+    default:       return 'text-[var(--colors-priority-low)]';
   }
 };
 
 // ─── Status Helpers ───────────────────────────────────────────────────────────
 export const getStatusColor = (status) => {
-  switch (status) {
-    case TASK_STATUS.TODO:        return 'text-zinc-400 bg-zinc-400/10';
-    case TASK_STATUS.IN_PROGRESS: return 'text-indigo-400 bg-indigo-400/10';
-    case TASK_STATUS.COMPLETED:   return 'text-emerald-400 bg-emerald-400/10';
-    default: return 'text-zinc-400 bg-zinc-400/10';
+  switch (status?.toLowerCase()) {
+    case 'backlog':     return 'bg-[var(--colors-status-backlog-bg)] text-[var(--colors-status-backlog-text)]';
+    case 'to do':       return 'bg-[var(--colors-status-todo-bg)] text-[var(--colors-status-todo-text)]';
+    case 'in progress': return 'bg-[var(--colors-status-progress-bg)] text-[var(--colors-status-progress-text)]';
+    case 'in review':   return 'bg-[var(--colors-status-review-bg)] text-[var(--colors-status-review-text)]';
+    case 'completed':   
+    case 'done':        return 'bg-[var(--colors-status-done-bg)] text-[var(--colors-status-done-text)]';
+    default:            return 'bg-[var(--colors-status-todo-bg)] text-[var(--colors-status-todo-text)]';
   }
 };
 

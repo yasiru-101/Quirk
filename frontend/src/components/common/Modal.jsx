@@ -7,15 +7,6 @@ import { createPortal } from 'react-dom';
 import Button from './Button';
 
 /**
- * Accessible Modal with focus trap, Escape key close, and backdrop click close.
- *
- * @param {boolean}  open
- * @param {Function} onClose
- * @param {string}   title
- * @param {'sm'|'md'|'lg'|'xl'} size
- * @param {ReactNode} footer - override default footer
- */
-/**
  * Overlay container dialog component. Handles document body scrolling lockouts, Focus trapping, and accessibility tags.
  *
  * @param {boolean} props.open - State flag to display modal
@@ -61,7 +52,7 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -70,29 +61,28 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`w-full ${sizeMap[size]} scale-in card flex flex-col max-h-[90vh] outline-none`}
-        style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-lg)' }}
+        className={`w-full ${sizeMap[size]} scale-in flex flex-col max-h-[90vh] outline-none rounded-[var(--radius-xl)] bg-[var(--colors-canvas)] dark:bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] shadow-lg dark:shadow-[0_0_0_2px_var(--colors-primary-glow)]`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/70">
-          <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--colors-hairline)]">
+          <h2 className="text-[var(--typography-display-md)] font-semibold text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-200 transition-colors p-1 rounded-md hover:bg-zinc-700/50 focus-ring"
+            className="text-[var(--colors-mute)] hover:text-[var(--colors-ink)] dark:hover:text-[var(--colors-on-dark)] transition-colors p-1.5 rounded-full hover:bg-[rgba(0,0,0,0.05)] dark:hover:bg-[rgba(255,255,255,0.05)] focus-ring"
             aria-label="Close modal"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
 
         {/* Footer */}
         {footer !== undefined ? (
-          footer && <div className="px-5 py-4 border-t border-zinc-800/70">{footer}</div>
+          footer && <div className="px-6 py-5 border-t border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] dark:bg-[var(--colors-canvas-softer)] rounded-b-[var(--radius-xl)]">{footer}</div>
         ) : null}
       </div>
     </div>,

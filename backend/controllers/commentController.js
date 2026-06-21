@@ -3,9 +3,7 @@
  * @description Controller handling task Comments creation and listing with task-assignment validation.
  */
 
-const Comment = require('../models/Comment');
-const Task = require('../models/Task');
-const TaskAssignment = require('../models/TaskAssignment');
+const prisma = require('../config/db');
 
 // @desc    Add a comment to a task
 // @route   POST /api/tasks/:taskId/comments
@@ -13,10 +11,11 @@ const TaskAssignment = require('../models/TaskAssignment');
 const addComment = async (req, res) => {
   const { taskId } = req.params;
   const { content } = req.body;
+  const targetTaskId = parseInt(taskId, 10);
 
   try {
     // 1. Verify task exists
-    const task = await Task.findById(taskId);
+    const task = await prisma.task.findUnique({ where: { id: targetTaskId } });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
@@ -25,7 +24,14 @@ const addComment = async (req, res) => {
 
     // 2. Safeguard: Collaborators can only comment if they are assigned to the task
     if (req.user.role === 'Collaborator') {
-      const isAssigned = await TaskAssignment.findOne({ taskId, userId: req.user._id });
+      const isAssigned = await prisma.taskAssignment.findUnique({
+        where: {
+          taskId_userId: {
+            taskId: targetTaskId,
+            userId: req.user.id,
+          },
+        },
+      });
       if (!isAssigned) {
         return res.status(403).json({
           message: 'Access denied: You can only add comments to tasks assigned to you.',
@@ -33,18 +39,32 @@ const addComment = async (req, res) => {
       }
     }
 
-    // 3. Create the comment
-    const comment = await Comment.create({
-      taskId,
-      userId: req.user._id,
-      content,
+    // 3. Create the comment using Prisma and include commenter user profile details
+    const comment = await prisma.comment.create({
+      data: {
+        taskId: targetTaskId,
+        userId: req.user.id,
+        content,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
     });
 
-    // Populate commenter details for response
-    const populatedComment = await comment.populate('userId', 'name email role');
+    // Trigger real-time notifications
+    const notificationService = require('../services/notificationService');
+    const commentPreview = content.length > 80 ? `${content.substring(0, 80)}...` : content;
+    await notificationService.notifyComment(targetTaskId, req.user.name, req.user.id, commentPreview);
 
     return res.status(201).json({
-      comment: populatedComment,
+      comment,
     });
   } catch (error) {
     console.error(`Add comment error: ${error.message}`);
@@ -59,10 +79,11 @@ const addComment = async (req, res) => {
 // @access  Private (PM or assigned Collaborator)
 const getComments = async (req, res) => {
   const { taskId } = req.params;
+  const targetTaskId = parseInt(taskId, 10);
 
   try {
     // 1. Verify task exists
-    const task = await Task.findById(taskId);
+    const task = await prisma.task.findUnique({ where: { id: targetTaskId } });
     if (!task) {
       return res.status(404).json({
         message: 'Task not found',
@@ -71,7 +92,14 @@ const getComments = async (req, res) => {
 
     // 2. Safeguard: Collaborators can only view comments if they are assigned to the task
     if (req.user.role === 'Collaborator') {
-      const isAssigned = await TaskAssignment.findOne({ taskId, userId: req.user._id });
+      const isAssigned = await prisma.taskAssignment.findUnique({
+        where: {
+          taskId_userId: {
+            taskId: targetTaskId,
+            userId: req.user.id,
+          },
+        },
+      });
       if (!isAssigned) {
         return res.status(403).json({
           message: 'Access denied: You can only view comments for tasks assigned to you.',
@@ -79,10 +107,21 @@ const getComments = async (req, res) => {
       }
     }
 
-    // 3. Retrieve comments sorted chronologically
-    const comments = await Comment.find({ taskId })
-      .populate('userId', 'name email role')
-      .sort({ createdAt: 1 });
+    // 3. Retrieve comments sorted chronologically using Prisma
+    const comments = await prisma.comment.findMany({
+      where: { taskId: targetTaskId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
 
     return res.status(200).json({
       comments,

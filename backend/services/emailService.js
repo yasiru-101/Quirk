@@ -22,10 +22,10 @@ const getOnboardingTemplate = (to, name, tempPassword, loginUrl) => `
 </head>
 <body>
   <div class="container">
-    <div class="header">Welcome to TaskFlow TMS</div>
+    <div class="header">Welcome to Quirk</div>
     <div class="content">
       <p>Hi <strong>${name}</strong>,</p>
-      <p>An administrator has created an account for you on the <strong>TaskFlow Task Management System (TMS)</strong>.</p>
+      <p>An administrator has created an account for you on <strong>Quirk Task Management</strong>.</p>
       <p>Please use the temporary credentials below to log in and set up your password:</p>
       <div class="credentials">
         <div class="credentials-title">Your Login Credentials</div>
@@ -33,7 +33,7 @@ const getOnboardingTemplate = (to, name, tempPassword, loginUrl) => `
         <strong>Temporary Password:</strong> <code style="font-size: 16px; color: #0f172a; font-weight: bold;">${tempPassword}</code>
       </div>
       <div class="btn-container">
-        <a href="${loginUrl}" class="btn" target="_blank">Log In to TaskFlow</a>
+        <a href="${loginUrl}" class="btn" target="_blank">Log In to Quirk</a>
       </div>
       <p style="font-size: 14px; color: #b91c1c; font-style: italic; margin-top: 20px;">
         Note: You will be prompted to change this temporary password upon your first login.
@@ -64,7 +64,7 @@ const sendEtherealEmail = async ({ to, subject, html }) => {
     });
 
     const info = await transporter.sendMail({
-      from: '"TaskFlow TMS" <no-reply@taskflow.local>',
+      from: '"Quirk" <no-reply@quirk.app>',
       to,
       subject,
       html,
@@ -120,7 +120,7 @@ const sendAzureEmail = async ({ to, name, subject, html }) => {
  * Main entry point: sends onboarding email using Azure ACS if available, otherwise Ethereal.
  */
 const sendOnboardingEmail = async ({ to, name, tempPassword, loginUrl }) => {
-  const subject = 'Welcome to TaskFlow — Your Account Has Been Created';
+  const subject = 'Welcome to Quirk — Your Account Has Been Created';
   const html = getOnboardingTemplate(to, name, tempPassword, loginUrl);
 
   if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {

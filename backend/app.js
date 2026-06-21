@@ -18,6 +18,9 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust the Nginx reverse proxy so that secure cookies and rate limiting work correctly
+app.set('trust proxy', 1);
+
 // ─── Security Middlewares ───────────────────────────────────────────────────
 // Helmet sets various HTTP security headers (X-Content-Type-Options, X-Frame-Options, etc.)
 // HSTS is explicitly configured to enforce HTTPS in production for 1 year + subdomains.

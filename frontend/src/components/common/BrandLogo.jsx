@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { cn } from '../../utils/helpers';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Renders the Quirk logo using the provided webp assets.

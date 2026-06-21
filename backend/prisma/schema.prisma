@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── User Model ──────────────────────────────────────────────────────────────
+model User {
+  id                Int              @id @default(autoincrement())
+  name              String
+  email             String           @unique
+  passwordHash      String
+  role              String           @default("Collaborator") // Admin, Project Manager, Collaborator
+  mustResetPassword Boolean          @default(true)
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  // Relations
+  tasksCreated      Task[]           @relation("TaskCreator")
+  assignments       TaskAssignment[]
+  comments          Comment[]
+  attachments       Attachment[]
+  notifications     Notification[]
+}
+
+// ─── Task Model ──────────────────────────────────────────────────────────────
+model Task {
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String?
+  createdBy    Int
+  dueDate      DateTime?
+  priority     String           @default("Medium") // Low, Medium, High
+  status       String           @default("To Do") // To Do, In Progress, Completed
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  // Relations
+  creator      User             @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  assignments  TaskAssignment[]
+  comments     Comment[]
+  attachments  Attachment[]
+  notifications Notification[]
+}
+
+// ─── TaskAssignment Model (Many-to-Many Join Table) ──────────────────────────
+model TaskAssignment {
+  taskId     Int
+  userId     Int
+  assignedAt DateTime @default(now())
+  
+  // Relations
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+}
+
+// ─── Comment Model ───────────────────────────────────────────────────────────
+model Comment {
+  id          Int          @id @default(autoincrement())
+  taskId      Int
+  userId      Int
+  content     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  attachments Attachment[]
+}
+
+// ─── Attachment Model ────────────────────────────────────────────────────────
+model Attachment {
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  commentId    Int?
+  uploadedBy   Int
+  originalName String
+  blobUrl      String
+  mimeType     String?
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  comment      Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploader     User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+}
+
+// ─── Notification Model ──────────────────────────────────────────────────────
+model Notification {
+  id            Int      @id @default(autoincrement())
+  recipientId   Int
+  type          String   // Assignment, StatusChange, Comment, Deadline, Admin
+  message       String
+  relatedTaskId Int?
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  recipient     User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  relatedTask   Task?    @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, isRead])
+}

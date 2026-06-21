@@ -11,14 +11,7 @@ import { normalizeError } from '../../services/api';
 import { taskService } from '../../services/taskService';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-
-// ── Mock users for assignment (until API is ready) ────────────────────────────
-const MOCK_USERS = [
-  { _id: 'u1', name: 'Sarah Johnson',   role: 'Collaborator' },
-  { _id: 'u2', name: 'Marcus Chen',     role: 'Collaborator' },
-  { _id: 'u3', name: 'Priya Patel',     role: 'Collaborator' },
-  { _id: 'u4', name: 'James O\'Brien',  role: 'Project Manager' },
-];
+import { userService } from '../../services/userService';
 
 const EMPTY_FORM = {
   title: '',
@@ -54,7 +47,16 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [availableUsers] = useState(MOCK_USERS);
+  const [availableUsers, setAvailableUsers] = useState([]);
+
+  // Fetch assignable users when modal opens
+  useEffect(() => {
+    if (!open) return;
+    userService
+      .getUsers()
+      .then(({ data }) => setAvailableUsers(data.users ?? []))
+      .catch(() => setAvailableUsers([]));
+  }, [open]);
 
   // Populate form when editing
   useEffect(() => {

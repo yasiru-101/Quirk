@@ -13,27 +13,6 @@ import TaskModal from '../components/tasks/TaskModal';
 import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue } from '../utils/helpers';
 import { ROLES, TASK_STATUS_LIST } from '../utils/constants';
 
-// ── Mock task detail (fallback before backend) ────────────────────────────────
-const MOCK_TASK = {
-  _id: 't1',
-  title: 'Design REST API schema for task endpoints',
-  description:
-    'Define all request/response shapes with Zod validation schemas and document every endpoint in Swagger/OpenAPI. Include error response shapes for 400/401/403/500.',
-  status: 'In Progress',
-  priority: 'High',
-  dueDate: '2026-06-10',
-  createdAt: '2026-05-28',
-  assignees: [
-    { _id: 'u1', name: 'Sarah Johnson' },
-    { _id: 'u3', name: 'Priya Patel' },
-  ],
-  createdBy: { _id: 'u4', name: "James O'Brien" },
-};
-
-/**
- * Task detail panel. Orchestrates specific task fetching, file uploads, download actions,
- * and status updates.
- */
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,16 +22,32 @@ export default function TaskDetailPage() {
 
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setFetchError(false);
     taskService
       .getTask(id)
       .then(({ data }) => setTask(data.task))
-      .catch(() => setTask(MOCK_TASK))
+      .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ── Error state ──────────────────────────────────────────────────────────────────
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 animate-in text-center space-y-4">
+        <div className="text-4xl">⚠️</div>
+        <h2 className="text-sm font-semibold text-zinc-200">Task not found</h2>
+        <p className="text-xs text-zinc-500 max-w-xs">The task could not be loaded. It may have been deleted or you may not have access.</p>
+        <button onClick={() => navigate('/tasks')} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          ← Back to tasks
+        </button>
+      </div>
+    );
+  }
 
   const handleStatusChange = async (newStatus) => {
     setTask((t) => ({ ...t, status: newStatus }));

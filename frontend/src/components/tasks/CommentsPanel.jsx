@@ -8,24 +8,8 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { getInitials, formatRelativeTime } from '../../utils/helpers';
 
-// ── Mock comments ─────────────────────────────────────────────────────────────
-const MOCK_COMMENTS = [
-  {
-    _id: 'c1',
-    content: 'I\'ve started working on this. Should be done by EOD.',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    user: { _id: 'u1', name: 'Sarah Johnson' },
-  },
-  {
-    _id: 'c2',
-    content: 'Great progress! Please also add error handling for the edge cases we discussed.',
-    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    user: { _id: 'u4', name: 'James O\'Brien' },
-  },
-];
-
 /**
- * Commentary block. Orchestrates comment fetching, post actions, mock fallbacks, 
+ * Commentary block. Orchestrates comment fetching, post actions,
  * and handles file attachments.
  *
  * @param {string} props.taskId - ID of the parent task
@@ -44,7 +28,7 @@ export default function CommentsPanel({ taskId }) {
     taskService
       .getComments(taskId)
       .then(({ data }) => setComments(data.comments ?? []))
-      .catch(() => setComments(MOCK_COMMENTS))
+      .catch(() => setComments([]))
       .finally(() => setLoading(false));
   }, [taskId]);
 
@@ -57,15 +41,7 @@ export default function CommentsPanel({ taskId }) {
       setText('');
       setFile(null);
     } catch (err) {
-      // Optimistic fallback for demo
-      const mockComment = {
-        _id: `c-${Date.now()}`,
-        content: text.trim(),
-        createdAt: new Date().toISOString(),
-        user: { _id: user._id, name: user.name },
-      };
-      setComments((prev) => [...prev, mockComment]);
-      setText('');
+      toastError('Failed to post comment. Please try again.');
     } finally {
       setPosting(false);
     }

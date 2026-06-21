@@ -10,49 +10,6 @@ import { getNotificationMeta, formatRelativeTime } from '../../utils/helpers';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
 
-// ── Mock data for demo (before backend is ready) ─────────────────────────────
-const MOCK_NOTIFICATIONS = [
-  {
-    _id: 'n1',
-    type: 'Assignment',
-    message: 'You have been assigned to "Design API schema"',
-    isRead: false,
-    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    relatedTaskId: 't1',
-  },
-  {
-    _id: 'n2',
-    type: 'StatusChange',
-    message: '"Implement auth middleware" moved to In Progress',
-    isRead: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    relatedTaskId: 't2',
-  },
-  {
-    _id: 'n3',
-    type: 'Deadline',
-    message: '"Deploy to Azure" is due tomorrow',
-    isRead: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    relatedTaskId: 't3',
-  },
-  {
-    _id: 'n4',
-    type: 'Comment',
-    message: 'Sarah left a comment on "Setup Docker containers"',
-    isRead: true,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    relatedTaskId: 't4',
-  },
-  {
-    _id: 'n5',
-    type: 'Admin',
-    message: 'Your account role has been updated to Project Manager',
-    isRead: true,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 /**
  * Dialogue side container rendering notification lists. Integrates web-socket events
  * to load instant updates, and handles read-status markers.
@@ -73,7 +30,7 @@ export default function NotificationPanel({ open, onClose }) {
     notificationService
       .getNotifications()
       .then(({ data }) => setNotifications(data.notifications ?? []))
-      .catch(() => setNotifications(MOCK_NOTIFICATIONS)) // fallback to mock
+      .catch(() => setNotifications([]))
       .finally(() => setLoading(false));
   }, [open]);
 

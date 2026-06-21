@@ -77,7 +77,7 @@ export default function Sidebar({ collapsed, onToggle }) {
       {/* Brand */}
       <div className="flex items-center gap-2 px-4 h-[60px] border-b" style={{ borderColor: 'var(--border)' }}>
         {collapsed ? (
-          <img src="/favicon.svg" alt="TaskFlow" className="w-7 h-7 flex-shrink-0" draggable={false} />
+          <img src="/favicon.svg" alt="Quirk" className="w-7 h-7 flex-shrink-0" draggable={false} />
         ) : (
           <BrandLogo size="md" showText={true} />
         )}

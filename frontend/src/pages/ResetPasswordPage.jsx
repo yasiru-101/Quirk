@@ -109,11 +109,9 @@ export default function ResetPasswordPage() {
       updateUser({ mustResetPassword: false });
       toastSuccess('Password updated successfully. Welcome aboard!');
       navigate('/dashboard', { replace: true });
-    } catch {
-      // ── Mock fallback: accept any valid new password when API is offline ──
-      updateUser({ mustResetPassword: false });
-      toastSuccess('Demo: Password reset accepted. Welcome aboard!');
-      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Password reset failed');
     } finally {
       setLoading(false);
     }

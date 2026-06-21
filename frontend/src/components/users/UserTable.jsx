@@ -13,16 +13,6 @@ import Button from '../common/Button';
 import EmptyState from '../common/EmptyState';
 import { normalizeError } from '../../services/api';
 
-// ── Mock users ────────────────────────────────────────────────────────────────
-const MOCK_USERS = [
-  { _id: 'u1', name: 'Sarah Johnson',  email: 'sarah@company.com',  role: 'Collaborator',    isActive: true,  mustResetPassword: false, createdAt: '2026-05-20' },
-  { _id: 'u2', name: 'Marcus Chen',    email: 'marcus@company.com', role: 'Collaborator',    isActive: true,  mustResetPassword: false, createdAt: '2026-05-22' },
-  { _id: 'u3', name: 'Priya Patel',    email: 'priya@company.com',  role: 'Project Manager', isActive: true,  mustResetPassword: false, createdAt: '2026-05-18' },
-  { _id: 'u4', name: 'James O\'Brien', email: 'james@company.com',  role: 'Admin',           isActive: true,  mustResetPassword: false, createdAt: '2026-05-01' },
-  { _id: 'u5', name: 'Aisha Musa',     email: 'aisha@company.com',  role: 'Collaborator',    isActive: false, mustResetPassword: false, createdAt: '2026-05-25' },
-  { _id: 'u6', name: 'Liam Torres',    email: 'liam@company.com',   role: 'Collaborator',    isActive: true,  mustResetPassword: true,  createdAt: '2026-06-01' },
-];
-
 const ROLE_LIST = [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR];
 
 const EMPTY_FORM = { name: '', email: '', role: ROLES.COLLABORATOR };
@@ -155,8 +145,8 @@ function UserFormModal({ open, onClose, user = null, onSaved }) {
  */
 export default function UserTable({ search }) {
   const { success, error: toastError, warning } = useToast();
-  const [users, setUsers] = useState(MOCK_USERS);
-  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [panel, setPanel] = useState({ open: false, user: null });
 
   useEffect(() => {
@@ -164,7 +154,7 @@ export default function UserTable({ search }) {
     userService
       .getUsers()
       .then(({ data }) => setUsers(data.users ?? []))
-      .catch(() => {})
+      .catch(() => toastError('Failed to load users. Please refresh.'))
       .finally(() => setLoading(false));
   }, []);
 

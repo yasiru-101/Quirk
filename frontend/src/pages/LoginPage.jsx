@@ -81,7 +81,7 @@ export default function LoginPage() {
         {/* Brand */}
         <div className="flex flex-col items-center mb-10">
           <BrandLogo size="lg" className="mb-1" />
-          <p className="text-sm text-zinc-500 mt-2">Sign in to your workspace</p>
+          <p className="text-sm text-zinc-500 mt-2">Sign in to your Quirk workspace</p>
         </div>
 
         {/* Form card */}
@@ -138,34 +138,6 @@ export default function LoginPage() {
         <p className="text-center text-[11px] text-zinc-600 mt-4">
           First time? Your admin will provide credentials via email.
         </p>
-
-        {/* ── Demo credentials card ──────────────────────────────────────── */}
-        <div className="mt-5 card p-4 space-y-3" style={{ background: 'var(--bg-surface)', borderColor: 'rgba(99,102,241,0.2)' }}>
-          <p className="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span>🧪</span> Demo — Quick Access
-          </p>
-          <div className="space-y-2">
-            {[
-              { label: 'Admin',           email: 'admin@taskflow.dev',  password: 'Admin@1234',    badge: 'text-violet-400 bg-violet-400/10' },
-              { label: 'Project Manager', email: 'pm@taskflow.dev',     password: 'Manager@1234',  badge: 'text-indigo-400 bg-indigo-400/10' },
-              { label: 'Collaborator',    email: 'collab@taskflow.dev', password: 'Collab@1234',   badge: 'text-emerald-400 bg-emerald-400/10' },
-              { label: 'New User (reset)',email: 'new@taskflow.dev',    password: 'Temp@1234',     badge: 'text-amber-400 bg-amber-400/10' },
-            ].map(({ label, email, password, badge }) => (
-              <button
-                key={email}
-                type="button"
-                onClick={() => setForm({ email, password })}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-zinc-800 transition-colors text-left group"
-              >
-                <div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge} mr-2`}>{label}</span>
-                  <span className="text-[11px] text-zinc-500 group-hover:text-zinc-300 transition-colors">{email}</span>
-                </div>
-                <span className="text-[10px] text-zinc-700 group-hover:text-indigo-400 transition-colors">click to fill →</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

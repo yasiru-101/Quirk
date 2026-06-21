@@ -16,63 +16,6 @@ import { useSocket } from '../context/SocketContext';
 import { ROLES } from '../utils/constants';
 import { cn, isOverdue } from '../utils/helpers';
 
-// ── Mock data (until backend ready) ──────────────────────────────────────────
-const MOCK_TASKS = [
-  {
-    _id: 't1',
-    title: 'Design REST API schema for task endpoints',
-    description: 'Define all request/response shapes with Zod and document in Swagger.',
-    status: 'In Progress',
-    priority: 'High',
-    dueDate: '2026-06-10',
-    assignees: [{ _id: 'u1', name: 'Sarah Johnson' }],
-  },
-  {
-    _id: 't2',
-    title: 'Implement JWT auth middleware',
-    description: 'HTTP-only cookie strategy with auto refresh.',
-    status: 'To Do',
-    priority: 'High',
-    dueDate: '2026-06-07',
-    assignees: [{ _id: 'u2', name: 'Marcus Chen' }],
-  },
-  {
-    _id: 't3',
-    title: 'Deploy backend to Azure Container Apps',
-    description: '',
-    status: 'To Do',
-    priority: 'Medium',
-    dueDate: '2026-06-15',
-    assignees: [],
-  },
-  {
-    _id: 't4',
-    title: 'Setup Docker multi-stage build',
-    description: 'Optimise image size; separate dev and prod stages.',
-    status: 'Completed',
-    priority: 'Low',
-    dueDate: '2026-06-03',
-    assignees: [{ _id: 'u1', name: 'Sarah Johnson' }, { _id: 'u3', name: 'Priya Patel' }],
-  },
-  {
-    _id: 't5',
-    title: 'Write Swagger/OpenAPI documentation',
-    description: 'Cover all auth, user, task, comment and notification endpoints.',
-    status: 'In Progress',
-    priority: 'Medium',
-    dueDate: '2026-06-12',
-    assignees: [{ _id: 'u3', name: 'Priya Patel' }],
-  },
-  {
-    _id: 't6',
-    title: 'Implement WebSocket notification service',
-    description: '',
-    status: 'To Do',
-    priority: 'High',
-    dueDate: '2026-06-14',
-    assignees: [{ _id: 'u2', name: 'Marcus Chen' }],
-  },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 /**
@@ -87,8 +30,8 @@ export default function TaskBoardPage() {
   const isPM = role === ROLES.PROJECT_MANAGER;
 
   const [view, setView] = useState('kanban');
-  const [tasks, setTasks] = useState(MOCK_TASKS);
-  const [loading, setLoading] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ search: '', status: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
 
@@ -98,7 +41,7 @@ export default function TaskBoardPage() {
     taskService
       .getTasks()
       .then(({ data }) => setTasks(data.tasks ?? []))
-      .catch(() => {}) // keep mock
+      .catch(() => toastError('Failed to load tasks. Please refresh.'))
       .finally(() => setLoading(false));
   }, []);
 

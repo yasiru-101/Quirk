@@ -18,7 +18,7 @@ const PAGE_TITLES = {
  */
 export default function TopBar() {
   const { pathname } = useLocation();
-  const title = PAGE_TITLES[pathname] ?? 'TaskFlow';
+  const title = PAGE_TITLES[pathname] ?? 'Quirk';
   const [panelOpen, setPanelOpen] = useState(false);
 
   return (

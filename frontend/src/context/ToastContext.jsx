@@ -92,17 +92,17 @@ function ToastItem({ toast, dismiss }) {
       {/* text */}
       <div className="flex-1 min-w-0">
         {title && (
-          <p className="text-sm font-semibold text-zinc-100 leading-snug">{title}</p>
+          <p className="text-sm font-semibold text-ink leading-snug">{title}</p>
         )}
         {message && (
-          <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{message}</p>
+          <p className="text-xs text-body mt-0.5 leading-relaxed">{message}</p>
         )}
       </div>
 
       {/* dismiss */}
       <button
         onClick={() => dismiss(id)}
-        className="flex-shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors focus-ring rounded"
+        className="flex-shrink-0 text-mute hover:text-body transition-colors focus-ring rounded"
         aria-label="Dismiss"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

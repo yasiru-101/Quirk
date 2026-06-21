@@ -46,7 +46,7 @@ export default function NotificationBell({ onClick }) {
       id="notification-bell-btn"
       onClick={onClick}
       aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
-      className="relative w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 transition-all focus-ring"
+      className="relative w-9 h-9 rounded-lg flex items-center justify-center text-mute hover:text-ink hover:bg-hairline transition-all focus-ring"
     >
       {/* Bell SVG */}
       <svg
@@ -68,7 +68,7 @@ export default function NotificationBell({ onClick }) {
       {unread > 0 && (
         <span
           aria-hidden
-          className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px] font-bold px-1 ring-2 ring-zinc-950"
+          className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-[var(--colors-primary)] text-black flex items-center justify-center text-[9px] font-bold px-1 ring-2 ring-canvas"
           style={{ animation: pulsing ? 'pulse-dot 0.5s ease' : 'none' }}
         >
           {unread > 99 ? '99+' : unread}

@@ -7,13 +7,9 @@ import { taskService } from '../../services/taskService';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { getInitials, formatRelativeTime } from '../../utils/helpers';
+import Input from '../common/Input';
+import Button from '../common/Button';
 
-/**
- * Commentary block. Orchestrates comment fetching, post actions,
- * and handles file attachments.
- *
- * @param {string} props.taskId - ID of the parent task
- */
 export default function CommentsPanel({ taskId }) {
   const { user } = useAuth();
   const { error: toastError } = useToast();
@@ -48,40 +44,43 @@ export default function CommentsPanel({ taskId }) {
   };
 
   return (
-    <div className="space-y-5">
-      <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+    <div className="space-y-6">
+      <h3 className="text-[var(--typography-body-md-strong)] font-bold text-[var(--colors-ink)] flex items-center gap-3">
         <span>💬</span> Comments
-        <span className="text-[10px] font-medium text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] font-bold text-[var(--colors-ink)] bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] px-2 py-0.5 rounded-full shadow-sm">
           {comments.length}
         </span>
       </h3>
 
       {/* Comment list */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {loading ? (
           [1, 2].map((i) => (
-            <div key={i} className="flex gap-3">
-              <div className="skeleton w-7 h-7 rounded-full flex-shrink-0" />
-              <div className="flex-1 space-y-1.5">
+            <div key={i} className="flex gap-4">
+              <div className="skeleton w-8 h-8 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2">
                 <div className="skeleton h-3 w-24 rounded" />
-                <div className="skeleton h-12 rounded-lg" />
+                <div className="skeleton h-16 rounded-xl" />
               </div>
             </div>
           ))
         ) : comments.length === 0 ? (
-          <p className="text-xs text-zinc-600 text-center py-6">No comments yet. Be the first to comment.</p>
+          <div className="py-8 text-center border border-dashed border-[var(--colors-hairline)] rounded-[var(--radius-xl)] bg-[var(--colors-canvas-softer)]">
+            <span className="text-2xl mb-2 inline-block">📭</span>
+            <p className="text-sm font-medium text-[var(--colors-body)]">No comments yet. Start the conversation!</p>
+          </div>
         ) : (
           comments.map((c) => (
-            <div key={c._id} className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ring-1 ring-indigo-500/20">
+            <div key={c._id} className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)] flex items-center justify-center text-[11px] font-bold flex-shrink-0 ring-1 ring-[var(--colors-primary)]">
                 {getInitials(c.user?.name)}
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs font-medium text-zinc-200">{c.user?.name}</span>
-                  <span className="text-[10px] text-zinc-600">{formatRelativeTime(c.createdAt)}</span>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="text-xs font-bold text-[var(--colors-ink)]">{c.user?.name}</span>
+                  <span className="text-[10px] font-medium text-[var(--colors-mute)]">{formatRelativeTime(c.createdAt)}</span>
                 </div>
-                <div className="text-xs text-zinc-300 bg-zinc-800/60 rounded-xl rounded-tl-none px-3 py-2.5 leading-relaxed border border-zinc-700/30">
+                <div className="text-sm text-[var(--colors-ink)] bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] rounded-[var(--radius-lg)] rounded-tl-sm px-4 py-3 leading-relaxed shadow-sm">
                   {c.content}
                 </div>
                 {c.attachments?.length > 0 && (
@@ -92,7 +91,7 @@ export default function CommentsPanel({ taskId }) {
                         href={a.blobUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded transition-colors"
+                        className="text-[11px] font-bold text-[var(--colors-primary-deep)] hover:text-[var(--colors-ink)] bg-[var(--colors-primary-glow)] px-3 py-1.5 rounded-full transition-colors border border-[var(--colors-primary)]"
                       >
                         📎 {a.originalName}
                       </a>
@@ -106,13 +105,14 @@ export default function CommentsPanel({ taskId }) {
       </div>
 
       {/* Compose area */}
-      <div className="space-y-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ring-1 ring-indigo-500/20 mt-0.5">
+      <div className="border-t border-[var(--colors-hairline)] pt-6 mt-4">
+        <div className="flex items-start gap-4">
+          <div className="w-8 h-8 rounded-full bg-[var(--colors-canvas-softer)] text-[var(--colors-ink)] flex items-center justify-center text-[11px] font-bold flex-shrink-0 border border-[var(--colors-hairline)] mt-1">
             {getInitials(user?.name)}
           </div>
-          <div className="flex-1 space-y-2">
-            <textarea
+          <div className="flex-1 space-y-3">
+            <Input
+              type="textarea"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -120,26 +120,26 @@ export default function CommentsPanel({ taskId }) {
               }}
               placeholder="Add a comment… (Ctrl+Enter to send)"
               rows={3}
-              className="w-full bg-zinc-900 border border-zinc-700/50 text-sm text-zinc-100 rounded-lg px-3 py-2 outline-none focus:border-indigo-500 transition-colors placeholder:text-zinc-600 resize-none"
             />
 
             <div className="flex items-center justify-between">
-              {/* Attachment */}
-              <label className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <label className="flex items-center gap-2 text-[11px] font-bold text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors cursor-pointer uppercase tracking-widest px-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                 </svg>
                 {file ? file.name : 'Attach file'}
                 <input type="file" className="sr-only" onChange={(e) => setFile(e.target.files[0])} />
               </label>
 
-              <button
+              <Button
                 onClick={handlePost}
                 disabled={!text.trim() || posting}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                variant="primary"
+                loading={posting}
+                className="h-9 px-5 text-xs shadow-sm"
               >
-                {posting ? 'Posting…' : 'Post'}
-              </button>
+                Post Comment
+              </Button>
             </div>
           </div>
         </div>

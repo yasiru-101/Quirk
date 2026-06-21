@@ -1,23 +1,15 @@
 /**
  * @file Button.jsx
- * @description Modular button component supporting variants, loading state indicators, and sizes.
+ * @description Modular button component matching the hybrid Mint-Uber design system.
  */
 import React from 'react';
 import { cn } from '../../utils/helpers';
 
 /**
- * Base Button component.
- *
- * @param {'primary'|'secondary'|'ghost'|'danger'} variant
- * @param {'sm'|'md'|'lg'} size
- * @param {boolean} loading - shows a spinner and disables interaction
- * @param {boolean} iconOnly - removes horizontal padding for icon-only buttons
- */
-/**
- * Button wrapper component providing standard interactive controls, loading states, and custom variants.
+ * Button wrapper matching the design system components.
  *
  * @param {React.ReactNode} props.children - Label or content inside button
- * @param {'primary'|'secondary'|'ghost'|'danger'} props.variant - Visual variant style
+ * @param {'primary'|'secondary'|'subtle'|'danger'|'icon'} props.variant - Visual variant style
  * @param {'sm'|'md'|'lg'} props.size - Size variant mapping height and padding
  * @param {boolean} props.loading - Shows loading spinner and disables action
  * @param {boolean} props.iconOnly - Adjusts padding for purely icon buttons
@@ -35,44 +27,49 @@ export default function Button({
   ...rest
 }) {
   const base =
-    'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all focus-ring select-none disabled:opacity-40 disabled:pointer-events-none';
+    'inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-pill)] transition-all focus-ring select-none disabled:opacity-40 disabled:pointer-events-none relative overflow-hidden';
 
   const variants = {
     primary:
-      'bg-indigo-500 text-white hover:bg-indigo-600 active:bg-indigo-700 shadow-sm',
+      'bg-[var(--colors-primary)] text-[var(--colors-on-primary)] hover:bg-[var(--colors-primary-deep)] hover:shadow-[0_4px_12px_var(--colors-primary-glow)] active:scale-95',
     secondary:
-      'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 active:bg-zinc-600 border border-zinc-700',
-    ghost:
-      'bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 active:bg-zinc-700',
+      'bg-[var(--colors-canvas)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-[rgba(255,255,255,0.05)] active:scale-95',
+    subtle:
+      'bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] dark:bg-[var(--colors-canvas-softer)] dark:hover:bg-[var(--colors-surface-pressed)] active:scale-95',
+    icon:
+      'bg-transparent text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] active:scale-95',
     danger:
-      'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/20',
+      'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/20 active:scale-95',
   };
 
   const sizes = {
-    sm: cn('text-xs h-7',  iconOnly ? 'w-7'  : 'px-3'),
-    md: cn('text-sm h-9',  iconOnly ? 'w-9'  : 'px-4'),
-    lg: cn('text-sm h-11', iconOnly ? 'w-11' : 'px-5'),
+    sm: cn('text-sm h-8',  iconOnly ? 'w-8'  : 'px-4'),
+    md: cn('text-base h-10',  iconOnly ? 'w-10'  : 'px-6'),
+    lg: cn('text-lg h-12', iconOnly ? 'w-12' : 'px-8'),
   };
+
+  const actualSize = variant === 'icon' ? 'md' : size;
+  const isIconOnly = variant === 'icon' || iconOnly;
 
   return (
     <button
-      className={cn(base, variants[variant], sizes[size], className)}
+      className={cn(base, variants[variant], sizes[actualSize], isIconOnly ? 'p-0' : '', className)}
       disabled={disabled || loading}
       {...rest}
     >
-      {loading ? (
-        <>
-          <Spinner size={size === 'lg' ? 16 : 14} />
-          {!iconOnly && <span>Loading…</span>}
-        </>
-      ) : (
-        children
+      {loading && (
+        <span className="absolute inset-0 flex items-center justify-center bg-inherit rounded-[inherit]">
+          <Spinner size={actualSize === 'lg' ? 20 : 16} />
+        </span>
       )}
+      <span className={cn('flex items-center gap-2', loading && 'opacity-0')}>
+        {children}
+      </span>
     </button>
   );
 }
 
-function Spinner({ size = 14 }) {
+function Spinner({ size = 16 }) {
   return (
     <svg
       width={size}

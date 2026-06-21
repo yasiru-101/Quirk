@@ -40,10 +40,10 @@ export default function TaskFilters({ filters, onChange }) {
       <select
         value={filters.status}
         onChange={(e) => onChange('status', e.target.value)}
-        className={`h-10 px-3 pr-8 rounded-lg bg-zinc-900 border text-sm outline-none transition-colors cursor-pointer
+        className={`h-10 px-3 pr-8 rounded-lg bg-canvas-soft border text-sm outline-none transition-colors cursor-pointer
           ${filters.status === 'Overdue'
             ? 'border-rose-500/60 text-rose-400 focus:border-rose-500'
-            : 'border-zinc-700/50 text-zinc-300 focus:border-indigo-500'}`}
+            : 'border-surface-pressed/50 text-body focus:border-primary focus:ring-1 focus:ring-primary'}`}
         aria-label="Filter by status"
       >
         <option value="">All Statuses</option>
@@ -56,7 +56,7 @@ export default function TaskFilters({ filters, onChange }) {
       <select
         value={filters.priority}
         onChange={(e) => onChange('priority', e.target.value)}
-        className="h-10 px-3 pr-8 rounded-lg bg-zinc-900 border border-zinc-700/50 text-sm text-zinc-300 outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+        className="h-10 px-3 pr-8 rounded-lg bg-canvas-soft border border-surface-pressed/50 text-sm text-body outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors cursor-pointer"
         aria-label="Filter by priority"
       >
         <option value="">All Priorities</option>
@@ -67,7 +67,7 @@ export default function TaskFilters({ filters, onChange }) {
       {(filters.search || filters.status || filters.priority) && (
         <button
           onClick={() => { onChange('search', ''); onChange('status', ''); onChange('priority', ''); }}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 h-10 rounded-lg hover:bg-zinc-800"
+          className="text-xs text-mute hover:text-body transition-colors px-3 h-10 rounded-lg hover:bg-hairline"
         >
           Clear filters
         </button>

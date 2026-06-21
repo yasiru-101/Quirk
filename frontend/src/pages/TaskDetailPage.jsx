@@ -12,6 +12,7 @@ import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
 import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue } from '../utils/helpers';
 import { ROLES, TASK_STATUS_LIST } from '../utils/constants';
+import { cn } from '../utils/helpers';
 
 export default function TaskDetailPage() {
   const { id } = useParams();
@@ -35,14 +36,13 @@ export default function TaskDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ── Error state ──────────────────────────────────────────────────────────────────
   if (fetchError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-in text-center space-y-4">
         <div className="text-4xl">⚠️</div>
-        <h2 className="text-sm font-semibold text-zinc-200">Task not found</h2>
-        <p className="text-xs text-zinc-500 max-w-xs">The task could not be loaded. It may have been deleted or you may not have access.</p>
-        <button onClick={() => navigate('/tasks')} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+        <h2 className="text-sm font-bold text-[var(--colors-ink)]">Task not found</h2>
+        <p className="text-xs text-[var(--colors-body)] max-w-xs">The task could not be loaded. It may have been deleted or you may not have access.</p>
+        <button onClick={() => navigate('/tasks')} className="text-xs font-semibold text-[var(--colors-primary)] hover:text-[var(--colors-primary-deep)] transition-colors underline underline-offset-2">
           ← Back to tasks
         </button>
       </div>
@@ -71,16 +71,15 @@ export default function TaskDetailPage() {
 
   const handleSaved = (saved) => setTask(saved);
 
-  // ── Loading skeleton ────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="space-y-5 animate-in">
-        <div className="skeleton h-8 w-1/2 rounded" />
+      <div className="space-y-6 animate-in max-w-5xl mx-auto">
+        <div className="skeleton h-10 w-1/2 rounded" />
         <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <div key={i} className="skeleton h-20 rounded-xl" />)}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
         </div>
-        <div className="skeleton h-48 rounded-xl" />
+        <div className="skeleton h-64 rounded-xl" />
       </div>
     );
   }
@@ -90,43 +89,43 @@ export default function TaskDetailPage() {
   const overdue = isOverdue(task.dueDate);
 
   return (
-    <div className="space-y-6 animate-in max-w-4xl">
+    <div className="space-y-8 animate-in max-w-5xl mx-auto pb-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-600">
-        <button onClick={() => navigate('/tasks')} className="hover:text-zinc-300 transition-colors">
+      <div className="flex items-center gap-2 text-sm font-medium text-[var(--colors-mute)]">
+        <button onClick={() => navigate('/tasks')} className="hover:text-[var(--colors-ink)] transition-colors">
           Tasks
         </button>
         <span>/</span>
-        <span className="text-zinc-400 truncate max-w-xs">{task.title}</span>
+        <span className="text-[var(--colors-body)] truncate max-w-xs">{task.title}</span>
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="space-y-2 flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
-              {task.priority}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div className="space-y-3 flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className={cn('text-xs font-bold px-3 py-1 rounded-full border', getPriorityColor(task.priority))}>
+              {task.priority} Priority
             </span>
             {overdue && (
-              <span className="text-[11px] font-medium text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded-full ring-1 ring-rose-400/20">
+              <span className="text-[11px] font-bold text-[var(--colors-priority-urgent)] bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-full border border-rose-200 dark:border-rose-800">
                 ⚠ Overdue
               </span>
             )}
           </div>
-          <h1 className="text-xl font-bold text-zinc-100 leading-snug">{task.title}</h1>
+          <h1 className="text-[var(--typography-display-md)] font-bold text-[var(--colors-ink)] leading-tight">{task.title}</h1>
           {task.description && (
-            <p className="text-sm text-zinc-400 leading-relaxed">{task.description}</p>
+            <p className="text-[var(--typography-body-lg)] text-[var(--colors-body)] leading-relaxed max-w-3xl">{task.description}</p>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {isPM && (
             <>
-              <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
-                Edit
+              <Button variant="secondary" onClick={() => setEditOpen(true)}>
+                Edit Task
               </Button>
-              <Button variant="danger" size="sm" onClick={handleDelete}>
+              <Button variant="danger" onClick={handleDelete}>
                 Delete
               </Button>
             </>
@@ -135,51 +134,58 @@ export default function TaskDetailPage() {
       </div>
 
       {/* Meta grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Status */}
-        <div className="card p-4 space-y-1.5">
-          <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Status</p>
-          <select
-            value={task.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 outline-none cursor-pointer w-full ${getStatusColor(task.status)} bg-transparent`}
-          >
-            {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
-          </select>
+        <div className="card p-5 space-y-2">
+          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Status</p>
+          <div className="relative">
+            <select
+              value={task.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className={cn('text-sm font-bold px-3 py-1.5 rounded-lg border outline-none cursor-pointer w-full appearance-none', getStatusColor(task.status))}
+            >
+              {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
         </div>
 
         {/* Due date */}
-        <div className="card p-4 space-y-1.5">
-          <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Due Date</p>
-          <p className={`text-sm font-semibold ${overdue ? 'text-rose-400' : 'text-zinc-100'}`}>
+        <div className="card p-5 space-y-2">
+          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Due Date</p>
+          <p className={cn('text-sm font-bold', overdue ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-ink)]')}>
             {formatDate(task.dueDate)}
           </p>
         </div>
 
         {/* Created by */}
-        <div className="card p-4 space-y-1.5">
-          <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Created by</p>
-          <p className="text-sm font-semibold text-zinc-100">{task.createdBy?.name ?? '—'}</p>
+        <div className="card p-5 space-y-2">
+          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Created By</p>
+          <p className="text-sm font-bold text-[var(--colors-ink)] truncate">{task.createdBy?.name ?? '—'}</p>
         </div>
 
         {/* Created at */}
-        <div className="card p-4 space-y-1.5">
-          <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Created</p>
-          <p className="text-sm font-semibold text-zinc-100">{formatDate(task.createdAt)}</p>
+        <div className="card p-5 space-y-2">
+          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Created At</p>
+          <p className="text-sm font-bold text-[var(--colors-ink)]">{formatDate(task.createdAt)}</p>
         </div>
       </div>
 
       {/* Assignees */}
       {task.assignees?.length > 0 && (
-        <div className="card p-5 space-y-3">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Assignees</p>
-          <div className="flex flex-wrap gap-3">
+        <div className="card p-6 space-y-4">
+          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest border-b border-[var(--colors-hairline)] pb-2">Assignees</p>
+          <div className="flex flex-wrap gap-4 pt-2">
             {task.assignees.map((u) => (
-              <div key={u._id} className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold ring-1 ring-indigo-500/20">
+              <div key={u._id} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)] flex items-center justify-center text-[11px] font-bold ring-1 ring-[var(--colors-primary)]">
                   {getInitials(u.name)}
                 </div>
-                <span className="text-xs text-zinc-200">{u.name}</span>
+                <span className="text-sm font-bold text-[var(--colors-ink)]">{u.name}</span>
               </div>
             ))}
           </div>
@@ -187,7 +193,7 @@ export default function TaskDetailPage() {
       )}
 
       {/* Comments & Attachments panel */}
-      <div className="card p-5">
+      <div className="card p-6">
         <CommentsPanel taskId={task._id} />
       </div>
 

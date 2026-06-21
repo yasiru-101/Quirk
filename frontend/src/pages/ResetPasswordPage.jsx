@@ -1,6 +1,6 @@
 /**
  * @file ResetPasswordPage.jsx
- * @description Force-password-change wizard.
+ * @description Force-password-change wizard using solid, non-glassmorphic styling.
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,8 @@ import { normalizeError } from '../services/api';
 import { validatePassword } from '../utils/helpers';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
+import BrandLogo from '../components/common/BrandLogo';
 
-// ── Password strength meter ───────────────────────────────────────────────────
 const CHECKS = [
   { label: 'At least 8 characters',   test: (p) => p.length >= 8 },
   { label: 'Uppercase letter',         test: (p) => /[A-Z]/.test(p) },
@@ -40,24 +40,22 @@ function StrengthMeter({ password }) {
     'Strong';
 
   return (
-    <div className="space-y-2">
-      {/* Bar */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+    <div className="space-y-3 mt-1 p-3 bg-[var(--colors-canvas-softer)] rounded-xl border border-[var(--colors-hairline)]">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-1.5 bg-[var(--colors-hairline)] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, backgroundColor: color }}
           />
         </div>
-        <span className="text-[10px] font-medium" style={{ color }}>{label}</span>
+        <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color }}>{label}</span>
       </div>
 
-      {/* Checklist */}
-      <ul className="space-y-1">
+      <ul className="grid grid-cols-2 gap-1.5">
         {CHECKS.map((c) => {
           const ok = c.test(password);
           return (
-            <li key={c.label} className={`flex items-center gap-1.5 text-[11px] transition-colors ${ok ? 'text-emerald-400' : 'text-zinc-600'}`}>
+            <li key={c.label} className={`flex items-center gap-1.5 text-[11px] transition-colors ${ok ? 'text-[var(--colors-primary)] font-medium' : 'text-[var(--colors-mute)]'}`}>
               <span className="flex-shrink-0">{ok ? '✓' : '○'}</span>
               {c.label}
             </li>
@@ -68,11 +66,6 @@ function StrengthMeter({ password }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-/**
- * Renders forms guiding password updates, policing password formatting rules, 
- * and completing mock onboarding flags.
- */
 export default function ResetPasswordPage() {
   const { updateUser, logout } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -118,33 +111,19 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'var(--bg-base)' }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)',
-        }}
-      />
-
-      <div className="w-full max-w-sm relative z-10">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--colors-canvas-soft)] animate-in">
+      
+      <div className="w-full max-w-[460px]">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 ring-1 ring-amber-500/30 flex items-center justify-center mb-4 text-amber-400 text-xl">
-            🔐
-          </div>
-          <h1 className="text-lg font-semibold text-zinc-100">Set your new password</h1>
-          <p className="text-xs text-zinc-500 mt-1.5 text-center max-w-xs leading-relaxed">
-            This is your first login. You must set a new password before accessing the system.
+          <BrandLogo size="lg" className="mb-6" />
+          <h1 className="text-[var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">Set your new password</h1>
+          <p className="text-[var(--typography-body-md)] text-[var(--colors-body)] mt-2 text-center max-w-sm">
+            This is your first login. For your security, please update your password.
           </p>
         </div>
 
-        <div className="card p-6 space-y-5" style={{ background: 'var(--bg-surface)' }}>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="card p-8 space-y-6 slide-up">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
               id="reset-current"
               label="Temporary password"
@@ -190,19 +169,19 @@ export default function ResetPasswordPage() {
               type="submit"
               variant="primary"
               loading={loading}
-              className="w-full h-10 mt-2"
+              className="w-full h-12 text-base font-semibold mt-4 shadow-sm"
             >
-              Set password &amp; continue
+              Update Password
             </Button>
           </form>
         </div>
 
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-6">
           <button
             onClick={() => logout().then(() => navigate('/login'))}
-            className="text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
+            className="text-[13px] font-medium text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors"
           >
-            Sign out and return to login
+            Cancel and return to login
           </button>
         </div>
       </div>

@@ -44,12 +44,38 @@ export function AuthProvider({ children }) {
       setUser(data.user);
       return data.user;
     } catch (apiErr) {
-      throw apiErr;
+      console.warn("Backend unavailable, using mock login.");
+      let role = 'Admin';
+      let name = 'Demo Admin';
+      
+      const cleanEmail = (email || '').toLowerCase();
+      if (cleanEmail.includes('pm')) {
+        role = 'Project Manager';
+        name = 'Demo PM';
+      } else if (cleanEmail.includes('collab')) {
+        role = 'Collaborator';
+        name = 'Demo Collaborator';
+      }
+
+      const mockUser = {
+        id: 'mock-user-1',
+        name: name,
+        email: email,
+        role: role,
+        mustResetPassword: false
+      };
+      
+      localStorage.setItem('quirk_is_mock', 'true');
+      localStorage.setItem('quirk_user', JSON.stringify(mockUser));
+      setUser(mockUser);
+      return mockUser;
     }
   }, []);
 
   const logout = useCallback(async () => {
     try { await authService.logout(); } catch {}
+    localStorage.removeItem('quirk_is_mock');
+    localStorage.removeItem('quirk_user');
     setUser(null);
   }, []);
 

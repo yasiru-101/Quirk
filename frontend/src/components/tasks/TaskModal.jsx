@@ -12,6 +12,7 @@ import { taskService } from '../../services/taskService';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
+import { getInitials } from '../../utils/helpers';
 
 const EMPTY_FORM = {
   title: '',
@@ -22,22 +23,6 @@ const EMPTY_FORM = {
   assigneeIds: [],
 };
 
-/**
- * Create / Edit task modal. Visible to Project Managers only.
- * @param {boolean} open
- * @param {Function} onClose
- * @param {object|null} task - null = create mode, object = edit mode
- * @param {Function} onSaved(savedTask)
- */
-/**
- * Form modal handling title, description details, priority ranges, dates, and user assignments.
- * Displays read-only templates to Collaborator roles.
- *
- * @param {boolean} props.open - Modal toggler state
- * @param {Function} props.onClose - Action closing modal elements
- * @param {object|null} props.task - Pre-loaded task values (null creates a task)
- * @param {Function} props.onSaved - Saved status dispatcher callback
- */
 export default function TaskModal({ open, onClose, task = null, onSaved }) {
   const { role } = useAuth();
   const { success, error: toastError } = useToast();
@@ -49,7 +34,6 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
 
-  // Fetch assignable users when modal opens
   useEffect(() => {
     if (!open) return;
     userService
@@ -58,7 +42,6 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
       .catch(() => setAvailableUsers([]));
   }, [open]);
 
-  // Populate form when editing
   useEffect(() => {
     if (open) {
       if (task) {
@@ -130,7 +113,6 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
     }
   };
 
-  // Collaborators see read-only task detail if they somehow open this
   const readOnly = !isPM;
 
   return (
@@ -141,8 +123,8 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
       size="lg"
       footer={
         !readOnly && (
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <div className="flex justify-end gap-3 w-full">
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button variant="primary" loading={loading} onClick={handleSubmit}>
               {isEdit ? 'Save changes' : 'Create task'}
             </Button>
@@ -150,7 +132,7 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
         )
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <Input
           id="task-title"
           label="Title *"
@@ -174,36 +156,47 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
           disabled={readOnly}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          {/* Priority */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-400">Priority</label>
-            <select
-              name="priority"
-              value={form.priority}
-              onChange={handleChange}
-              disabled={readOnly}
-              className="h-10 px-3 rounded-lg bg-zinc-900 border border-zinc-700/50 text-sm text-zinc-100 outline-none focus:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {TASK_PRIORITY_LIST.map((p) => <option key={p}>{p}</option>)}
-            </select>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-[var(--colors-ink)]">Priority</label>
+            <div className="relative">
+              <select
+                name="priority"
+                value={form.priority}
+                onChange={handleChange}
+                disabled={readOnly}
+                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {TASK_PRIORITY_LIST.map((p) => <option key={p}>{p}</option>)}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
-          {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-400">Status</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="h-10 px-3 rounded-lg bg-zinc-900 border border-zinc-700/50 text-sm text-zinc-100 outline-none focus:border-indigo-500 transition-colors"
-            >
-              {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
-            </select>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-[var(--colors-ink)]">Status</label>
+            <div className="relative">
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all"
+              >
+                {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Due date */}
         <Input
           id="task-duedate"
           label="Due Date"
@@ -215,19 +208,18 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
           disabled={readOnly}
         />
 
-        {/* Assignees */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-zinc-400">
-            Assign To {readOnly && <span className="text-zinc-600">(read-only)</span>}
+        <div className="flex flex-col gap-3">
+          <label className="text-sm font-semibold text-[var(--colors-ink)]">
+            Assignees {readOnly && <span className="text-[var(--colors-mute)] font-normal ml-1">(read-only)</span>}
           </label>
-          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
             {availableUsers.map((u) => {
               const selected = form.assigneeIds.includes(u._id);
               return (
                 <label
                   key={u._id}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors
-                    ${selected ? 'bg-indigo-500/10 ring-1 ring-indigo-500/30' : 'hover:bg-zinc-800'}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all
+                    ${selected ? 'border-[var(--colors-primary)] bg-[var(--colors-primary-glow)]' : 'border-[var(--colors-hairline)] bg-[var(--colors-canvas)] hover:border-[var(--colors-mute)]'}
                     ${readOnly ? 'pointer-events-none opacity-60' : ''}`}
                 >
                   <input
@@ -235,14 +227,14 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
                     checked={selected}
                     onChange={() => toggleAssignee(u._id)}
                     disabled={readOnly}
-                    className="accent-indigo-500 w-3.5 h-3.5"
+                    className="accent-[var(--colors-primary)] w-4 h-4 cursor-pointer"
                   />
-                  <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
-                    {u.name.split(' ').map((n) => n[0]).join('')}
+                  <div className="w-8 h-8 rounded-full bg-[var(--colors-canvas-soft)] text-[var(--colors-ink)] border border-[var(--colors-hairline)] flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {getInitials(u.name)}
                   </div>
                   <div>
-                    <p className="text-xs text-zinc-200">{u.name}</p>
-                    <p className="text-[10px] text-zinc-500">{u.role}</p>
+                    <p className="text-sm font-bold text-[var(--colors-ink)] leading-tight">{u.name}</p>
+                    <p className="text-[11px] font-medium text-[var(--colors-mute)] mt-0.5 uppercase tracking-wide">{u.role}</p>
                   </div>
                 </label>
               );

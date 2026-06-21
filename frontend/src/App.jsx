@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider }   from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ToastProvider }  from './context/ToastContext';
+import { ThemeProvider }  from './context/ThemeContext';
 
 // Guards & Layout
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -33,75 +34,77 @@ import { ROLES } from './utils/constants';
  */
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <SocketProvider>
-          <ToastProvider>
-            <Routes>
-              {/* ── Public ─────────────────────────────────────────────── */}
-              <Route path="/login"          element={<LoginPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/403"            element={<ForbiddenPage />} />
-              <Route path="/404"            element={<NotFoundPage />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <SocketProvider>
+            <ToastProvider>
+              <Routes>
+                {/* ── Public ─────────────────────────────────────────────── */}
+                <Route path="/login"          element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/403"            element={<ForbiddenPage />} />
+                <Route path="/404"            element={<NotFoundPage />} />
 
-              {/* ── Protected shell ────────────────────────────────────── */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                {/* Default redirect */}
-                <Route index element={<Navigate to="/dashboard" replace />} />
-
-                {/* All authenticated roles */}
+                {/* ── Protected shell ────────────────────────────────────── */}
                 <Route
-                  path="dashboard"
+                  path="/"
                   element={
                     <ProtectedRoute>
-                      <DashboardPage />
+                      <AppLayout />
                     </ProtectedRoute>
                   }
-                />
+                >
+                  {/* Default redirect */}
+                  <Route index element={<Navigate to="/dashboard" replace />} />
 
-                {/* Admin + PM + Collaborator */}
-                <Route
-                  path="tasks"
-                  element={
-                    <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
-                      <TaskBoardPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* All authenticated roles */}
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="tasks/:id"
-                  element={
-                    <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
-                      <TaskDetailPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Admin + PM + Collaborator */}
+                  <Route
+                    path="tasks"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <TaskBoardPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Admin only */}
-                <Route
-                  path="users"
-                  element={
-                    <ProtectedRoute roles={[ROLES.ADMIN]}>
-                      <UserManagementPage />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
+                  <Route
+                    path="tasks/:id"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <TaskDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-              {/* ── Catch-all ──────────────────────────────────────────── */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </ToastProvider>
-        </SocketProvider>
-      </AuthProvider>
-    </BrowserRouter>
+                  {/* Admin only */}
+                  <Route
+                    path="users"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN]}>
+                        <UserManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
+
+                {/* ── Catch-all ──────────────────────────────────────────── */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </ToastProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

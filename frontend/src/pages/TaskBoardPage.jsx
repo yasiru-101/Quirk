@@ -1,6 +1,6 @@
 /**
  * @file TaskBoardPage.jsx
- * @description Task board layout supporting list formats, Kanban layouts, search filters, and detail popups.
+ * @description Task board layout supporting Kanban and list formats.
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,12 +16,6 @@ import { useSocket } from '../context/SocketContext';
 import { ROLES } from '../utils/constants';
 import { cn, isOverdue } from '../utils/helpers';
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-/**
- * Component rendering the primary task workflow screen. Manages card sorting, layout toggles, 
- * filters, and triggers modals.
- */
 export default function TaskBoardPage() {
   const { role } = useAuth();
   const { error: toastError, success } = useToast();
@@ -35,7 +29,6 @@ export default function TaskBoardPage() {
   const [filters, setFilters] = useState({ search: '', status: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
 
-  // Load tasks from API
   useEffect(() => {
     setLoading(true);
     taskService
@@ -45,7 +38,6 @@ export default function TaskBoardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Real-time: update task status on socket event
   useEffect(() => {
     const unsub = on('task:statusChanged', ({ taskId, status }) => {
       setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, status } : t)));
@@ -53,7 +45,6 @@ export default function TaskBoardPage() {
     return unsub;
   }, [on]);
 
-  // Real-time: new task assigned
   useEffect(() => {
     const unsub = on('task:assigned', (newTask) => {
       setTasks((prev) => {
@@ -67,11 +58,9 @@ export default function TaskBoardPage() {
   const handleFilterChange = (name, value) =>
     setFilters((f) => ({ ...f, [name]: value }));
 
-  // Apply filters (Overdue is a virtual filter — not a real DB status)
   const filtered = tasks.filter((t) => {
     if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
     if (filters.status === 'Overdue') {
-      // Overdue: deadline passed AND task is not yet Completed
       if (!isOverdue(t.dueDate) || t.status === 'Completed') return false;
     } else if (filters.status) {
       if (t.status !== filters.status) return false;
@@ -84,9 +73,7 @@ export default function TaskBoardPage() {
     setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t)));
     try {
       await taskService.updateTaskStatus(taskId, newStatus);
-    } catch {
-      // revert on failure (simplified — in production re-fetch)
-    }
+    } catch {}
   };
 
   const handleDelete = async (taskId) => {
@@ -95,9 +82,8 @@ export default function TaskBoardPage() {
     try {
       await taskService.deleteTask(taskId);
       success('Task deleted');
-    } catch (err) {
+    } catch {
       toastError('Failed to delete task. Please try again.');
-      // In a production app you'd re-fetch here
     }
   };
 
@@ -111,15 +97,26 @@ export default function TaskBoardPage() {
   };
 
   return (
-    <div className="space-y-5 animate-in">
-      {/* Top bar */}
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        {/* Filters */}
+    <div className="space-y-6 animate-in pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--colors-hairline)] pb-6">
+        <div>
+          <h1 className="text-[var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">Task Board</h1>
+          <p className="text-[var(--typography-body-md)] text-[var(--colors-body)] mt-1.5">
+            Plan, organize, and track all your tasks in one place.
+          </p>
+        </div>
+        {isPM && (
+          <Button variant="primary" onClick={() => setModal({ open: true, task: null })} className="w-full sm:w-auto h-11">
+            + New Task
+          </Button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 justify-between">
         <TaskFilters filters={filters} onChange={handleFilterChange} />
 
-        <div className="flex items-center gap-2 ml-auto">
-          {/* View toggle */}
-          <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="flex items-center bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] rounded-lg p-1 shadow-sm">
             {[
               { id: 'kanban', icon: '⊞', label: 'Kanban' },
               { id: 'table',  icon: '≡', label: 'Table' },
@@ -128,10 +125,10 @@ export default function TaskBoardPage() {
                 key={id}
                 onClick={() => setView(id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                  'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all',
                   view === id
-                    ? 'bg-zinc-700 text-zinc-100 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    ? 'bg-[var(--colors-canvas)] text-[var(--colors-ink)] shadow-sm border border-[var(--colors-hairline)]'
+                    : 'text-[var(--colors-mute)] hover:text-[var(--colors-ink)] border border-transparent'
                 )}
                 aria-pressed={view === id}
               >
@@ -139,33 +136,18 @@ export default function TaskBoardPage() {
               </button>
             ))}
           </div>
-
-          {/* Create task (PM only) */}
-          {isPM && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setModal({ open: true, task: null })}
-            >
-              + New Task
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Count */}
-      <p className="text-xs text-zinc-600">
+      <p className="text-xs font-semibold text-[var(--colors-mute)] uppercase tracking-widest">
         {filtered.length} {filtered.length === 1 ? 'task' : 'tasks'}
-        {filters.status === 'Overdue'
-          ? ' overdue'
-          : (filters.search || filters.status || filters.priority) ? ' (filtered)' : ''}
+        {filters.status === 'Overdue' ? ' overdue' : (filters.search || filters.status || filters.priority) ? ' (filtered)' : ''}
       </p>
 
-      {/* Views */}
       {loading ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-64 rounded-xl" />
+            <div key={i} className="skeleton h-80 rounded-xl" />
           ))}
         </div>
       ) : view === 'kanban' ? (
@@ -185,7 +167,6 @@ export default function TaskBoardPage() {
         />
       )}
 
-      {/* Task create/edit modal */}
       <TaskModal
         open={modal.open}
         onClose={() => setModal({ open: false, task: null })}

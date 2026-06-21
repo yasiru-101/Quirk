@@ -1,29 +1,12 @@
 /**
  * @file Input.jsx
- * @description Customized text input and textarea component with validation warnings.
+ * @description Customized text input and textarea component adhering to the premium hybrid design system.
  */
 import React, { forwardRef } from 'react';
 import { cn } from '../../utils/helpers';
 
 /**
- * Controlled Input / Textarea with floating label and error state.
- *
- * @param {'text'|'email'|'password'|'date'|'search'|'textarea'} type
- * @param {string}  label
- * @param {string}  error      - Error message to show below input
- * @param {string}  hint       - Helper text below input
- * @param {ReactNode} leftIcon - Rendered inside the left inset
- * @param {ReactNode} rightIcon- Rendered inside the right inset
- */
-/**
  * Custom text inputs or textareas featuring inline warning banners, hints, and icon placements.
- *
- * @param {string} props.label - Floating title header for input
- * @param {string} props.error - Optional validation error string
- * @param {string} props.hint - Small info label text below the field
- * @param {string} props.type - Element type (text, email, password, textarea, etc.)
- * @param {React.ReactNode} props.leftIcon - Inline decorative left icon
- * @param {React.ReactNode} props.rightIcon - Inline decorative right icon
  */
 const Input = forwardRef(function Input(
   {
@@ -44,13 +27,13 @@ const Input = forwardRef(function Input(
   const isTextarea = type === 'textarea';
 
   const baseInput = cn(
-    'w-full bg-zinc-900 border text-sm text-zinc-100 rounded-lg outline-none transition-colors focus-ring placeholder:text-zinc-600',
+    'w-full bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] text-[var(--typography-body-md)] text-[var(--colors-ink)] rounded-[var(--radius-lg)] outline-none transition-all focus-ring placeholder-[var(--colors-mute)] shadow-sm',
     error
-      ? 'border-rose-500/60 focus:border-rose-500'
-      : 'border-zinc-700/50 focus:border-indigo-500',
-    leftIcon  ? 'pl-10' : 'pl-3.5',
-    rightIcon ? 'pr-10' : 'pr-3.5',
-    isTextarea ? 'py-2.5 resize-none' : 'h-10',
+      ? 'border-[var(--colors-priority-urgent)] focus:border-[var(--colors-priority-urgent)] focus:ring-[var(--colors-priority-urgent)]'
+      : 'hover:border-[var(--colors-hairline-mid)] focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)] focus:shadow-md',
+    leftIcon  ? 'pl-11' : 'pl-4',
+    rightIcon ? 'pr-11' : 'pr-4',
+    isTextarea ? 'py-3 resize-none' : 'h-11',
     className
   );
 
@@ -59,15 +42,15 @@ const Input = forwardRef(function Input(
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-medium text-zinc-400 tracking-wide"
+          className="text-[var(--typography-body-sm)] font-medium text-[var(--colors-body)] ml-1"
         >
           {label}
         </label>
       )}
 
-      <div className="relative">
+      <div className="relative group">
         {leftIcon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--colors-mute)] group-focus-within:text-[var(--colors-primary)] transition-colors pointer-events-none">
             {leftIcon}
           </span>
         )}
@@ -79,19 +62,19 @@ const Input = forwardRef(function Input(
         )}
 
         {rightIcon && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--colors-mute)]">
             {rightIcon}
           </span>
         )}
       </div>
 
       {error && (
-        <p className="text-xs text-rose-400 flex items-center gap-1">
+        <p className="text-[var(--typography-caption)] text-[var(--colors-priority-urgent)] flex items-center gap-1 font-medium mt-1 ml-1 slide-up">
           <span aria-hidden>⚠</span> {error}
         </p>
       )}
       {hint && !error && (
-        <p className="text-xs text-zinc-600">{hint}</p>
+        <p className="text-[var(--typography-caption)] text-[var(--colors-mute)] mt-1 ml-1">{hint}</p>
       )}
     </div>
   );

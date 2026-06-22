@@ -3,7 +3,7 @@
  * @description Global state for projects and active project scope.
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../services/apiClient';
+import api from '../services/api';
 
 const ProjectContext = createContext();
 
@@ -15,7 +15,7 @@ export function ProjectProvider({ children }) {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const { data } = await apiClient.get('/projects');
+      const { data } = await api.get('/projects');
       setProjects(data.projects || []);
     } catch (err) {
       console.error('Failed to load projects:', err);

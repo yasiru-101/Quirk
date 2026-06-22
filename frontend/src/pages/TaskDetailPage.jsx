@@ -133,6 +133,10 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+        {/* Left Column: Main Content */}
+        <div className="space-y-8 min-w-0">
+
       {/* Meta grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Status */}
@@ -197,15 +201,40 @@ export default function TaskDetailPage() {
         <CommentsPanel taskId={task._id} />
       </div>
 
-      {/* Edit modal (PM only) */}
-      {isPM && (
-        <TaskModal
-          open={editOpen}
-          onClose={() => setEditOpen(false)}
-          task={task}
-          onSaved={handleSaved}
-        />
-      )}
+        {/* Edit modal (PM only) */}
+        {isPM && (
+          <TaskModal
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            task={task}
+            onSaved={handleSaved}
+          />
+        )}
+        </div> {/* End Left Column */}
+
+        {/* Right Column: Advanced Panels */}
+        <div className="space-y-6 flex-shrink-0 w-full">
+          {/* <!-- TODO: SubtasksPanel --> */}
+          <div className="feature-card border-dashed flex flex-col items-center justify-center text-center p-6 text-[color:var(--colors-ink-faint)]">
+            <p className="text-sm">SubtasksPanel Placeholder</p>
+          </div>
+
+          {/* <!-- TODO: DependenciesPanel --> */}
+          <div className="feature-card border-dashed flex flex-col items-center justify-center text-center p-6 text-[color:var(--colors-ink-faint)]">
+            <p className="text-sm">DependenciesPanel Placeholder</p>
+          </div>
+
+          {/* <!-- TODO: TimeLogPanel --> */}
+          <div className="feature-card border-dashed flex flex-col items-center justify-center text-center p-6 text-[color:var(--colors-ink-faint)]">
+            <p className="text-sm">TimeLogPanel Placeholder</p>
+          </div>
+
+          {/* <!-- TODO: ActivityFeedPanel --> */}
+          <div className="feature-card border-dashed flex flex-col items-center justify-center text-center p-6 text-[color:var(--colors-ink-faint)]">
+            <p className="text-sm">ActivityFeedPanel Placeholder</p>
+          </div>
+        </div> {/* End Right Column */}
+      </div>
     </div>
   );
 }

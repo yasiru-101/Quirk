@@ -7,13 +7,13 @@ import { formatDate, isOverdue, cn } from '../utils/helpers';
 
 function StatCard({ label, value, loading }) {
   return (
-    <div className="card p-6 flex flex-col justify-between h-32 hover:border-[var(--colors-surface-pressed)] transition-all">
-      <p className="text-[length:var(--typography-body-sm)] font-medium text-[var(--colors-body)] uppercase tracking-widest">{label}</p>
+    <div className="feature-card flex flex-col justify-between h-32 hover:border-[var(--colors-surface-pressed)] transition-all">
+      <p className="text-[length:var(--typography-caption)] font-medium text-[color:var(--colors-ink-muted)] uppercase tracking-widest">{label}</p>
       <div>
         {loading ? (
           <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-10 w-16 rounded mt-2" />
         ) : (
-          <p className="text-[length:var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tabular-nums leading-none tracking-tight">
+          <p className="text-[length:var(--typography-heading-1)] font-bold text-[color:var(--colors-ink)] tabular-nums leading-none tracking-[var(--letter-spacing-heading-1)]">
             {value}
           </p>
         )}
@@ -103,10 +103,10 @@ export default function DashboardPage() {
       
       {/* Uber-style minimalist header */}
       <header className="space-y-2">
-        <h1 className="text-[length:var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tracking-tight">
+        <h1 className="text-[length:var(--typography-heading-1)] font-bold text-[color:var(--colors-ink)] tracking-[var(--letter-spacing-heading-1)]">
           Good {greeting}, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-[length:var(--typography-body-lg)] text-[var(--colors-body)]">
+        <p className="text-[length:var(--typography-body-md)] text-[color:var(--colors-ink-muted)]">
           Here's an overview of your workspace today.
         </p>
       </header>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {loadingStats
           ? [1, 2, 3, 4].map((i) => (
-              <div key={i} className="card p-6 h-32 flex flex-col justify-between border-[var(--colors-hairline)]">
+              <div key={i} className="feature-card h-32 flex flex-col justify-between border-[var(--colors-hairline)]">
                 <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-4 w-24 rounded" />
                 <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-10 w-16 rounded mt-2" />
               </div>
@@ -123,6 +123,21 @@ export default function DashboardPage() {
           : stats.map((s) => <StatCard key={s.label} {...s} />)
         }
       </div>
+
+      {/* Quick Actions */}
+      {role !== ROLES.ADMIN && (
+        <div className="flex items-center gap-4 py-2 border-b border-[var(--colors-hairline)]">
+          <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Quick Actions:</p>
+          {role === ROLES.PROJECT_MANAGER ? (
+            <>
+              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">+ New Task</button>
+              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">+ New Project</button>
+            </>
+          ) : (
+            <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">My Tasks</button>
+          )}
+        </div>
+      )}
 
       {/* Recent tasks table */}
       {role !== ROLES.ADMIN && (

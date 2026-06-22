@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import ErrorBoundary from '../common/ErrorBoundary';
 import { cn } from '../../utils/helpers';
 
 export default function AppLayout() {
@@ -25,7 +26,9 @@ export default function AppLayout() {
         <TopBar />
 
         <main className="flex-1 p-8 pt-6 max-w-7xl mx-auto w-full animate-in">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

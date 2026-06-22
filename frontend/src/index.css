@@ -3,6 +3,8 @@
 
 @theme {
   --color-primary: var(--colors-primary);
+  --color-primary-deep: var(--colors-primary-deep);
+  --color-primary-glow: var(--colors-primary-glow);
   --color-on-primary: var(--colors-on-primary);
 
   --color-canvas: var(--colors-canvas);
@@ -26,27 +28,48 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    /* ── Light-mode Design Tokens (from design.md) ────────────────────────── */
-    --colors-primary: #000000;
-    --colors-on-primary: #FFFFFF;
+    /* ── Light-mode Design Tokens ────────────────────────────────────────────── */
+    --colors-primary: #75EE8F;
+    --colors-primary-deep: #5DD978;
+    --colors-primary-glow: rgba(117, 238, 143, 0.4);
+    --colors-on-primary: #052611;
 
     --colors-canvas: #FFFFFF;
-    --colors-canvas-soft: #EFEFEF;
-    --colors-canvas-softer: #F3F3F3;
-    --colors-surface-pressed: #E2E2E2;
-    --colors-hairline: #EFEFEF;
+    --colors-canvas-soft: #F8FAF9;
+    --colors-canvas-softer: #F0F4F1;
+    --colors-surface-pressed: #E9ECEA;
+    --colors-hairline: #E2E8E4;
     
-    --bg-base: var(--colors-canvas);
+    --bg-base: var(--colors-canvas-soft);
     --bg-surface: var(--colors-canvas);
 
     --colors-ink: #000000;
-    --colors-body: #5E5E5E;
-    --colors-hairline-mid: #4B4B4B;
-    --colors-mute: #AFAFAF;
+    --colors-body: #5E6B62;
+    --colors-hairline-mid: #4B554E;
+    --colors-mute: #A3B3A8;
     --colors-on-dark: #FFFFFF;
 
     --colors-ink-elevated: #282828;
-    --colors-link: #0000EE;
+
+    /* ── Status Ramps (Light) ──────────────────────────────────────────────── */
+    --colors-status-backlog-bg: #F1F1EE;
+    --colors-status-backlog-text: #A3A39C;
+    --colors-status-todo-bg: #EDEDE9;
+    --colors-status-todo-text: #4B4B47;
+    --colors-status-progress-bg: #E8FBEC;
+    --colors-status-progress-text: #1AD141;
+    --colors-status-review-bg: #DFF7E5;
+    --colors-status-review-text: #15AD36;
+    --colors-status-done-bg: #D8F3DD;
+    --colors-status-done-text: #0C641F;
+
+    /* ── Priority Ramps (Light) ────────────────────────────────────────────── */
+    --colors-priority-urgent: #E0451C;
+    --colors-priority-high: #C77D17;
+    --colors-priority-medium: #2563AC;
+    --colors-priority-low: #7A7A74;
+
+    --colors-link: #15AD36;
 
     /* ── Spacing & Geometry ────────────────────────────────────────────────── */
     --radius-sm: 6px;
@@ -54,7 +77,6 @@
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-pill: 999px;
-    --radius-pill-tab: 36px;
 
     --sidebar-width: 248px;
     --board-col-width: 296px;
@@ -63,40 +85,61 @@
   }
 
   .dark {
-    /* ── Dark-mode Design Tokens (Polarity Flipped) ────────────────────────── */
-    --colors-primary: #FFFFFF;
-    --colors-on-primary: #000000;
+    /* ── Dark-mode Design Tokens ────────────────────────────────────────────── */
+    --colors-primary: #75EE8F;
+    --colors-primary-deep: #5DD978;
+    --colors-primary-glow: rgba(117, 238, 143, 0.15);
+    --colors-on-primary: #052611;
 
-    --colors-canvas: #000000;
-    --colors-canvas-soft: #282828;
-    --colors-canvas-softer: #1C1C1C;
-    --colors-surface-pressed: #333333;
-    --colors-hairline: #282828;
+    --colors-canvas: #0A0E0C;
+    --colors-canvas-soft: #121814;
+    --colors-canvas-softer: #1A231D;
+    --colors-surface-pressed: #222D26;
+    --colors-hairline: #2C3831;
     
-    --bg-base: var(--colors-canvas);
+    --bg-base: var(--colors-canvas-soft);
     --bg-surface: var(--colors-canvas);
 
     --colors-ink: #FFFFFF;
-    --colors-body: #AFAFAF;
-    --colors-hairline-mid: #7A7A7A;
-    --colors-mute: #5E5E5E;
-    --colors-on-dark: #000000;
+    --colors-body: #A3B3A8;
+    --colors-hairline-mid: #738078;
+    --colors-mute: #525E57;
+    --colors-on-dark: #0A0E0C;
 
-    --colors-ink-elevated: #1C1C1C;
-    --colors-link: #63E980; /* Subtle green for links on dark if needed */
+    --colors-ink-elevated: #1A231D;
+
+    /* ── Status Ramps (Dark) ──────────────────────────────────────────────── */
+    --colors-status-backlog-bg: #1B2420;
+    --colors-status-backlog-text: #9CA89E;
+    --colors-status-todo-bg: #1D2A20;
+    --colors-status-todo-text: #C7D0C9;
+    --colors-status-progress-bg: #163B1E;
+    --colors-status-progress-text: #63E980;
+    --colors-status-review-bg: #18391F;
+    --colors-status-review-text: #3CDD5E;
+    --colors-status-done-bg: #163B1E;
+    --colors-status-done-text: #75EE8F;
+
+    /* ── Priority Ramps (Dark) ────────────────────────────────────────────── */
+    --colors-priority-urgent: #FF6B42;
+    --colors-priority-high: #E5A33D;
+    --colors-priority-medium: #5B9AE0;
+    --colors-priority-low: #8C8C85;
+
+    --colors-link: #63E980;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body, #root {
     height: 100%;
-    background-color: var(--colors-canvas);
+    background-color: var(--colors-canvas-soft);
     color: var(--colors-ink);
   }
 
   ::selection {
-    background-color: var(--colors-surface-pressed);
-    color: var(--colors-ink);
+    background-color: var(--colors-primary-glow);
+    color: var(--colors-primary);
   }
 
   /* Custom Scrollbar for sleekness */
@@ -108,24 +151,34 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--colors-hairline-mid);
+    background: var(--colors-hairline);
     border-radius: var(--radius-pill);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--colors-mute);
   }
 
-  /* Typography Scale */
+  /* Fix autofill background in inputs */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px var(--colors-canvas-softer) inset !important;
+      -webkit-text-fill-color: var(--colors-ink) !important;
+      transition: background-color 5000s ease-in-out 0s;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
   :root {
-    --typography-display-xxl: 52px;
-    --typography-display-xl: 36px; 
-    --typography-display-lg: 32px;    
-    --typography-display-md: 24px; 
-    --typography-display-sm: 20px; 
-    --typography-body-lg: 18px;   
-    --typography-body-md: 16px;       
-    --typography-body-sm: 14px;   
-    --typography-caption: 12px;    
+    --typography-display-xxl: 3.25rem;
+    --typography-display-xl: 2.25rem; 
+    --typography-display-lg: 2rem;    
+    --typography-display-sm: 1.25rem; 
+    --typography-body-lg: 1.125rem;   
+    --typography-body-md: 1rem;       
+    --typography-body-sm: 0.875rem;   
+    --typography-caption: 0.75rem;    
   }
 }
 
@@ -148,47 +201,38 @@
     from { opacity: 0; transform: scale(0.96); }
     to   { opacity: 1; transform: scale(1); }
   }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+
 
   .focus-ring:focus-visible {
     outline: 2px solid var(--colors-primary);
     outline-offset: 2px;
   }
 
-  .card-content {
+  .card {
     background-color: var(--colors-canvas);
+    border: 1px solid var(--colors-hairline);
     border-radius: var(--radius-xl);
-    padding: 24px;
-    /* Default is Level 0 - no shadow */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    transition: all var(--transition);
+  }
+  
+  .card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    border-color: var(--colors-surface-pressed);
   }
 
-  .card-elevated {
+  .dark .card {
     background-color: var(--colors-canvas);
-    border-radius: var(--radius-xl);
-    padding: 24px;
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 0px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   }
-
-  .btn-primary {
-    background-color: var(--colors-primary);
-    color: var(--colors-on-primary);
-    padding: 12px 16px;
-    border-radius: var(--radius-pill);
-    font-weight: 500;
-    transition: var(--transition);
-  }
-  .btn-primary:hover {
-    opacity: 0.85;
-  }
-
-  .btn-subtle {
-    background-color: var(--colors-canvas-soft);
-    color: var(--colors-ink);
-    padding: 12px 16px;
-    border-radius: var(--radius-pill);
-    font-weight: 500;
-    transition: var(--transition);
-  }
-  .btn-subtle:hover {
-    background-color: var(--colors-surface-pressed);
+  
+  .dark .card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 }

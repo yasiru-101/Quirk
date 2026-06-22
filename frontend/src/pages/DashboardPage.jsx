@@ -5,16 +5,15 @@ import { userService } from '../services/userService';
 import { ROLES } from '../utils/constants';
 import { formatDate, isOverdue, cn } from '../utils/helpers';
 
-// Instead of colored icons, we use simple, minimalist geometric icons or text
 function StatCard({ label, value, loading }) {
   return (
-    <div className="card-content border border-[var(--colors-hairline)] flex flex-col justify-between h-32 hover:border-[var(--colors-surface-pressed)] transition-all">
-      <p className="text-[var(--typography-body-sm)] font-medium text-[var(--colors-body)] uppercase tracking-widest">{label}</p>
+    <div className="card p-6 flex flex-col justify-between h-32 hover:border-[var(--colors-surface-pressed)] transition-all">
+      <p className="text-[length:var(--typography-body-sm)] font-medium text-[var(--colors-body)] uppercase tracking-widest">{label}</p>
       <div>
         {loading ? (
           <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-10 w-16 rounded mt-2" />
         ) : (
-          <p className="text-[var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tabular-nums leading-none tracking-tight">
+          <p className="text-[length:var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tabular-nums leading-none tracking-tight">
             {value}
           </p>
         )}
@@ -102,12 +101,12 @@ export default function DashboardPage() {
   return (
     <div className="animate-in max-w-5xl mx-auto py-10 px-4 md:px-8 space-y-12">
       
-      {/* Notion-style minimalist header */}
+      {/* Uber-style minimalist header */}
       <header className="space-y-2">
-        <h1 className="text-[var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tracking-tight">
+        <h1 className="text-[length:var(--typography-display-xl)] font-bold text-[var(--colors-ink)] tracking-tight">
           Good {greeting}, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-[var(--typography-body-lg)] text-[var(--colors-body)]">
+        <p className="text-[length:var(--typography-body-lg)] text-[var(--colors-body)]">
           Here's an overview of your workspace today.
         </p>
       </header>
@@ -116,7 +115,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {loadingStats
           ? [1, 2, 3, 4].map((i) => (
-              <div key={i} className="card-content border border-[var(--colors-hairline)] h-32 flex flex-col justify-between">
+              <div key={i} className="card p-6 h-32 flex flex-col justify-between border-[var(--colors-hairline)]">
                 <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-4 w-24 rounded" />
                 <div className="animate-pulse bg-[var(--colors-canvas-soft)] h-10 w-16 rounded mt-2" />
               </div>
@@ -129,7 +128,7 @@ export default function DashboardPage() {
       {role !== ROLES.ADMIN && (
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-[var(--colors-hairline)] pb-4">
-            <h2 className="text-[var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">Recent Tasks</h2>
+            <h2 className="text-[length:var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">Recent Tasks</h2>
           </div>
 
           {loadingTasks ? (
@@ -138,7 +137,7 @@ export default function DashboardPage() {
             </div>
           ) : recentTasks.length === 0 ? (
             <div className="py-12 text-center border border-[var(--colors-hairline)] border-dashed rounded-lg">
-              <p className="text-[var(--typography-body-md)] text-[var(--colors-body)]">No tasks assigned yet.</p>
+              <p className="text-[length:var(--typography-body-md)] text-[var(--colors-body)]">No tasks assigned yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -146,7 +145,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b-2 border-[var(--colors-ink)]">
                     {['Task', 'Status', 'Priority', 'Due Date'].map((h) => (
-                      <th key={h} className="py-4 px-2 text-[var(--typography-body-sm)] font-bold text-[var(--colors-ink)] uppercase tracking-wider">
+                      <th key={h} className="py-4 px-2 text-[length:var(--typography-body-sm)] font-bold text-[var(--colors-ink)] uppercase tracking-wider">
                         {h}
                       </th>
                     ))}
@@ -154,19 +153,19 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-[var(--colors-hairline)]">
                   {recentTasks.map((t) => (
-                    <tr key={t._id} className="hover:bg-[var(--colors-canvas-soft)] transition-colors">
-                      <td className="py-4 px-2 text-[var(--typography-body-md)] font-medium text-[var(--colors-ink)]">{t.title}</td>
+                    <tr key={t.id} className="hover:bg-[var(--colors-canvas-soft)] transition-colors">
+                      <td className="py-4 px-2 text-[length:var(--typography-body-md)] font-medium text-[var(--colors-ink)]">{t.title}</td>
                       <td className="py-4 px-2">
-                        <span className="btn-subtle px-3 py-1 text-[var(--typography-body-sm)] uppercase tracking-wider rounded-full whitespace-nowrap">
+                        <span className="bg-[var(--colors-surface-pressed)] text-[var(--colors-ink)] px-3 py-1 text-[length:var(--typography-body-sm)] uppercase tracking-wider rounded-[var(--radius-pill)] whitespace-nowrap">
                           {t.status}
                         </span>
                       </td>
                       <td className="py-4 px-2">
-                        <span className="btn-subtle px-3 py-1 text-[var(--typography-body-sm)] uppercase tracking-wider rounded-full whitespace-nowrap">
+                        <span className="bg-[var(--colors-surface-pressed)] text-[var(--colors-ink)] px-3 py-1 text-[length:var(--typography-body-sm)] uppercase tracking-wider rounded-[var(--radius-pill)] whitespace-nowrap">
                           {t.priority}
                         </span>
                       </td>
-                      <td className={cn('py-4 px-2 text-[var(--typography-body-sm)]', isOverdue(t.dueDate) && t.status !== 'Completed' ? 'text-[var(--colors-primary)] font-bold' : 'text-[var(--colors-body)]')}>
+                      <td className={cn('py-4 px-2 text-[length:var(--typography-body-sm)]', isOverdue(t.dueDate) && t.status !== 'Completed' ? 'text-[var(--colors-priority-urgent)] font-bold' : 'text-[var(--colors-body)]')}>
                         {formatDate(t.dueDate)}
                       </td>
                     </tr>

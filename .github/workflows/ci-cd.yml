@@ -33,6 +33,15 @@ jobs:
       - name: Log in to Azure Container Registry
         run: az acr login --name ${{ env.ACR_NAME }}
 
+      - name: Push Prisma DB Schema to Azure Postgres
+        run: |
+          cd backend
+          npm install prisma
+          npx prisma generate
+          npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build & push quirk-backend image
         run: |
           docker build \

@@ -51,6 +51,10 @@ const createTaskSchema = z.object({
       invalid_type_error: `Status must be one of: ${VALID_STATUSES.join(', ')}`,
     })
     .default('To Do'),
+    
+  projectId: z.string().uuid('Invalid project ID format').optional(),
+  
+  tags: z.array(z.string().trim().min(1)).optional().default([]),
 });
 
 // ─── Update Task Schema ──────────────────────────────────────────────────────
@@ -90,6 +94,10 @@ const updateTaskSchema = z
         invalid_type_error: `Status must be one of: ${VALID_STATUSES.join(', ')}`,
       })
       .optional(),
+      
+    projectId: z.string().uuid('Invalid project ID format').optional(),
+    
+    tags: z.array(z.string().trim().min(1)).optional(),
   })
   .refine(
     // Require at least one field to prevent empty updates
@@ -99,12 +107,8 @@ const updateTaskSchema = z
 
 // ─── Assign Users Schema ─────────────────────────────────────────────────────
 // Used on: POST /api/tasks/:id/assign (PM assigns users to task)
-// User IDs are PostgreSQL integers; accept either a number or a numeric string
-// (the controller normalizes via parseInt before persisting).
-const userIdSchema = z
-  .union([z.number().int(), z.string().regex(/^\d+$/, 'Invalid user ID format')])
-  .transform((val) => parseInt(val, 10))
-  .refine((val) => Number.isInteger(val) && val > 0, 'Invalid user ID');
+// User IDs are UUID strings
+const userIdSchema = z.string().uuid('Invalid user ID format');
 
 const assignTaskSchema = z.object({
   userIds: z

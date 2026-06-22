@@ -11,7 +11,7 @@ const prisma = require('../config/db');
 const addComment = async (req, res) => {
   const { taskId } = req.params;
   const { content } = req.body;
-  const targetTaskId = parseInt(taskId, 10);
+  const targetTaskId = taskId;
 
   try {
     // 1. Verify task exists
@@ -79,7 +79,7 @@ const addComment = async (req, res) => {
 // @access  Private (PM or assigned Collaborator)
 const getComments = async (req, res) => {
   const { taskId } = req.params;
-  const targetTaskId = parseInt(taskId, 10);
+  const targetTaskId = taskId;
 
   try {
     // 1. Verify task exists

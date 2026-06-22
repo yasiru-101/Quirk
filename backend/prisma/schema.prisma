@@ -11,7 +11,7 @@ generator client {
 
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
-  id                Int              @id @default(autoincrement())
+  id                String           @id @default(uuid())
   name              String
   email             String           @unique
   passwordHash      String
@@ -20,8 +20,10 @@ model User {
   isActive          Boolean          @default(true)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
   
   // Relations
+  projectsCreated   Project[]        @relation("ProjectCreator")
   tasksCreated      Task[]           @relation("TaskCreator")
   assignments       TaskAssignment[]
   comments          Comment[]
@@ -29,19 +31,38 @@ model User {
   notifications     Notification[]
 }
 
+// ─── Project Model ───────────────────────────────────────────────────────────
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  creator     User      @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  tasks       Task[]
+}
+
 // ─── Task Model ──────────────────────────────────────────────────────────────
 model Task {
-  id           Int              @id @default(autoincrement())
+  id           String           @id @default(uuid())
   title        String
   description  String?
-  createdBy    Int
+  projectId    String?
+  createdBy    String
   dueDate      DateTime?
   priority     String           @default("Medium") // Low, Medium, High
   status       String           @default("To Do") // To Do, In Progress, Completed
+  tags         String[]         @default([])
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
   
   // Relations
+  project      Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
   creator      User             @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   assignments  TaskAssignment[]
   comments     Comment[]
@@ -51,8 +72,8 @@ model Task {
 
 // ─── TaskAssignment Model (Many-to-Many Join Table) ──────────────────────────
 model TaskAssignment {
-  taskId     Int
-  userId     Int
+  taskId     String
+  userId     String
   assignedAt DateTime @default(now())
   
   // Relations
@@ -64,12 +85,13 @@ model TaskAssignment {
 
 // ─── Comment Model ───────────────────────────────────────────────────────────
 model Comment {
-  id          Int          @id @default(autoincrement())
-  taskId      Int
-  userId      Int
+  id          String       @id @default(uuid())
+  taskId      String
+  userId      String
   content     String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
   
   // Relations
   task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -79,10 +101,10 @@ model Comment {
 
 // ─── Attachment Model ────────────────────────────────────────────────────────
 model Attachment {
-  id           Int      @id @default(autoincrement())
-  taskId       Int
-  commentId    Int?
-  uploadedBy   Int
+  id           String   @id @default(uuid())
+  taskId       String
+  commentId    String?
+  uploadedBy   String
   originalName String
   blobUrl      String
   mimeType     String?
@@ -97,11 +119,11 @@ model Attachment {
 
 // ─── Notification Model ──────────────────────────────────────────────────────
 model Notification {
-  id            Int      @id @default(autoincrement())
-  recipientId   Int
+  id            String   @id @default(uuid())
+  recipientId   String
   type          String   // Assignment, StatusChange, Comment, Deadline, Admin
   message       String
-  relatedTaskId Int?
+  relatedTaskId String?
   isRead        Boolean  @default(false)
   createdAt     DateTime @default(now())
   

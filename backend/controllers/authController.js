@@ -166,7 +166,7 @@ const refresh = async (req, res) => {
 
     // Find user using Prisma
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(decoded.id, 10) },
+      where: { id:  },
     });
     if (!user) {
       return res.status(401).json({
@@ -213,7 +213,7 @@ const resetPassword = async (req, res) => {
   try {
     // Load user again to include password hash
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId, 10) },
+      where: { id:  },
     });
     if (!user) {
       return res.status(404).json({
@@ -236,7 +236,7 @@ const resetPassword = async (req, res) => {
 
     // Update password using Prisma
     const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId, 10) },
+      where: { id:  },
       data: {
         passwordHash: newPasswordHash,
         mustResetPassword: false,

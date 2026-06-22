@@ -100,7 +100,7 @@ const getTasks = async (req, res) => {
 // @access  Private (PM & Collaborator)
 const getTaskById = async (req, res) => {
   const { id } = req.params;
-  const targetId = parseInt(id, 10);
+  const targetId = ;
 
   try {
     // Fetch the task document including relationships using Prisma
@@ -178,7 +178,7 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
   const { id } = req.params;
   const { title, description, dueDate, priority, status } = req.body;
-  const targetId = parseInt(id, 10);
+  const targetId = ;
 
   try {
     const task = await prisma.task.findUnique({
@@ -219,7 +219,7 @@ const updateTask = async (req, res) => {
 const updateTaskStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const targetId = parseInt(id, 10);
+  const targetId = ;
 
   try {
     const task = await prisma.task.findUnique({
@@ -274,7 +274,7 @@ const updateTaskStatus = async (req, res) => {
 // @access  Private (Project Manager only)
 const deleteTask = async (req, res) => {
   const { id } = req.params;
-  const targetId = parseInt(id, 10);
+  const targetId = ;
 
   try {
     const task = await prisma.task.findUnique({
@@ -323,8 +323,8 @@ const deleteTask = async (req, res) => {
 const assignUsers = async (req, res) => {
   const { id } = req.params;
   const { userIds } = req.body;
-  const targetId = parseInt(id, 10);
-  const parsedUserIds = userIds.map((uid) => parseInt(uid, 10));
+  const targetId = ;
+  const parsedUserIds = userIds.map((uid) => );
 
   try {
     // 1. Verify task exists

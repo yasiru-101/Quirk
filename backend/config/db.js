@@ -9,7 +9,20 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 
 // Setup PostgreSQL Connection Pool
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Cloud Postgres (e.g. Supabase, Azure) requires TLS; the local Docker Postgres
+// used for development does not. Enable SSL unless connecting to localhost, or
+// honour an explicit DATABASE_SSL=false override.
+const connectionString = process.env.DATABASE_URL || '';
+const isLocalDb = /@(localhost|127\.0\.0\.1|postgres)[:/]/.test(connectionString);
+const useSsl =
+  process.env.DATABASE_SSL === 'false'
+    ? false
+    : process.env.DATABASE_SSL === 'true' || !isLocalDb;
+
+const pool = new Pool({
+  connectionString,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
+});
 const adapter = new PrismaPg(pool);
 
 // Instantiate PrismaClient with pg Driver Adapter

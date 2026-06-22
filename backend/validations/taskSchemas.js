@@ -99,11 +99,16 @@ const updateTaskSchema = z
 
 // ─── Assign Users Schema ─────────────────────────────────────────────────────
 // Used on: POST /api/tasks/:id/assign (PM assigns users to task)
+// User IDs are PostgreSQL integers; accept either a number or a numeric string
+// (the controller normalizes via parseInt before persisting).
+const userIdSchema = z
+  .union([z.number().int(), z.string().regex(/^\d+$/, 'Invalid user ID format')])
+  .transform((val) => parseInt(val, 10))
+  .refine((val) => Number.isInteger(val) && val > 0, 'Invalid user ID');
+
 const assignTaskSchema = z.object({
   userIds: z
-    .array(
-      z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid user ID format')
-    , { required_error: 'userIds is required' })
+    .array(userIdSchema, { required_error: 'userIds is required' })
     .min(1, 'At least one user ID must be provided'),
 });
 

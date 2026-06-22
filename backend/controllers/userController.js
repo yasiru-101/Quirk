@@ -134,7 +134,7 @@ const getUserById = async (req, res) => {
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(id, 10) },
+      where: { id: id },
       select: {
         id: true,
         name: true,
@@ -170,7 +170,7 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, role, isActive } = req.body;
-  const targetId = parseInt(id, 10);
+  const targetId = id;
 
   try {
     const user = await prisma.user.findUnique({
@@ -225,7 +225,7 @@ const updateUser = async (req, res) => {
 // @access  Private (Admin only)
 const deactivateUser = async (req, res) => {
   const { id } = req.params;
-  const targetId = parseInt(id, 10);
+  const targetId = id;
 
   try {
     const user = await prisma.user.findUnique({

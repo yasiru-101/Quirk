@@ -49,7 +49,7 @@ const getNotifications = async (req, res) => {
 // @access  Private
 const markAsRead = async (req, res) => {
   const { id } = req.params;
-  const targetId = parseInt(id, 10);
+  const targetId = id;
 
   try {
     // 1. Find the notification using Prisma

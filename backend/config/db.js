@@ -19,9 +19,24 @@ const useSsl =
     ? false
     : process.env.DATABASE_SSL === 'true' || !isLocalDb;
 
+// Pool sizing matters on managed Postgres (e.g. Supabase) where the connection
+// limit is small. An oversized pool — multiplied across replicas — exhausts the
+// upstream limit; once every client connection is busy, node-pg queues new
+// queries *indefinitely* (no default acquire timeout), so heavier requests like
+// the task list hang while a single-query login still succeeds. We therefore cap
+// the pool and fail fast on acquisition instead of hanging.
 const pool = new Pool({
   connectionString,
   ssl: useSsl ? { rejectUnauthorized: false } : false,
+  max: parseInt(process.env.DB_POOL_MAX || '5', 10),
+  connectionTimeoutMillis: parseInt(process.env.DB_CONN_TIMEOUT_MS || '10000', 10),
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || '30000', 10),
+});
+
+// Surface pool-level errors (e.g. an idle connection dropped by the server)
+// instead of letting them crash the process or silently poison the pool.
+pool.on('error', (err) => {
+  console.error(`[db] Idle PostgreSQL client error: ${err.message}`);
 });
 const adapter = new PrismaPg(pool);
 

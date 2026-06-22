@@ -39,9 +39,26 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// ─── id → _id Normalizer ──────────────────────────────────────────────────────
+// The backend (Prisma/PostgreSQL) returns integer `id` fields, while the frontend
+// and the realtime socket payloads use `_id`. Recursively alias `id` to `_id` on
+// every REST response so both shapes are always available to components.
+const aliasIds = (value) => {
+  if (Array.isArray(value)) {
+    value.forEach(aliasIds);
+  } else if (value && typeof value === 'object') {
+    if ('id' in value && !('_id' in value)) value._id = value.id;
+    Object.values(value).forEach(aliasIds);
+  }
+  return value;
+};
+
 // ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response?.data) aliasIds(response.data);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

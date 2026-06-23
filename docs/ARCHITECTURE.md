@@ -96,6 +96,12 @@ as the REST API. Each user joins a private room (`user:<id>`); notifications are
 emitted to that room. Notifications created while a user is offline are persisted
 and replayed when they reconnect.
 
+Each conversation also has a room (`conv:<id>`). On connection the server resolves
+all conversations the user participates in and joins those rooms. Incoming chat
+messages are emitted to the conversation room so all connected participants receive
+them immediately. The latest message preview per conversation is replayed on
+reconnect. See [ADR 0003](./adr/0003-realtime-chat-and-dm-module.md).
+
 ## Roadmap
 
 The system is being expanded from a single-tenant tool into a multi-tenant SaaS

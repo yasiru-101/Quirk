@@ -19,6 +19,7 @@ const projectRoutes       = require('./routes/projectRoutes');
 const workspaceRoutes     = require('./routes/workspaceRoutes');
 const activityRoutes      = require('./routes/activityRoutes');
 const timeLogRoutes       = require('./routes/timeLogRoutes');
+const chatRoutes          = require('./routes/chatRoutes');
 const errorHandler        = require('./middleware/errorHandler');
 
 const app = express();
@@ -130,6 +131,7 @@ app.use('/api/attachments',   attachmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/projects',      projectRoutes);         // Projects, columns, epics, members
 app.use('/api/workspaces',    workspaceRoutes);       // Workspaces, members, invitations
+app.use('/api/chat',          chatRoutes);            // Chat conversations and messages
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

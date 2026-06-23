@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const prisma = require('../config/db');
 const { generateTempPassword, checkLastAdmin } = require('../utils/userHelpers');
 
-// @desc    Create new user and trigger onboarding email (mocked)
+// @desc    Create new user and trigger onboarding email
 // @route   POST /api/users
 // @access  Private (Admin only)
 const createUser = async (req, res) => {

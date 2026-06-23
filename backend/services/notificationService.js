@@ -6,8 +6,8 @@ const socketService = require('./socketService');
  * Emits 'notification' to each user room, and 'task:assigned' to all assigned users.
  */
 const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
-  const targetTaskId = parseInt(taskId, 10);
-  const parsedUserIds = assignedUserIds.map((uid) => parseInt(uid, 10));
+  const targetTaskId = taskId;
+  const parsedUserIds = assignedUserIds;
 
   try {
     const task = await prisma.task.findUnique({
@@ -77,8 +77,8 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
  * Emits 'notification' and 'task:statusChanged' events.
  */
 const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => {
-  const targetTaskId = parseInt(taskId, 10);
-  const parsedChangerId = changerId ? parseInt(changerId, 10) : null;
+  const targetTaskId = taskId;
+  const parsedChangerId = changerId || null;
 
   try {
     const task = await prisma.task.findUnique({
@@ -145,8 +145,8 @@ const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => 
  * Notify all assigned users and the task creator (except the commenter) when a comment is added.
  */
 const notifyComment = async (taskId, commenterName, commenterId, commentPreview) => {
-  const targetTaskId = parseInt(taskId, 10);
-  const parsedCommenterId = commenterId ? parseInt(commenterId, 10) : null;
+  const targetTaskId = taskId;
+  const parsedCommenterId = commenterId || null;
 
   try {
     const task = await prisma.task.findUnique({
@@ -206,7 +206,7 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview)
  * Notify a user of an administrative action (e.g., account activation/deactivation).
  */
 const notifyAdmin = async (message, recipientId) => {
-  const targetRecipientId = parseInt(recipientId, 10);
+  const targetRecipientId = recipientId;
 
   try {
     const notification = await prisma.notification.create({

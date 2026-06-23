@@ -23,9 +23,10 @@ const protect = async (req, res, next) => {
     // 3. Verify token — JWT_SECRET must be set in environment variables (no fallback)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 4. Find the user associated with the token (exclude passwordHash)
+    // 4. Find the user associated with the token (exclude passwordHash).
+    // User IDs are UUID strings, so the token subject is used as-is.
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(decoded.id, 10) },
+      where: { id: decoded.id },
       select: {
         id: true,
         name: true,

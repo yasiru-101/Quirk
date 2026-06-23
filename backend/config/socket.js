@@ -47,9 +47,10 @@ module.exports = (httpServer) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
-      // Fetch user profile using Prisma Client (exclude passwordHash)
+      // Fetch user profile using Prisma Client (exclude passwordHash).
+      // User IDs are UUID strings, so the token subject is used as-is.
       const user = await prisma.user.findUnique({
-        where: { id: parseInt(decoded.id, 10) },
+        where: { id: decoded.id },
         select: {
           id: true,
           name: true,

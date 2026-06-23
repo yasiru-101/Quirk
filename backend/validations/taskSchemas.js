@@ -5,7 +5,7 @@
 
 const { z } = require('zod');
 
-// Allowed status and priority values matching the Mongoose Task model
+// Allowed status and priority values matching the Prisma Task model
 const VALID_STATUSES = ['To Do', 'In Progress', 'Completed'];
 const VALID_PRIORITIES = ['Low', 'Medium', 'High'];
 

@@ -1,0 +1,81 @@
+# Architecture
+
+This document describes how the Quirk Task Management System is put together. It
+is kept current as the system evolves; significant decisions are recorded as ADRs
+under [`docs/adr`](./adr).
+
+## Stack
+
+| Layer     | Technology                                        |
+| --------- | ------------------------------------------------- |
+| Frontend  | React, Vite, Tailwind CSS, React Router           |
+| Backend   | Node.js, Express, Prisma ORM                      |
+| Database  | PostgreSQL                                        |
+| Realtime  | Socket.IO                                         |
+| Email     | Azure Communication Services (Ethereal in dev)    |
+| Storage   | Azure Blob Storage (local disk in dev)            |
+| Delivery  | Docker, Kubernetes (AKS), GitHub Actions          |
+
+## Backend layout
+
+The backend follows a layered MVC structure:
+
+```
+backend/
+  routes/        HTTP route definitions and OpenAPI annotations
+  controllers/   Request handling and business logic
+  services/      Cross-cutting concerns (email, notifications, sockets, storage)
+  middleware/    Auth, RBAC, validation, error handling, uploads
+  validations/   Zod request schemas
+  utils/         Shared helpers (activity logging, password/user helpers)
+  config/        Database, Socket.IO, Swagger, Azure clients
+  prisma/        Schema and migrations
+```
+
+### Request lifecycle
+
+1. Security middleware runs first: Helmet headers, CORS, body-size limits, input
+   sanitisation, and rate limiting (a stricter limiter guards the login route).
+2. `protect` authenticates the request from the `accessToken` cookie (or a Bearer
+   token), loads the user, and enforces the mandatory-password-reset gate.
+3. `rbac(...roles)` authorises the request against the user's role.
+4. A Zod schema validates the request body via the `validate` middleware.
+5. The controller executes the business logic through Prisma.
+6. Any thrown error is normalised by the central error handler into a consistent
+   `{ errorCode, message, errors }` payload.
+
+### Identifiers
+
+All entity identifiers are opaque UUID strings and are never numerically coerced.
+See [ADR 0001](./adr/0001-use-uuid-identifiers-end-to-end.md).
+
+## Authentication and sessions
+
+- Passwords are hashed with bcrypt (cost factor 12).
+- On login the server issues a short-lived access token (15 min) and a longer
+  refresh token (7 days), both stored as `httpOnly` cookies.
+- `POST /auth/refresh` rotates both tokens.
+- Accounts created by an administrator start with `mustResetPassword = true`; the
+  user is forced to set a new password on first login before any other route is
+  reachable.
+
+## Realtime
+
+Socket.IO authenticates each connection during the handshake using the same JWT
+as the REST API. Each user joins a private room (`user:<id>`); notifications are
+emitted to that room. Notifications created while a user is offline are persisted
+and replayed when they reconnect.
+
+## Roadmap
+
+The system is being expanded from a single-tenant tool into a multi-tenant SaaS
+product. Planned foundational work, tracked as it lands:
+
+- Workspace tenancy with create-or-join-by-invite onboarding.
+- Per-workspace and per-project membership roles, with object-level
+  authorization on every resource.
+- Self-service registration with email verification and optional login 2FA.
+- Kanban column as the single source of task workflow state.
+
+Each item ships as an isolated, reviewable change with its own migration, tests,
+and documentation update.

@@ -125,7 +125,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      {role !== ROLES.ADMIN && (
+      {role !== ROLES.ADMIN ? (
         <div className="flex items-center gap-4 py-2 border-b border-[var(--colors-hairline)]">
           <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Quick Actions:</p>
           {role === ROLES.PROJECT_MANAGER ? (
@@ -137,10 +137,17 @@ export default function DashboardPage() {
             <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">My Tasks</button>
           )}
         </div>
+      ) : (
+        <div className="flex items-center gap-4 py-2 border-b border-[var(--colors-hairline)]">
+          <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Admin Actions:</p>
+          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => window.location.href = '/users'}>Manage Users</button>
+          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => window.location.href = '/projects'}>View All Projects</button>
+          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => window.location.href = '/settings'}>System Settings</button>
+        </div>
       )}
 
       {/* Recent tasks table */}
-      {role !== ROLES.ADMIN && (
+      {role !== ROLES.ADMIN ? (
         <section className="space-y-6">
           <div className="flex items-center justify-between border-b border-[var(--colors-hairline)] pb-4">
             <h2 className="text-[length:var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">Recent Tasks</h2>
@@ -189,6 +196,16 @@ export default function DashboardPage() {
               </table>
             </div>
           )}
+        </section>
+      ) : (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between border-b border-[var(--colors-hairline)] pb-4">
+            <h2 className="text-[length:var(--typography-display-sm)] font-bold text-[var(--colors-ink)]">System Overview</h2>
+          </div>
+          <div className="py-12 text-center border border-[var(--colors-hairline)] border-dashed rounded-lg bg-[var(--colors-canvas-soft)]">
+            <p className="text-[length:var(--typography-body-md)] font-semibold text-[var(--colors-ink)] mb-2">Everything is running smoothly.</p>
+            <p className="text-[length:var(--typography-body-sm)] text-[var(--colors-body)]">Use the quick actions above or the navigation sidebar to manage the platform.</p>
+          </div>
         </section>
       )}
     </div>

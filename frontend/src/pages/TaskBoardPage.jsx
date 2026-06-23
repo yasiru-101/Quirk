@@ -16,6 +16,7 @@ import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { cn, isOverdue } from '../utils/helpers';
+import { ROLES } from '../utils/constants';
 
 export default function TaskBoardPage() {
   const { role } = useAuth();

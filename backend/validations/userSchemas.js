@@ -20,7 +20,7 @@
 const { z } = require('zod');
 
 // ─── Allowed role values ─────────────────────────────────────────────────────
-// These must match the enum defined in the User Mongoose model (models/User.js).
+// These must match the role values defined in the Prisma User model (prisma/schema.prisma).
 const VALID_ROLES = ['Admin', 'Project Manager', 'Collaborator'];
 
 // ─── Create User Schema ──────────────────────────────────────────────────────

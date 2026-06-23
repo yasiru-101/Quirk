@@ -85,7 +85,7 @@ const generateTempPassword = (length = 12) => {
  * This safeguard ensures the system always retains at least one active Admin,
  * preventing a state where no one can manage users.
  *
- * @param {string} userId - The MongoDB ObjectId of the user being modified.
+ * @param {string} userId - The UUID of the user being modified.
  * @throws {Error} Throws an error with status 400 if the user is the last active Admin.
  *
  * @example
@@ -94,7 +94,7 @@ const generateTempPassword = (length = 12) => {
  *   // If this line is reached, it's safe to proceed.
  */
 const checkLastAdmin = async (userId) => {
-  const targetId = parseInt(userId, 10);
+  const targetId = userId;
 
   // Count how many active users currently hold the 'Admin' role
   const activeAdminCount = await prisma.user.count({

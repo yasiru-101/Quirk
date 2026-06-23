@@ -149,23 +149,25 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Quick Login Cheat-sheet */}
-          <div className="mt-12 pt-8 border-t border-[var(--colors-hairline)]">
-            <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest mb-4">
-              Quick Test Accounts
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>
-                Admin
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>
-                PM
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>
-                Collab
-              </Button>
+          {/* Quick-login helpers — development builds only; never shipped to production. */}
+          {import.meta.env.DEV && (
+            <div className="mt-12 pt-8 border-t border-[var(--colors-hairline)]">
+              <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest mb-4">
+                Quick Test Accounts
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>
+                  Admin
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>
+                  PM
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>
+                  Collab
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
       </div>

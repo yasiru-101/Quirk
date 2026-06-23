@@ -89,115 +89,102 @@ export default function TaskDetailPage() {
   const overdue = isOverdue(task.dueDate);
 
   return (
-    <div className="space-y-8 animate-in max-w-5xl mx-auto pb-10">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm font-medium text-[var(--colors-mute)]">
-        <button onClick={() => navigate('/tasks')} className="hover:text-[var(--colors-ink)] transition-colors">
-          Tasks
-        </button>
-        <span>/</span>
-        <span className="text-[var(--colors-body)] truncate max-w-xs">{task.title}</span>
-      </div>
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-        <div className="space-y-3 flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={cn('text-xs font-bold px-3 py-1 rounded-full border', getPriorityColor(task.priority))}>
+    <div id="detail-panel" className="w-[400px] flex-shrink-0 bg-[var(--surface)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden transition-all duration-200 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] z-20">
+      
+      {/* ── dp-header ── */}
+      <div className="flex flex-col gap-3 p-5 border-b border-[var(--border)] bg-[var(--surface)] shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider', getPriorityColor(task.priority))}>
               {task.priority} Priority
             </span>
             {overdue && (
-              <span className="text-[11px] font-bold text-[var(--colors-priority-urgent)] bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-full border border-rose-200 dark:border-rose-800">
-                ⚠ Overdue
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-400">
+                Overdue
               </span>
             )}
           </div>
-          <h1 className="text-[var(--typography-display-md)] font-bold text-[var(--colors-ink)] leading-tight">{task.title}</h1>
-          {task.description && (
-            <p className="text-[var(--typography-body-lg)] text-[var(--colors-body)] leading-relaxed max-w-3xl">{task.description}</p>
-          )}
+          <div className="flex items-center gap-1">
+            {isPM && (
+              <button onClick={() => setEditOpen(true)} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-faint)] hover:text-[var(--text-primary)] transition-colors" title="Edit">
+                ✏️
+              </button>
+            )}
+            <button onClick={() => navigate('/tasks')} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-faint)] hover:text-[var(--text-primary)] transition-colors" title="Close">
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {isPM && (
-            <>
-              <Button variant="secondary" onClick={() => setEditOpen(true)}>
-                Edit Task
-              </Button>
-              <Button variant="danger" onClick={handleDelete}>
-                Delete
-              </Button>
-            </>
-          )}
+        <h2 className="text-[18px] font-bold text-[var(--text-primary)] leading-snug">{task.title}</h2>
+        <div className="flex items-center gap-4 text-xs font-medium text-[var(--text-muted)]">
+          <div className="flex items-center gap-1">
+            <span>📅 {formatDate(task.dueDate)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>👤 {task.createdBy?.name || '—'}</span>
+          </div>
         </div>
       </div>
 
-      {/* Meta grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Status */}
-        <div className="card p-5 space-y-2">
-          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Status</p>
-          <div className="relative">
-            <select
-              value={task.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className={cn('text-sm font-bold px-3 py-1.5 rounded-lg border outline-none cursor-pointer w-full appearance-none', getStatusColor(task.status))}
-            >
-              {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path d="m6 9 6 6 6-6"/>
-              </svg>
+      {/* ── dp-body ── */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        
+        {/* Description Section */}
+        {task.description && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Description</h3>
+            <p className="text-sm text-[var(--text-primary)] leading-relaxed bg-[var(--bg-faint)] p-3 rounded-lg border border-[var(--border)]">
+              {task.description}
+            </p>
+          </div>
+        )}
+
+        {/* Status Dropdown */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Status</h3>
+          <select
+            value={task.status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className={cn('w-full text-sm font-bold px-3 py-2 rounded-lg border outline-none cursor-pointer appearance-none', getStatusColor(task.status))}
+          >
+            {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
+          </select>
+        </div>
+
+        {/* Assignees */}
+        {task.assignees?.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Assignees</h3>
+            <div className="flex flex-col gap-2 bg-[var(--bg-faint)] p-3 rounded-lg border border-[var(--border)]">
+              {task.assignees.map((u) => (
+                <div key={u._id} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white flex items-center justify-center text-[10px] font-bold">
+                    {getInitials(u.name)}
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{u.name}</span>
+                </div>
+              ))}
             </div>
           </div>
+        )}
+
+        {/* Comments Panel */}
+        <div className="space-y-2 pt-4 border-t border-[var(--border)]">
+          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Activity</h3>
+          <CommentsPanel taskId={task._id} />
         </div>
 
-        {/* Due date */}
-        <div className="card p-5 space-y-2">
-          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Due Date</p>
-          <p className={cn('text-sm font-bold', overdue ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-ink)]')}>
-            {formatDate(task.dueDate)}
-          </p>
-        </div>
-
-        {/* Created by */}
-        <div className="card p-5 space-y-2">
-          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Created By</p>
-          <p className="text-sm font-bold text-[var(--colors-ink)] truncate">{task.createdBy?.name ?? '—'}</p>
-        </div>
-
-        {/* Created at */}
-        <div className="card p-5 space-y-2">
-          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest">Created At</p>
-          <p className="text-sm font-bold text-[var(--colors-ink)]">{formatDate(task.createdAt)}</p>
-        </div>
-      </div>
-
-      {/* Assignees */}
-      {task.assignees?.length > 0 && (
-        <div className="card p-6 space-y-4">
-          <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest border-b border-[var(--colors-hairline)] pb-2">Assignees</p>
-          <div className="flex flex-wrap gap-4 pt-2">
-            {task.assignees.map((u) => (
-              <div key={u._id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[var(--colors-primary-glow)] text-[var(--colors-primary-deep)] flex items-center justify-center text-[11px] font-bold ring-1 ring-[var(--colors-primary)]">
-                  {getInitials(u.name)}
-                </div>
-                <span className="text-sm font-bold text-[var(--colors-ink)]">{u.name}</span>
-              </div>
-            ))}
+        {isPM && (
+          <div className="pt-6 mt-6 border-t border-rose-100 dark:border-rose-900/30">
+            <Button variant="danger" className="w-full text-sm" onClick={handleDelete}>
+              Delete Task
+            </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Comments & Attachments panel */}
-      <div className="card p-6">
-        <CommentsPanel taskId={task._id} />
       </div>
 
-      {/* Edit modal (PM only) */}
       {isPM && (
         <TaskModal
           open={editOpen}

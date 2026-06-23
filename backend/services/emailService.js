@@ -48,6 +48,42 @@ const getOnboardingTemplate = (to, name, tempPassword, loginUrl) => `
 `;
 
 /**
+ * Returns the HTML template for a workspace invitation email.
+ */
+const getInvitationTemplate = (workspaceName, inviterName, acceptUrl) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+    .header { font-size: 24px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+    .content { font-size: 16px; color: #475569; }
+    .btn-container { text-align: center; margin: 30px 0; }
+    .btn { background-color: #2563eb; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; }
+    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">You've been invited to Quirk</div>
+    <div class="content">
+      <p><strong>${inviterName}</strong> has invited you to collaborate in the
+      <strong>${workspaceName}</strong> workspace on Quirk Task Management.</p>
+      <div class="btn-container">
+        <a href="${acceptUrl}" class="btn" target="_blank">Accept Invitation</a>
+      </div>
+      <p style="font-size: 14px; color: #94a3b8;">This invitation link expires in 7 days.</p>
+    </div>
+    <div class="footer">
+      This is an automated system email. Please do not reply directly to this address.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+/**
  * Sends email using Ethereal SMTP test account (development fallback).
  */
 const sendEtherealEmail = async ({ to, subject, html }) => {
@@ -131,6 +167,21 @@ const sendOnboardingEmail = async ({ to, name, tempPassword, loginUrl }) => {
   }
 };
 
+/**
+ * Sends a workspace invitation email using Azure ACS if available, otherwise Ethereal.
+ */
+const sendInvitationEmail = async ({ to, workspaceName, inviterName, acceptUrl }) => {
+  const subject = `${inviterName} invited you to the ${workspaceName} workspace on Quirk`;
+  const html = getInvitationTemplate(workspaceName, inviterName, acceptUrl);
+
+  if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
+    return await sendAzureEmail({ to, name: to, subject, html });
+  }
+  console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
+  return await sendEtherealEmail({ to, subject, html });
+};
+
 module.exports = {
-  sendOnboardingEmail
+  sendOnboardingEmail,
+  sendInvitationEmail,
 };

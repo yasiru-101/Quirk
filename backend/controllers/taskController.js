@@ -1,31 +1,41 @@
 /**
  * @file taskController.js
  * @description Controller handling Task CRUD, status updates, user assignments, and resource cleanups.
+ * Emits activity log entries via activityLogger after every meaningful mutation.
  */
 
 const prisma = require('../config/db');
+const { logActivity } = require('../utils/activityLogger');
 
 // @desc    Create a new task
 // @route   POST /api/tasks
 // @access  Private (Project Manager only)
 const createTask = async (req, res) => {
-  const { title, description, dueDate, priority, status } = req.body;
+  const { title, description, dueDate, priority, status, projectId, tags,
+          parentTaskId, epicId, columnId, estimatedHours } = req.body;
 
   try {
     const task = await prisma.task.create({
       data: {
         title,
         description,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        priority,
-        status,
+        dueDate:        dueDate        ? new Date(dueDate) : null,
+        priority:       priority       || 'Medium',
+        status:         status         || 'To Do',
+        projectId:      projectId      || null,
+        tags:           tags           || [],
+        parentTaskId:   parentTaskId   || null,
+        epicId:         epicId         || null,
+        columnId:       columnId       || null,
+        estimatedHours: estimatedHours || null,
         createdBy: req.user.id,
       },
     });
 
-    return res.status(201).json({
-      task,
-    });
+    // Write audit log entry
+    await logActivity(task.id, req.user.id, 'task_created', { title });
+
+    return res.status(201).json({ task });
   } catch (error) {
     console.error(`Create task error: ${error.message}`);
     return res.status(500).json({
@@ -38,13 +48,16 @@ const createTask = async (req, res) => {
 // @route   GET /api/tasks
 // @access  Private (PM & Collaborator)
 const getTasks = async (req, res) => {
-  const { status, priority } = req.query;
+  const { status, priority, parentTaskId } = req.query;
   const where = {};
 
   try {
     // Apply filters if provided
-    if (status) where.status = status;
-    if (priority) where.priority = priority;
+    if (status)       where.status       = status;
+    if (priority)     where.priority     = priority;
+    // parentTaskId filter: 'null' string = top-level tasks only, uuid = subtasks of that parent
+    if (parentTaskId === 'null') where.parentTaskId = null;
+    else if (parentTaskId)      where.parentTaskId = parentTaskId;
 
     const tasks = await prisma.task.findMany({
       where,
@@ -100,7 +113,7 @@ const getTasks = async (req, res) => {
 // @access  Private (PM & Collaborator)
 const getTaskById = async (req, res) => {
   const { id } = req.params;
-  const targetId = ;
+  const targetId = id;
 
   try {
     // Fetch the task document including relationships using Prisma
@@ -177,34 +190,36 @@ const getTaskById = async (req, res) => {
 // @access  Private (Project Manager only)
 const updateTask = async (req, res) => {
   const { id } = req.params;
-  const { title, description, dueDate, priority, status } = req.body;
-  const targetId = ;
+  const { title, description, dueDate, priority, status, projectId, tags,
+          parentTaskId, epicId, columnId, estimatedHours } = req.body;
+  const targetId = id;
 
   try {
-    const task = await prisma.task.findUnique({
-      where: { id: targetId },
-    });
+    const task = await prisma.task.findUnique({ where: { id: targetId } });
     if (!task) {
-      return res.status(404).json({
-        message: 'Task not found',
-      });
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Perform updates using Prisma
     const updatedTask = await prisma.task.update({
       where: { id: targetId },
       data: {
-        title: title || undefined,
-        description: description !== undefined ? description : undefined,
-        dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
-        priority: priority || undefined,
-        status: status || undefined,
+        title:          title          !== undefined ? title                          : undefined,
+        description:    description    !== undefined ? description                    : undefined,
+        dueDate:        dueDate        !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
+        priority:       priority       !== undefined ? priority                       : undefined,
+        status:         status         !== undefined ? status                         : undefined,
+        projectId:      projectId      !== undefined ? projectId                      : undefined,
+        tags:           tags           !== undefined ? tags                           : undefined,
+        parentTaskId:   parentTaskId   !== undefined ? parentTaskId                   : undefined,
+        epicId:         epicId         !== undefined ? epicId                         : undefined,
+        columnId:       columnId       !== undefined ? columnId                       : undefined,
+        estimatedHours: estimatedHours !== undefined ? estimatedHours                 : undefined,
       },
     });
 
-    return res.status(200).json({
-      task: updatedTask,
-    });
+    await logActivity(targetId, req.user.id, 'task_updated', { updatedFields: Object.keys(req.body) });
+
+    return res.status(200).json({ task: updatedTask });
   } catch (error) {
     console.error(`Update task error: ${error.message}`);
     return res.status(500).json({
@@ -219,7 +234,7 @@ const updateTask = async (req, res) => {
 const updateTaskStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const targetId = ;
+  const targetId = id;
 
   try {
     const task = await prisma.task.findUnique({
@@ -258,9 +273,10 @@ const updateTaskStatus = async (req, res) => {
     const notificationService = require('../services/notificationService');
     await notificationService.notifyStatusChange(targetId, status, req.user.name, req.user.id);
 
-    return res.status(200).json({
-      task: updatedTask,
-    });
+    // Write audit log entry for status change
+    await logActivity(targetId, req.user.id, 'status_changed', { from: task.status, to: status });
+
+    return res.status(200).json({ task: updatedTask });
   } catch (error) {
     console.error(`Patch task status error: ${error.message}`);
     return res.status(500).json({
@@ -274,7 +290,7 @@ const updateTaskStatus = async (req, res) => {
 // @access  Private (Project Manager only)
 const deleteTask = async (req, res) => {
   const { id } = req.params;
-  const targetId = ;
+  const targetId = id;
 
   try {
     const task = await prisma.task.findUnique({
@@ -323,8 +339,8 @@ const deleteTask = async (req, res) => {
 const assignUsers = async (req, res) => {
   const { id } = req.params;
   const { userIds } = req.body;
-  const targetId = ;
-  const parsedUserIds = userIds.map((uid) => );
+  const targetId = id;
+  const parsedUserIds = userIds.map((uid) => uid);
 
   try {
     // 1. Verify task exists

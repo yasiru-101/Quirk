@@ -9,65 +9,223 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Workspace Model ──────────────────────────────────────────────────────────
+// Top-level organisation container. Created during PM/Admin onboarding.
+model Workspace {
+  id          String             @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  // Relations
+  owner       User               @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members     WorkspaceMember[]
+  projects    Project[]
+  invitations Invitation[]
+}
+
+// ─── WorkspaceMember Model (Many-to-Many Join Table) ─────────────────────────
+// A user's role is scoped to the workspace, not global:
+//   Owner  — the creator; full control, cannot be removed while sole owner.
+//   Admin  — can manage members, invitations and projects.
+//   Member — can participate in projects they belong to.
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        String    @default("Member") // Owner, Admin, Member
+  joinedAt    DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+}
+
+// ─── Invitation Model ─────────────────────────────────────────────────────────
+// A tokenised invitation to join a workspace. The raw token is emailed to the
+// recipient and only its hash is stored, so a database leak cannot be replayed.
+model Invitation {
+  id          String    @id @default(uuid())
+  workspaceId String
+  email       String
+  role        String    @default("Member") // workspace role granted on acceptance
+  tokenHash   String    @unique
+  invitedBy   String
+  status      String    @default("pending") // pending, accepted, revoked
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter     User      @relation("InvitationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([email])
+}
+
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
-  id                String           @id @default(uuid())
-  name              String
-  email             String           @unique
-  passwordHash      String
-  role              String           @default("Collaborator") // Admin, Project Manager, Collaborator
-  mustResetPassword Boolean          @default(true)
-  isActive          Boolean          @default(true)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  deletedAt         DateTime?
-  
+  id                  String              @id @default(uuid())
+  name                String
+  email               String              @unique
+  passwordHash        String
+  role                String              @default("Collaborator") // Admin, Project Manager, Collaborator
+  mustResetPassword   Boolean             @default(true)
+  isActive            Boolean             @default(true)
+
+  // Extended profile fields (SRS §Onboarding)
+  avatarUrl           String?
+  jobTitle            String?
+  timezone            String?
+  onboardingComplete  Boolean             @default(false)
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+
   // Relations
-  projectsCreated   Project[]        @relation("ProjectCreator")
-  tasksCreated      Task[]           @relation("TaskCreator")
-  assignments       TaskAssignment[]
-  comments          Comment[]
-  attachments       Attachment[]
-  notifications     Notification[]
+  ownedWorkspaces     Workspace[]         @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+  invitationsSent     Invitation[]        @relation("InvitationInviter")
+  projectsCreated     Project[]           @relation("ProjectCreator")
+  projectMemberships  ProjectMember[]
+  tasksCreated        Task[]              @relation("TaskCreator")
+  assignments         TaskAssignment[]
+  comments            Comment[]
+  attachments         Attachment[]
+  notifications       Notification[]
+  timeLogs            TimeLog[]
+  activityLogs        ActivityLog[]
 }
 
 // ─── Project Model ───────────────────────────────────────────────────────────
 model Project {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id           String          @id @default(uuid())
+  name         String
+  description  String?
+  workspaceId  String?
+  createdBy    String
+  status       String          @default("active") // active, archived
+  templateType String?         // "Software Development", "Marketing Campaign", "Basic Kanban"
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime?
 
   // Relations
-  creator     User      @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  tasks       Task[]
+  workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  creator      User            @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  members      ProjectMember[]
+  tasks        Task[]
+  columns      KanbanColumn[]
+  epics        Epic[]
+}
+
+// ─── ProjectMember Model (Many-to-Many Join Table) ───────────────────────────
+model ProjectMember {
+  projectId String
+  userId    String
+  role      String   @default("Collaborator") // Project Manager, Collaborator
+  addedAt   DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+}
+
+// ─── KanbanColumn Model ───────────────────────────────────────────────────────
+// Custom workflow columns per project (SRS §Custom Workflows).
+model KanbanColumn {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([projectId, order])
+}
+
+// ─── Epic Model ───────────────────────────────────────────────────────────────
+// Broad categories grouping related tasks (SRS §Tags & Epics).
+model Epic {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  color     String?  // Accent hex color for UI display
+  createdAt DateTime @default(now())
+
+  // Relations
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
 }
 
 // ─── Task Model ──────────────────────────────────────────────────────────────
 model Task {
-  id           String           @id @default(uuid())
-  title        String
-  description  String?
-  projectId    String?
-  createdBy    String
-  dueDate      DateTime?
-  priority     String           @default("Medium") // Low, Medium, High
-  status       String           @default("To Do") // To Do, In Progress, Completed
-  tags         String[]         @default([])
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  deletedAt    DateTime?
-  
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  projectId       String?
+  createdBy       String
+
+  // Workflow positioning
+  columnId        String?           // FK to KanbanColumn; null = ungrouped
+  status          String            @default("To Do") // Kept for backward compat; mirrors column name
+
+  // Task attributes (SRS)
+  dueDate         DateTime?
+  priority        String            @default("Medium") // Low, Medium, High, Urgent
+  tags            String[]          @default([])
+  epicId          String?           // FK to Epic
+  estimatedHours  Float?            // SRS §Time Tracking
+
+  // Subtask support (self-relation)
+  parentTaskId    String?           // null = top-level task; set = subtask
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
   // Relations
-  project      Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  creator      User             @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  assignments  TaskAssignment[]
-  comments     Comment[]
-  attachments  Attachment[]
-  notifications Notification[]
+  project         Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  column          KanbanColumn?     @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  epic            Epic?             @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  creator         User              @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  parent          Task?             @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks        Task[]            @relation("Subtasks")
+  assignments     TaskAssignment[]
+  comments        Comment[]
+  attachments     Attachment[]
+  notifications   Notification[]
+  timeLogs        TimeLog[]
+  activityLogs    ActivityLog[]
+
+  // Dependency relations
+  blocking        TaskDependency[]  @relation("BlockingTask")
+  blockedBy       TaskDependency[]  @relation("BlockedTask")
+
+  @@index([projectId])
+  @@index([parentTaskId])
+}
+
+// ─── TaskDependency Model ────────────────────────────────────────────────────
+// Stores "Task A blocks Task B" relationships (SRS §Task Dependencies).
+model TaskDependency {
+  id             String   @id @default(uuid())
+  blockingTaskId String   // The task that is blocking
+  blockedTaskId  String   // The task that is blocked
+  createdAt      DateTime @default(now())
+
+  blockingTask   Task     @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockedTask    Task     @relation("BlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([blockingTaskId, blockedTaskId])
 }
 
 // ─── TaskAssignment Model (Many-to-Many Join Table) ──────────────────────────
@@ -75,12 +233,44 @@ model TaskAssignment {
   taskId     String
   userId     String
   assignedAt DateTime @default(now())
-  
-  // Relations
+
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([taskId, userId])
+}
+
+// ─── TimeLog Model ────────────────────────────────────────────────────────────
+// Records actual time spent on a task (SRS §Time Tracking).
+model TimeLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  hours     Float
+  date      DateTime @default(now())
+  note      String?
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ─── ActivityLog Model ────────────────────────────────────────────────────────
+// Automated audit trail per task (SRS §Activity Log).
+model ActivityLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  action    String   // e.g. "status_changed", "assigned", "commented", "subtask_added"
+  metadata  Json?    // { from, to, comment, assigneeName, etc. }
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
 }
 
 // ─── Comment Model ───────────────────────────────────────────────────────────
@@ -92,8 +282,7 @@ model Comment {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
-  
-  // Relations
+
   task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   attachments Attachment[]
@@ -110,8 +299,7 @@ model Attachment {
   mimeType     String?
   sizeBytes    Int
   createdAt    DateTime @default(now())
-  
-  // Relations
+
   task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   comment      Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
   uploader     User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
@@ -126,8 +314,7 @@ model Notification {
   relatedTaskId String?
   isRead        Boolean  @default(false)
   createdAt     DateTime @default(now())
-  
-  // Relations
+
   recipient     User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   relatedTask   Task?    @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
 

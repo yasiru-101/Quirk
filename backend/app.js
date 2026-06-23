@@ -4,22 +4,36 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 const path = require('path');
 
 // Configs and routes
-const serveSwagger = require('./config/swagger');
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const commentRoutes = require('./routes/commentRoutes');
-const attachmentRoutes = require('./routes/attachmentRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const errorHandler = require('./middleware/errorHandler');
+const serveSwagger        = require('./config/swagger');
+const authRoutes          = require('./routes/authRoutes');
+const userRoutes          = require('./routes/userRoutes');
+const taskRoutes          = require('./routes/taskRoutes');
+const commentRoutes       = require('./routes/commentRoutes');
+const attachmentRoutes    = require('./routes/attachmentRoutes');
+const notificationRoutes  = require('./routes/notificationRoutes');
+const projectRoutes       = require('./routes/projectRoutes');
+const workspaceRoutes     = require('./routes/workspaceRoutes');
+const activityRoutes      = require('./routes/activityRoutes');
+const timeLogRoutes       = require('./routes/timeLogRoutes');
+const errorHandler        = require('./middleware/errorHandler');
 
 const app = express();
 
 // Trust the Nginx reverse proxy so that secure cookies and rate limiting work correctly
 app.set('trust proxy', 1);
+
+// ─── HTTP Request Logging ─────────────────────────────────────────────────────
+// Use 'combined' format in production for structured access logs; 'dev' for readability locally.
+// Skip health-check probes to avoid log noise in Kubernetes.
+app.use(
+  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+    skip: (req) => req.url === '/api/health',
+  })
+);
 
 // ─── Security Middlewares ───────────────────────────────────────────────────
 // Helmet sets various HTTP security headers (X-Content-Type-Options, X-Frame-Options, etc.)
@@ -48,11 +62,20 @@ app.use(cookieParser());
 
 // Sanitize against NoSQL injection (Custom wrapper for Express 5 compatibility)
 app.use((req, res, next) => {
-  if (req.body) mongoSanitize.sanitize(req.body);
-  if (req.params) mongoSanitize.sanitize(req.params);
+  if (req.body)    mongoSanitize.sanitize(req.body);
+  if (req.params)  mongoSanitize.sanitize(req.params);
   if (req.headers) mongoSanitize.sanitize(req.headers);
-  if (req.query) mongoSanitize.sanitize(req.query);
+  if (req.query)   mongoSanitize.sanitize(req.query);
   next();
+});
+
+// ─── Health Check (Kubernetes readiness/liveness probe) ─────────────────────
+// Declared before the rate limiters: the kube-probe polls this endpoint every
+// few seconds from a single source IP, which would otherwise exhaust the limiter
+// and return 429. A failed liveness probe restarts the pod, so throttling the
+// health check causes a crash loop.
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // General Rate Limiter (Prevent general API brute-force)
@@ -82,18 +105,17 @@ serveSwagger(app);
 // ─── Static File Serving (Local uploads fallback for development) ───────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─── Health Check (Kubernetes readiness/liveness probe) ─────────────────────
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // ─── API Routes ─────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/tasks', commentRoutes);
-app.use('/api/attachments', attachmentRoutes);
+app.use('/api/auth',          authRoutes);
+app.use('/api/users',         userRoutes);
+app.use('/api/tasks',         taskRoutes);
+app.use('/api/tasks',         commentRoutes);
+app.use('/api/tasks/:id/activity', activityRoutes);  // Audit trail per task
+app.use('/api/tasks/:id/timelogs', timeLogRoutes);   // Time tracking per task
+app.use('/api/attachments',   attachmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/projects',      projectRoutes);         // Projects, columns, epics, members
+app.use('/api/workspaces',    workspaceRoutes);       // Workspaces, members, invitations
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

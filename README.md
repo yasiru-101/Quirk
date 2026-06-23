@@ -1,94 +1,89 @@
-# Quirk TMS (Task Management System)
+# Quirk — Task Management System
 
-Quirk is a modern, real-time Task Management System designed for collaborative teams. It provides robust features for task tracking, real-time notifications, file attachments, and role-based access control.
+Quirk is a Jira-inspired SaaS application built for modern software teams, providing robust project management, issue tracking, and advanced real-time collaboration.
 
-## 🌟 Features
+## 🚀 Architecture overview
 
-- **Role-Based Access Control (RBAC):** Distinct roles for Admin, Project Manager, and Collaborator.
-- **Real-time Collaboration:** Live updates for task changes, assignments, and comments using Socket.io.
-- **Task Management:** Create, assign, track, and comment on tasks.
-- **Secure Authentication:** JWT-based authentication stored in HTTP-only cookies.
-- **Cloud Integrations:** 
-  - Azure PostgreSQL for persistent data storage.
-  - Azure Blob Storage for secure file attachments.
-  - Azure Communication Services for email notifications.
-- **Modern UI:** Built with React, Vite, and TailwindCSS for a responsive and beautiful experience.
+- **Frontend**: React 18, React Router, Vite, Tailwind CSS (v4).
+- **Backend**: Node.js, Express 5, Prisma ORM.
+- **Database**: PostgreSQL (via Prisma).
+- **Real-time**: Socket.io for live updates.
+- **CI/CD**: Docker, Kubernetes (AKS), GitHub Actions.
 
-## 🚀 Technology Stack
+## 📁 Repository Structure
 
-### Backend
-- **Node.js & Express:** Robust backend framework.
-- **Prisma ORM:** Type-safe database access.
-- **PostgreSQL:** Reliable relational database (hosted on Azure).
-- **Socket.io:** Real-time bi-directional event-based communication.
-- **Zod:** Schema declaration and validation.
+```
+.
+├── backend/                  # Express server & APIs
+│   ├── config/               # Database and environment configurations
+│   ├── controllers/          # Business logic handlers
+│   ├── middleware/           # Auth, RBAC, Validation logic
+│   ├── prisma/               # Schema definitions and migrations
+│   ├── routes/               # API route definitions
+│   ├── services/             # Background tasks, Socket emission, etc.
+│   └── validations/          # Zod input validation schemas
+│
+├── frontend/                 # React UI
+│   ├── src/
+│   │   ├── components/       # Reusable components (common, tasks, layout)
+│   │   ├── context/          # React Contexts (Auth, Project, Socket, Theme)
+│   │   ├── pages/            # View shells (Dashboard, Projects, Tasks, etc.)
+│   │   ├── services/         # Axios API clients
+│   │   └── utils/            # Shared helpers & constants
+│   ├── index.css             # Main stylesheet & Design Tokens
+│   └── tailwind.config.js    # Tailwind customizations
+│
+├── k8s/                      # Kubernetes Deployment Configs
+└── .github/workflows/        # CI/CD pipelines
+```
 
-### Frontend
-- **React 18:** Modern UI library.
-- **Vite:** Next-generation frontend tooling.
-- **TailwindCSS:** Utility-first CSS framework for rapid UI development.
-- **React Router:** Declarative routing for React applications.
+## 🎨 Design System
 
-### DevOps
-- **Docker:** Containerized frontend and backend services.
-- **Kubernetes (AKS):** Scalable orchestration for production deployment.
-- **GitHub Actions:** Automated CI/CD pipeline.
+Quirk utilizes a strictly defined UI design system:
+- **Canvas Colors**: Soft off-white base (`#f6f5f4`) with premium dark mode.
+- **Typography**: Inter with specific negative letter-spacing for headers.
+- **Primary Brand Color**: Quirk Green (`#75EE8F`) used exclusively for CTAs and interactive focus.
+- **Core Components**:
+  - `Button.jsx`: Modular buttons (primary, secondary, utility, icon-circular)
+  - `ErrorBoundary.jsx`: Graceful fallback wrappers.
+  - `index.css`: Houses all CSS custom properties and semantic utilities (`.feature-card`, `.btn-primary`).
 
 ## 🛠️ Local Development
 
 ### Prerequisites
-- Node.js (v22+)
-- Docker & Docker Compose
-- A local PostgreSQL database or Docker installed.
+- Node.js 18+
+- PostgreSQL instance running locally (or Dockerized)
 
-### Setup
+### Backend Setup
+1. `cd backend`
+2. `npm install`
+3. Create `.env` from `.env.example` and set `DATABASE_URL` + JWT secrets.
+4. `npx prisma migrate dev` (Apply DB schemas)
+5. `npm run dev` (Runs on port 5000)
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yasiru-101/Quirk.git
-   cd Quirk
-   ```
+### Frontend Setup
+1. `cd frontend`
+2. `npm install`
+3. Create `.env` (optional, for custom API URL)
+4. `npm run dev` (Runs Vite server, usually on 5173)
 
-2. **Environment Variables:**
-   - Copy `backend/.env.example` to `backend/.env` and fill in the required values.
-   - For local development, `docker-compose.yml` provides a local PostgreSQL instance.
+## 🤝 For Contributors / Teammates
 
-3. **Run with Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
-   - The frontend will be available at `http://localhost:3000`
-   - The backend API will be available at `http://localhost:5000`
+### Branching Strategy
+We use **Feature Branching**:
+- Base your work off the main branch (or the current core feature branch, e.g., `feature/ui-overhaul-and-base-arch`).
+- Run `git checkout -b feature/your-feature-name`.
+- Use **Conventional Commits**: `feat(scope): message` or `refactor(scope): message`.
 
-### Manual Setup (Without Docker)
+### Building New Features
+If you are assigned to a specific module (e.g., Projects, Analytics, Onboarding):
+1. **Find your Shell Page**: Placeholder pages exist in `frontend/src/pages/` (e.g., `AnalyticsPage.jsx`).
+2. **Build Components**: Add your feature components under `frontend/src/components/feature-name/`.
+3. **Use the Design System**: DO NOT write custom hex colors inline. Use the CSS variables defined in `index.css` (e.g., `var(--colors-ink-muted)` or utility classes like `feature-card`).
+4. **Follow API Patterns**: Extend API calls via the existing `axios` wrapper in `frontend/src/services/`.
 
-1. **Backend:**
-   ```bash
-   cd backend
-   npm install
-   npx prisma generate
-   npx prisma db push
-   npm start
-   ```
+## 🚢 Deployment
 
-2. **Frontend:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+Committing to `main` triggers the GitHub Actions CI/CD pipeline which builds Docker images, runs Prisma migrations via init containers, and deploys to Azure Kubernetes Service (AKS).
 
-## 🏗️ Production Deployment
-
-Quirk is configured for deployment on Azure Kubernetes Service (AKS). The `.github/workflows/ci-cd.yml` file contains a complete CI/CD pipeline that builds Docker images, pushes them to Azure Container Registry (ACR), and deploys the Kubernetes manifests found in the `k8s/` directory.
-
-### Initializing the Database
-
-To seed the database with initial mock data:
-```bash
-cd backend
-node scripts/seed.js
-```
-
-## 📄 License
-This project is for educational purposes (University of Kelaniya - Semester 03 Web Application Development).
+Ensure your branch passes local validation (`npm test`, if any, and starts successfully) before opening a PR.

@@ -22,17 +22,16 @@ export default function KanbanBoard({ tasks, onStatusChange, onCardClick, onDele
   }, {});
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 animate-in w-full snap-x">
+    <div className="kanban-board">
       {TASK_STATUS_LIST.map((status) => (
-        <div key={status} className="snap-start">
-          <KanbanColumn
-            status={status}
-            tasks={grouped[status]}
-            onStatusChange={onStatusChange}
-            onCardClick={onCardClick}
-            onDelete={onDelete}
-          />
-        </div>
+        <KanbanColumn
+          key={status}
+          status={status}
+          tasks={grouped[status]}
+          onStatusChange={onStatusChange}
+          onCardClick={onCardClick}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );

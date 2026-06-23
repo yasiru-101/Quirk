@@ -49,15 +49,35 @@ server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
 
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
+// Kubernetes sends SIGTERM before SIGKILL. We close the HTTP server to stop accepting
+// new requests, then disconnect Prisma to allow any in-flight DB queries to complete.
+const gracefulShutdown = (signal) => {
+  console.log(`[Shutdown] Received ${signal}. Starting graceful shutdown...`);
+  server.close(async () => {
+    console.log('[Shutdown] HTTP server closed. Disconnecting DB...');
+    await prisma.$disconnect();
+    console.log('[Shutdown] Prisma disconnected. Exiting.');
+    process.exit(0);
+  });
+
+  // Force-exit if graceful shutdown takes more than 10 seconds
+  setTimeout(() => {
+    console.error('[Shutdown] Graceful shutdown timed out. Forcing exit.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+
 // Handle uncaught exceptions and unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.error(`Unhandled Rejection: ${err.message}`);
-  // Close server & exit process
   server.close(() => process.exit(1));
 });
 
 process.on('uncaughtException', (err) => {
   console.error(`Uncaught Exception: ${err.message}`);
-  // Close server & exit process
   server.close(() => process.exit(1));
 });

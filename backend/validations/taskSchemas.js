@@ -5,7 +5,7 @@
 
 const { z } = require('zod');
 
-// Allowed status and priority values matching the Mongoose Task model
+// Allowed status and priority values matching the Prisma Task model
 const VALID_STATUSES = ['To Do', 'In Progress', 'Completed'];
 const VALID_PRIORITIES = ['Low', 'Medium', 'High'];
 
@@ -55,6 +55,12 @@ const createTaskSchema = z.object({
   projectId: z.string().uuid('Invalid project ID format').optional(),
   
   tags: z.array(z.string().trim().min(1)).optional().default([]),
+
+  // ── New SRS fields (Phase 2 expansion) ────────────────────────────────────
+  parentTaskId:   z.string().uuid('Invalid parent task ID format').optional(),
+  epicId:         z.string().uuid('Invalid epic ID format').optional(),
+  columnId:       z.string().uuid('Invalid column ID format').optional(),
+  estimatedHours: z.number().positive('Estimated hours must be positive').optional(),
 });
 
 // ─── Update Task Schema ──────────────────────────────────────────────────────
@@ -98,6 +104,12 @@ const updateTaskSchema = z
     projectId: z.string().uuid('Invalid project ID format').optional(),
     
     tags: z.array(z.string().trim().min(1)).optional(),
+
+    // ── New SRS fields (Phase 2 expansion) ──────────────────────────────────
+    parentTaskId:   z.string().uuid('Invalid parent task ID format').optional(),
+    epicId:         z.string().uuid('Invalid epic ID format').optional(),
+    columnId:       z.string().uuid('Invalid column ID format').optional(),
+    estimatedHours: z.number().positive('Estimated hours must be positive').optional(),
   })
   .refine(
     // Require at least one field to prevent empty updates
@@ -133,6 +145,22 @@ const createCommentSchema = z.object({
     .trim()
     .min(1, 'Comment content cannot be empty')
     .max(1000, 'Comment cannot exceed 1000 characters'),
+});
+
+// ─── Create Time Log Schema ───────────────────────────────────────────────────
+// Used on: POST /api/tasks/:id/timelogs
+const createTimeLogSchema = z.object({
+  hours: z
+    .number({ required_error: 'Hours are required' })
+    .positive('Hours must be positive')
+    .multipleOf(0.5, 'Hours must be in 0.5 increments'),
+
+  note: z.string().trim().max(200, 'Note cannot exceed 200 characters').optional(),
+
+  date: z
+    .string()
+    .datetime({ message: 'Date must be a valid ISO datetime string' })
+    .optional(),
 });
 
 module.exports = {

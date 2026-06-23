@@ -11,6 +11,7 @@ import { AuthProvider }   from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ToastProvider }  from './context/ToastContext';
 import { ThemeProvider }  from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 
 // Guards & Layout
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -23,6 +24,11 @@ import DashboardPage      from './pages/DashboardPage';
 import TaskBoardPage      from './pages/TaskBoardPage';
 import TaskDetailPage     from './pages/TaskDetailPage';
 import UserManagementPage from './pages/UserManagementPage';
+import ProjectsPage       from './pages/ProjectsPage';
+import ProjectDetailPage  from './pages/ProjectDetailPage';
+import AnalyticsPage      from './pages/AnalyticsPage';
+import SettingsPage       from './pages/SettingsPage';
+import OnboardingPage     from './pages/OnboardingPage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 
@@ -39,10 +45,16 @@ export default function App() {
         <AuthProvider>
           <SocketProvider>
             <ToastProvider>
-              <Routes>
-                {/* ── Public ─────────────────────────────────────────────── */}
+              <ProjectProvider>
+                <Routes>
+                  {/* ── Public ─────────────────────────────────────────────── */}
                 <Route path="/login"          element={<LoginPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/onboarding"     element={
+                  <ProtectedRoute>
+                    <OnboardingPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/403"            element={<ForbiddenPage />} />
                 <Route path="/404"            element={<NotFoundPage />} />
 
@@ -76,16 +88,9 @@ export default function App() {
                         <TaskBoardPage />
                       </ProtectedRoute>
                     }
-                  />
-
-                  <Route
-                    path="tasks/:id"
-                    element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
-                        <TaskDetailPage />
-                      </ProtectedRoute>
-                    }
-                  />
+                  >
+                    <Route path=":id" element={<TaskDetailPage />} />
+                  </Route>
 
                   {/* Admin only */}
                   <Route
@@ -96,11 +101,50 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   />
+
+                  {/* Projects */}
+                  <Route
+                    path="projects"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <ProjectsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="projects/:id"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <ProjectDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Analytics */}
+                  <Route
+                    path="analytics"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER]}>
+                        <AnalyticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Settings */}
+                  <Route
+                    path="settings"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <SettingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
                 </Route>
 
                 {/* ── Catch-all ──────────────────────────────────────────── */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              </ProjectProvider>
             </ToastProvider>
           </SocketProvider>
         </AuthProvider>

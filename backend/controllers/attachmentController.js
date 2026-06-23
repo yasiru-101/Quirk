@@ -44,8 +44,8 @@ const uploadFile = async (req, res) => {
     // 5. Create the attachment record using Prisma
     const attachment = await prisma.attachment.create({
       data: {
-        taskId: ,
-        commentId: commentId ?  : null,
+        taskId: taskId,
+        commentId: commentId ? commentId : null,
         uploadedBy: req.user.id,
         originalName: originalname,
         blobUrl,
@@ -76,7 +76,7 @@ const uploadFile = async (req, res) => {
 // @access  Private (PM or Collaborator)
 const getDownloadUrl = async (req, res) => {
   const { id } = req.params;
-  const targetId = ;
+  const targetId = id;
 
   try {
     // 1. Find the attachment record

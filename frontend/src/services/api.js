@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-import { handleMockRequest } from '../utils/mockData';
+
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 const api = axios.create({
@@ -16,33 +16,16 @@ const api = axios.create({
 // ─── Request Interceptor ──────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
-    if (localStorage.getItem('quirk_is_mock') === 'true') {
-      const mockRes = handleMockRequest(config);
-      if (mockRes !== null) {
-        config.adapter = () => {
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              resolve({
-                data: mockRes,
-                status: 200,
-                statusText: 'OK',
-                headers: {},
-                config,
-              });
-            }, 180); // Micro-delay to simulate network activity nicely
-          });
-        };
-      }
-    }
+    // You can attach auth tokens here if not using HTTP-only cookies
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 // ─── id → _id Normalizer ──────────────────────────────────────────────────────
-// The backend (Prisma/PostgreSQL) returns integer `id` fields, while the frontend
-// and the realtime socket payloads use `_id`. Recursively alias `id` to `_id` on
-// every REST response so both shapes are always available to components.
+// The backend (Prisma/PostgreSQL) returns UUID string `id` fields, while some
+// components and the realtime socket payloads reference `_id`. Recursively alias
+// `id` to `_id` on every REST response so both shapes are available to components.
 const aliasIds = (value) => {
   if (Array.isArray(value)) {
     value.forEach(aliasIds);

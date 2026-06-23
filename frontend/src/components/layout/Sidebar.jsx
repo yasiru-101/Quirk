@@ -41,6 +41,36 @@ const NAV_ITEMS = [
     to: '/users',
     roles: [ROLES.ADMIN],
   },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
+      </svg>
+    ),
+    label: 'Projects',
+    to: '/projects',
+    roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    ),
+    label: 'Analytics',
+    to: '/analytics',
+    roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER],
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+    label: 'Settings',
+    to: '/settings',
+    roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
+  },
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
@@ -58,8 +88,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <aside
       className={cn(
-        'fixed left-4 top-4 bottom-4 z-40 flex flex-col transition-all duration-300 rounded-[var(--radius-xl)] shadow-xl border border-[rgba(255,255,255,0.05)]',
-        'bg-[#0C120E] text-white', // Deep green-black for premium feel
+        'relative flex flex-col h-full transition-all duration-300 flex-shrink-0',
+        'bg-[#0C120E] text-white overflow-hidden',
         collapsed ? 'w-[72px]' : 'w-[260px]'
       )}
     >
@@ -82,6 +112,24 @@ export default function Sidebar({ collapsed, onToggle }) {
             }
           </svg>
         </button>
+      </div>
+
+      {/* Workspace Switcher */}
+      <div className="p-3 border-b border-[rgba(255,255,255,0.05)]">
+        <div className={cn("bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-[var(--radius-md)] p-2 flex items-center gap-2.5 cursor-pointer hover:bg-[rgba(255,255,255,0.06)] transition-all", collapsed && "justify-center px-0")}>
+          <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-indigo-500 to-green-500 flex items-center justify-center text-[11px] font-bold shadow-sm flex-shrink-0">
+            H
+          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold truncate leading-none mb-1">hackX 2026</div>
+              <div className="text-[10px] text-[rgba(255,255,255,0.5)] truncate uppercase tracking-wider">Free Plan</div>
+            </div>
+          )}
+          {!collapsed && (
+            <svg className="w-3.5 h-3.5 text-[rgba(255,255,255,0.4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+          )}
+        </div>
       </div>
 
       {/* Nav */}
@@ -113,6 +161,21 @@ export default function Sidebar({ collapsed, onToggle }) {
             )}
           </NavLink>
         ))}
+
+        {/* Spaces Section */}
+        {!collapsed && (
+          <div className="mt-6 mb-2">
+            <div className="px-3.5 text-[10.5px] font-bold tracking-widest text-[rgba(255,255,255,0.4)] uppercase mb-2">Spaces</div>
+            <NavLink to="/projects" className="flex items-center gap-2.5 px-3.5 py-1.5 text-[13px] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-[var(--radius-md)] transition-all group">
+              <div className="w-5 h-5 rounded-[5px] bg-[#1aae39] text-[#0C120E] flex items-center justify-center text-[10px] font-bold flex-shrink-0">M</div>
+              <span className="flex-1 truncate">Main Board</span>
+            </NavLink>
+            <NavLink to="/projects/design" className="flex items-center gap-2.5 px-3.5 py-1.5 text-[13px] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-[var(--radius-md)] transition-all group">
+              <div className="w-5 h-5 rounded-[5px] bg-[#62aef0] text-[#0C120E] flex items-center justify-center text-[10px] font-bold flex-shrink-0">D</div>
+              <span className="flex-1 truncate">Design System</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       {/* User profile */}

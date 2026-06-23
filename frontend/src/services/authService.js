@@ -8,6 +8,27 @@ export const authService = {
   login: (email, password) =>
     api.post('/auth/login', { email, password }),
 
+  register: (name, email, password) =>
+    api.post('/auth/register', { name, email, password }),
+
+  verifyEmail: (email, code) =>
+    api.post('/auth/verify-email', { email, code }),
+
+  resendVerification: (email) =>
+    api.post('/auth/resend-verification', { email }),
+
+  verify2fa: (pendingToken, code) =>
+    api.post('/auth/verify-2fa', { pendingToken, code }),
+
+  enable2fa: () =>
+    api.post('/auth/2fa/enable'),
+
+  confirm2fa: (code) =>
+    api.post('/auth/2fa/confirm', { code }),
+
+  disable2fa: (password) =>
+    api.post('/auth/2fa/disable', { password }),
+
   logout: () =>
     api.post('/auth/logout'),
 

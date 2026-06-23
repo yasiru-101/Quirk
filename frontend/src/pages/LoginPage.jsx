@@ -116,14 +116,16 @@ export default function LoginPage() {
 
       <div className="relative flex flex-1 flex-col justify-center overflow-y-auto p-8 sm:p-12 lg:p-16 xl:p-24">
         <div className="mx-auto w-full max-w-[420px] slide-up">
-          <div className="mb-8">
-            <BrandLogo size="xl" className="-ml-4 -mb-4" />
-            <h1 className="text-[length:var(--typography-display-2)] font-normal text-[var(--colors-ink)]">
-              Sign in
-            </h1>
-            <p className="mt-3 text-[length:var(--typography-body-lg)] text-[var(--colors-body)]">
-              Welcome back. Enter your details to continue.
-            </p>
+          <div className="mb-10 flex flex-col items-start gap-2">
+            <BrandLogo size="xl" className="-ml-4" />
+            <div>
+              <h1 className="text-[length:var(--typography-display-2)] font-normal text-[var(--colors-ink)]">
+                Sign in
+              </h1>
+              <p className="mt-3 text-[length:var(--typography-body-lg)] text-[var(--colors-body)]">
+                Welcome back. Enter your details to continue.
+              </p>
+            </div>
           </div>
 
           {twoFactorData ? (

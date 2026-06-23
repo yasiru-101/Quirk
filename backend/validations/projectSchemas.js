@@ -25,8 +25,9 @@ const createProjectSchema = z.object({
     .enum(TEMPLATE_TYPES, {
       invalid_type_error: `Template must be one of: ${TEMPLATE_TYPES.join(', ')}`,
     })
-    .optional()
-    .default('Basic Kanban'),
+    .optional(),
+
+  templateId: z.string().uuid('Invalid template ID format').optional(),
 
   workspaceId: z
     .string({ required_error: 'Workspace is required' })

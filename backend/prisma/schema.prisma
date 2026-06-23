@@ -137,7 +137,8 @@ model Project {
   workspaceId  String?
   createdBy    String
   status       String    @default("active") // active, archived
-  templateType String? // "Software Development", "Marketing Campaign", "Basic Kanban"
+  templateType String? // Legacy: "Software Development", "Marketing Campaign", "Basic Kanban"
+  templateId   String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -145,11 +146,36 @@ model Project {
   // Relations
   workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   creator      User            @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  template     ProjectTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   members      ProjectMember[]
   tasks        Task[]
   columns      KanbanColumn[]
   epics        Epic[]
   conversation Conversation?
+}
+
+// ─── ProjectTemplate Model ───────────────────────────────────────────────────
+model ProjectTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  columns     ProjectTemplateColumn[]
+  projects    Project[]
+}
+
+// ─── ProjectTemplateColumn Model ─────────────────────────────────────────────
+model ProjectTemplateColumn {
+  id         String   @id @default(uuid())
+  templateId String
+  name       String
+  order      Int      @default(0)
+
+  template   ProjectTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, order])
 }
 
 // ─── ProjectMember Model (Many-to-Many Join Table) ───────────────────────────

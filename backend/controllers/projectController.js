@@ -30,7 +30,7 @@ const findProject = async (id, res) => {
 // @route  POST /api/projects
 // @access PM | Admin
 const createProject = async (req, res) => {
-  const { name, description, templateType, workspaceId } = req.body;
+  const { name, description, templateType, templateId, workspaceId } = req.body;
   try {
     // Projects belong to a workspace. Workspace Owners/Admins can create projects;
     // platform Admins bypass this for support and migration work.
@@ -51,6 +51,7 @@ const createProject = async (req, res) => {
           name,
           description,
           templateType,
+          templateId,
           workspaceId,
           createdBy: req.user.id,
         },
@@ -61,20 +62,40 @@ const createProject = async (req, res) => {
         data: { projectId: created.id, userId: req.user.id, role: 'Project Manager' },
       });
 
-      // Seed default columns based on template
-      const defaultColumns =
-        templateType === 'Software Development'
-          ? ['Backlog', 'To Do', 'In Progress', 'In Review', 'QA Testing', 'Done']
-          : templateType === 'Marketing Campaign'
-          ? ['Ideas', 'Planning', 'In Progress', 'Review', 'Published']
-          : ['To Do', 'In Progress', 'Done']; // Basic Kanban (default)
+      let columnsData = [];
 
-      await tx.kanbanColumn.createMany({
-        data: defaultColumns.map((colName, idx) => ({
+      if (templateId) {
+        const template = await tx.projectTemplate.findUnique({
+          where: { id: templateId },
+          include: { columns: { orderBy: { order: 'asc' } } },
+        });
+        if (template && template.columns.length > 0) {
+          columnsData = template.columns.map(col => ({
+            projectId: created.id,
+            name: col.name,
+            order: col.order,
+          }));
+        }
+      }
+      
+      if (columnsData.length === 0) {
+        // Fallback to legacy templateType
+        const defaultColumns =
+          templateType === 'Software Development'
+            ? ['Backlog', 'To Do', 'In Progress', 'In Review', 'QA Testing', 'Done']
+            : templateType === 'Marketing Campaign'
+            ? ['Ideas', 'Planning', 'In Progress', 'Review', 'Published']
+            : ['To Do', 'In Progress', 'Done']; // Basic Kanban (default)
+        
+        columnsData = defaultColumns.map((colName, idx) => ({
           projectId: created.id,
           name: colName,
           order: idx,
-        })),
+        }));
+      }
+
+      await tx.kanbanColumn.createMany({
+        data: columnsData,
       });
 
       return created;

@@ -105,7 +105,10 @@ const seedDatabase = async () => {
         name: 'Quirk Default Workspace',
         ownerId: adminUser.id,
         members: {
-          create: createdUsers.map(u => ({ userId: u.id }))
+          create: createdUsers.map(u => ({
+            userId: u.id,
+            role: u.role === 'Admin' ? 'Owner' : u.role === 'Project Manager' ? 'Admin' : 'Member',
+          }))
         }
       }
     });
@@ -118,7 +121,10 @@ const seedDatabase = async () => {
         createdBy: pmUser.id,
         templateType: 'Software Development',
         members: {
-          create: createdUsers.map(u => ({ userId: u.id }))
+          create: createdUsers.map(u => ({
+            userId: u.id,
+            role: u.role === 'Collaborator' ? 'Collaborator' : 'Project Manager',
+          }))
         }
       }
     });
@@ -227,7 +233,7 @@ const seedDatabase = async () => {
 
     console.log('\n=========================================');
     console.log('PostgreSQL Database successfully seeded!');
-    console.log('Mock Accounts Available for Testing:');
+    console.log('Seeded accounts for testing:');
     console.log(`  Admin:         email: admin@quirk.app  password: AdminPass123!`);
     console.log(`  Proj. Manager: email: pm@quirk.app     password: ManagerPass123!`);
     console.log(`  Collaborator:  email: dev@quirk.app    password: CollabPass123!`);

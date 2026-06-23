@@ -29,6 +29,18 @@ const findProject = async (id, res) => {
 const createProject = async (req, res) => {
   const { name, description, templateType, workspaceId } = req.body;
   try {
+    // A project may only be created inside a workspace the caller belongs to.
+    if (workspaceId && req.user.role !== 'Admin') {
+      const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: req.user.id } },
+      });
+      if (!membership) {
+        return res.status(403).json({
+          message: 'Access denied. You are not a member of this workspace.',
+        });
+      }
+    }
+
     const project = await prisma.$transaction(async (tx) => {
       const created = await tx.project.create({
         data: {
@@ -40,9 +52,9 @@ const createProject = async (req, res) => {
         },
       });
 
-      // Auto-add creator as a member
+      // The creator manages the project they created.
       await tx.projectMember.create({
-        data: { projectId: created.id, userId: req.user.id },
+        data: { projectId: created.id, userId: req.user.id, role: 'Project Manager' },
       });
 
       // Seed default columns based on template
@@ -76,8 +88,22 @@ const createProject = async (req, res) => {
 // @access All authenticated roles
 const getProjects = async (req, res) => {
   try {
+    // Platform Admins see everything; everyone else sees only projects they belong
+    // to, or projects in workspaces they own or administer.
+    const where = { deletedAt: null };
+    if (req.user.role !== 'Admin') {
+      where.OR = [
+        { members: { some: { userId: req.user.id } } },
+        {
+          workspace: {
+            members: { some: { userId: req.user.id, role: { in: ['Owner', 'Admin'] } } },
+          },
+        },
+      ];
+    }
+
     const projects = await prisma.project.findMany({
-      where: { deletedAt: null },
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         creator:  { select: { id: true, name: true, email: true } },
@@ -252,7 +278,7 @@ const deleteColumn = async (req, res) => {
 // @route  POST /api/projects/:id/members
 // @access PM | Admin
 const addMember = async (req, res) => {
-  const { userId } = req.body;
+  const { userId, role } = req.body;
   try {
     const project = await findProject(req.params.id, res);
     if (!project) return;
@@ -260,11 +286,13 @@ const addMember = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: userId, isActive: true } });
     if (!user) return res.status(404).json({ message: 'User not found or inactive' });
 
+    const memberRole = role === 'Project Manager' ? 'Project Manager' : 'Collaborator';
+
     // Upsert to avoid duplicate member error
     await prisma.projectMember.upsert({
       where: { projectId_userId: { projectId: req.params.id, userId } },
-      create: { projectId: req.params.id, userId },
-      update: {},
+      create: { projectId: req.params.id, userId, role: memberRole },
+      update: { role: memberRole },
     });
     return res.status(200).json({ message: 'Member added successfully' });
   } catch (error) {

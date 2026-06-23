@@ -23,18 +23,46 @@ model Workspace {
   owner       User               @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   members     WorkspaceMember[]
   projects    Project[]
+  invitations Invitation[]
 }
 
 // ─── WorkspaceMember Model (Many-to-Many Join Table) ─────────────────────────
+// A user's role is scoped to the workspace, not global:
+//   Owner  — the creator; full control, cannot be removed while sole owner.
+//   Admin  — can manage members, invitations and projects.
+//   Member — can participate in projects they belong to.
 model WorkspaceMember {
   workspaceId String
   userId      String
+  role        String    @default("Member") // Owner, Admin, Member
   joinedAt    DateTime  @default(now())
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([workspaceId, userId])
+}
+
+// ─── Invitation Model ─────────────────────────────────────────────────────────
+// A tokenised invitation to join a workspace. The raw token is emailed to the
+// recipient and only its hash is stored, so a database leak cannot be replayed.
+model Invitation {
+  id          String    @id @default(uuid())
+  workspaceId String
+  email       String
+  role        String    @default("Member") // workspace role granted on acceptance
+  tokenHash   String    @unique
+  invitedBy   String
+  status      String    @default("pending") // pending, accepted, revoked
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter     User      @relation("InvitationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([email])
 }
 
 // ─── User Model ──────────────────────────────────────────────────────────────
@@ -60,6 +88,7 @@ model User {
   // Relations
   ownedWorkspaces     Workspace[]         @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
+  invitationsSent     Invitation[]        @relation("InvitationInviter")
   projectsCreated     Project[]           @relation("ProjectCreator")
   projectMemberships  ProjectMember[]
   tasksCreated        Task[]              @relation("TaskCreator")
@@ -97,6 +126,7 @@ model Project {
 model ProjectMember {
   projectId String
   userId    String
+  role      String   @default("Collaborator") // Project Manager, Collaborator
   addedAt   DateTime @default(now())
 
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

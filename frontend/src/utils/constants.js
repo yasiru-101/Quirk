@@ -40,8 +40,8 @@ export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '/';
 // ─── Password Policy ──────────────────────────────────────────────────────────
 export const PASSWORD_POLICY = {
   MIN_LENGTH: 8,
-  REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/,
-  HINT: 'Min 8 chars, uppercase, lowercase, number, and special character (!@#$%^&*)',
+  REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
+  HINT: 'Min 8 chars, uppercase, lowercase, number, and special character (@$!%*?&#)',
 };
 
 // ─── Toast Durations (ms) ─────────────────────────────────────────────────────

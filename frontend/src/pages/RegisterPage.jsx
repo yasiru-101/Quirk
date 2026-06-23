@@ -10,6 +10,8 @@ import { normalizeError } from '../services/api';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import BrandLogo from '../components/common/BrandLogo';
+import { validatePassword } from '../utils/helpers';
+import { PASSWORD_POLICY } from '../utils/constants';
 
 export default function RegisterPage() {
   const { error: toastError } = useToast();
@@ -31,7 +33,10 @@ export default function RegisterPage() {
     if (!form.email) nextErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(form.email)) nextErrors.email = 'Enter a valid email address';
     if (!form.password) nextErrors.password = 'Password is required';
-    else if (form.password.length < 8) nextErrors.password = 'Password must be at least 8 characters';
+    else {
+      const passwordErrors = validatePassword(form.password);
+      if (passwordErrors.length) nextErrors.password = passwordErrors.join(', ');
+    }
     return nextErrors;
   };
 
@@ -129,6 +134,7 @@ export default function RegisterPage() {
               autoComplete="new-password"
               placeholder="Choose a password"
             />
+            <p className="text-xs text-[var(--colors-body)]">{PASSWORD_POLICY.HINT}</p>
 
             <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
               Sign up

@@ -12,6 +12,13 @@ import Button from '../components/common/Button';
 import BrandLogo from '../components/common/BrandLogo';
 import { authService } from '../services/authService';
 
+const TEST_ACCOUNTS = [
+  { label: 'Admin', name: 'System Admin', email: 'admin@quirk.app', password: 'AdminPass123!' },
+  { label: 'PM', name: 'Sarah Manager', email: 'pm@quirk.app', password: 'ManagerPass123!' },
+  { label: 'Collab', name: 'Alex Developer', email: 'dev@quirk.app', password: 'CollabPass123!' },
+  { label: 'Design', name: 'Emma Designer', email: 'emma@quirk.app', password: 'CollabPass123!' },
+];
+
 export default function LoginPage() {
   const { login, setSession } = useAuth();
   const { error: toastError } = useToast();
@@ -197,14 +204,28 @@ export default function LoginPage() {
           )}
 
           {import.meta.env.DEV && (
-            <div className="mt-12 border-t border-[var(--colors-hairline)] pt-8">
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-[var(--colors-mute)]">
-                Quick test accounts
+            <div className="mt-12 rounded-[var(--radius-xl)] border border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[var(--colors-mute)]">
+                Testing only accounts
               </p>
-              <div className="grid grid-cols-3 gap-3">
-                <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>Admin</Button>
-                <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>PM</Button>
-                <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>Collab</Button>
+              <p className="mb-4 text-xs text-[var(--colors-body)]">
+                For local/demo testing only. Press a button to apply that user's credentials.
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {TEST_ACCOUNTS.map((account) => (
+                  <Button
+                    key={account.email}
+                    variant="secondary"
+                    size="sm"
+                    className="justify-start text-left"
+                    onClick={() => autofill(account.email, account.password)}
+                  >
+                    <span className="flex w-full flex-col items-start">
+                      <span>{account.label} - {account.name}</span>
+                      <span className="text-[10px] font-medium text-[var(--colors-mute)]">{account.email}</span>
+                    </span>
+                  </Button>
+                ))}
               </div>
             </div>
           )}

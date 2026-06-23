@@ -84,7 +84,7 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
         </div>
 
         {/* Days Grid */}
-        <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-[1px] bg-[var(--colors-hairline)] overflow-hidden">
+        <div className="flex-1 grid grid-cols-7 auto-rows-[minmax(132px,auto)] gap-[1px] bg-[var(--colors-hairline)] overflow-auto">
           {days.map((day, idx) => {
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isDayToday = isToday(day);
@@ -94,7 +94,7 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
               <div
                 key={idx}
                 className={cn(
-                  "flex flex-col min-h-0 p-2 transition-colors relative group",
+                  "flex min-h-[132px] flex-col p-2 transition-colors relative group",
                   isCurrentMonth ? "bg-[var(--colors-canvas)]" : "bg-[var(--colors-canvas-soft)] opacity-70"
                 )}
               >
@@ -118,7 +118,7 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
                 </div>
 
                 {/* Tasks container in the Day cell */}
-                <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 custom-scrollbar">
+                <div className="flex-1 space-y-1 pr-0.5">
                   {dayTasks.map((task) => {
                     const columnName = getTaskColumnName(task);
                     return (
@@ -126,7 +126,7 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
                         key={task._id}
                         onClick={() => onTaskClick?.(task)}
                         className={cn(
-                          "w-full text-left text-[11px] px-2 py-1 rounded-[var(--radius-sm)] border border-[var(--colors-hairline)] truncate transition-all cursor-pointer block hover:scale-[0.98] active:scale-[0.96]",
+                          "block w-full cursor-pointer rounded-[var(--radius-sm)] border border-[var(--colors-hairline)] px-2 py-1.5 text-left text-[11px] leading-snug transition-all hover:scale-[0.98] active:scale-[0.96]",
                           getStatusColor(columnName)
                         )}
                         title={`${task.title} (${columnName})`}
@@ -138,7 +138,7 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
                             task.priority === 'Medium' ? 'bg-[var(--colors-priority-medium)]' :
                             'bg-[var(--colors-priority-low)]'
                           )} />
-                          <span className="truncate font-medium text-[var(--colors-ink)]">{task.title}</span>
+                          <span className="min-w-0 whitespace-normal break-words font-medium text-[var(--colors-ink)]">{task.title}</span>
                         </div>
                       </button>
                     );

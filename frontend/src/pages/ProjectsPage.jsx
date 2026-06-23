@@ -17,12 +17,15 @@ import { ROLES } from '../utils/constants';
 const EMPTY_PROJECT = {
   name: '',
   description: '',
-  templateType: 'Basic Kanban',
+  templateId: '',
+  workspaceId: '',
 };
 
 export default function ProjectsPage() {
   const { role } = useAuth();
   const {
+    workspaces,
+    activeWorkspaceId,
     projects,
     loading,
     activeWorkspace,
@@ -39,6 +42,19 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState([]);
+
+  React.useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const { data } = await api.get('/templates');
+        setTemplates(data.templates || []);
+      } catch (err) {
+        console.error('Failed to load templates:', err);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const openCreate = () => {
     setForm(EMPTY_PROJECT);
@@ -50,7 +66,8 @@ export default function ProjectsPage() {
     setForm({
       name: project.name || '',
       description: project.description || '',
-      templateType: project.templateType || 'Basic Kanban',
+      templateId: project.templateId || '',
+      workspaceId: project.workspaceId || '',
     });
     setErrors({});
     setModal({ open: true, project });
@@ -73,6 +90,11 @@ export default function ProjectsPage() {
       setErrors({ name: 'Project name is required' });
       return;
     }
+    
+    if (role === ROLES.ADMIN && !activeWorkspaceId && !form.workspaceId) {
+      setErrors({ workspaceId: 'Workspace is required for Admins without an active workspace.' });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -86,7 +108,8 @@ export default function ProjectsPage() {
         await createProject({
           name: form.name.trim(),
           description: form.description.trim(),
-          templateType: form.templateType,
+          templateId: form.templateId || undefined,
+          workspaceId: form.workspaceId || activeWorkspaceId,
         });
         success('Project created');
       }
@@ -235,19 +258,39 @@ export default function ProjectsPage() {
             placeholder="What this project is responsible for"
           />
           {!modal.project && (
-            <div className="flex flex-col gap-2">
-              <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Template</label>
-              <select
-                name="templateType"
-                value={form.templateType}
-                onChange={handleChange}
-                className="h-12 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
-              >
-                <option>Basic Kanban</option>
-                <option>Software Development</option>
-                <option>Marketing Campaign</option>
-              </select>
-            </div>
+            <>
+              {role === ROLES.ADMIN && !activeWorkspaceId && workspaces.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Workspace</label>
+                  <select
+                    name="workspaceId"
+                    value={form.workspaceId}
+                    onChange={handleChange}
+                    className={`h-12 rounded-[var(--radius-md)] border bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:bg-[var(--colors-canvas)] ${errors.workspaceId ? 'border-red-500 focus:border-red-500' : 'border-[var(--colors-hairline)] focus:border-[var(--colors-primary)]'}`}
+                  >
+                    <option value="">Select workspace...</option>
+                    {workspaces.map(w => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                  {errors.workspaceId && <span className="ml-1 text-xs text-red-500">{errors.workspaceId}</span>}
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Template</label>
+                <select
+                  name="templateId"
+                  value={form.templateId}
+                  onChange={handleChange}
+                  className="h-12 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
+                >
+                  <option value="">Select a template...</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
         </form>
       </Modal>

@@ -37,10 +37,10 @@ function MessageBubble({ message, isOwn, onDelete }) {
           <span className="text-[11px] text-[rgba(255,255,255,0.5)] mb-1 ml-1">{message.sender?.name}</span>
         )}
         <div
-          className={`relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+          className={`relative px-4 py-3 rounded-[1.25rem] text-[15px] leading-relaxed break-words shadow-sm ${
             isOwn
               ? 'bg-[var(--colors-primary)] text-[#0C120E] rounded-tr-sm font-medium'
-              : 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.9)] rounded-tl-sm'
+              : 'bg-[#2A303A] text-white rounded-tl-sm border border-[rgba(255,255,255,0.05)]'
           } ${isDeleted ? 'italic opacity-50' : ''}`}
         >
           {message.content}
@@ -48,16 +48,16 @@ function MessageBubble({ message, isOwn, onDelete }) {
             <button
               onClick={() => onDelete(message.id)}
               id={`delete-msg-${message.id}`}
-              className="absolute -top-1 -left-6 opacity-0 group-hover:opacity-100 transition-opacity bg-[rgba(255,255,255,0.1)] hover:bg-red-500/20 text-[rgba(255,255,255,0.4)] hover:text-red-400 rounded p-0.5"
+              className="absolute -top-1.5 -left-8 opacity-0 group-hover:opacity-100 transition-opacity bg-[rgba(255,255,255,0.1)] hover:bg-red-500/20 text-[rgba(255,255,255,0.4)] hover:text-red-400 rounded-full p-1.5"
               title="Delete message"
             >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-        <span className="text-[10px] text-[rgba(255,255,255,0.3)] mt-1 mx-1">
+        <span className="text-[10px] text-[rgba(255,255,255,0.4)] mt-1.5 mx-1.5">
           {formatTimestamp(message.createdAt)}
         </span>
       </div>
@@ -105,6 +105,7 @@ export default function MessageThread() {
   const handleDelete = useCallback(
     async (messageId) => {
       if (!activeConversationId) return;
+      if (!window.confirm('Are you sure you want to delete this message? This action cannot be undone.')) return;
       await deleteMessage(activeConversationId, messageId);
     },
     [activeConversationId, deleteMessage]

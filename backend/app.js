@@ -100,6 +100,20 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
+// Limit account-action endpoints (registration, code requests, verification) to
+// resist abuse and one-time-code brute forcing, layered on the per-code attempt cap.
+const authActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 12,
+  message: { message: 'Too many attempts, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/register', authActionLimiter);
+app.use('/api/auth/verify-email', authActionLimiter);
+app.use('/api/auth/resend-verification', authActionLimiter);
+app.use('/api/auth/verify-2fa', authActionLimiter);
+
 // ─── API Documentation ──────────────────────────────────────────────────────
 serveSwagger(app);
 

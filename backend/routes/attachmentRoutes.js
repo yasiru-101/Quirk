@@ -18,7 +18,6 @@ const {
 } = require('../controllers/attachmentController');
 
 const { protect } = require('../middleware/auth');
-const rbac = require('../middleware/rbac');
 const upload = require('../middleware/upload');
 
 // Require authentication for all attachment operations
@@ -66,7 +65,6 @@ router.use(protect);
  */
 router.post(
   '/upload',
-  rbac('Project Manager', 'Collaborator'),
   upload.single('file'),
   uploadFile
 );
@@ -97,7 +95,6 @@ router.post(
  */
 router.get(
   '/:id/download',
-  rbac('Project Manager', 'Collaborator'),
   getDownloadUrl
 );
 

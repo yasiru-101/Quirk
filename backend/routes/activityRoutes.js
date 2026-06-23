@@ -8,7 +8,7 @@ const router  = express.Router({ mergeParams: true }); // mergeParams to access 
 
 const { getTaskActivity } = require('../controllers/activityController');
 const { protect }         = require('../middleware/auth');
-const rbac                = require('../middleware/rbac');
+const { requireTaskAccess } = require('../middleware/membership');
 
 router.use(protect);
 
@@ -29,6 +29,6 @@ router.use(protect);
  *       200: { description: Activity log entries }
  *       404: { description: Task not found }
  */
-router.get('/', rbac('Project Manager', 'Collaborator'), getTaskActivity);
+router.get('/', requireTaskAccess(), getTaskActivity);
 
 module.exports = router;

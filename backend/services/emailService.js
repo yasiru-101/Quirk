@@ -181,7 +181,62 @@ const sendInvitationEmail = async ({ to, workspaceName, inviterName, acceptUrl }
   return await sendEtherealEmail({ to, subject, html });
 };
 
+/**
+ * Returns the HTML template for a one-time code email.
+ */
+const getOtpTemplate = (heading, intro, code) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+    .header { font-size: 22px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+    .content { font-size: 16px; color: #475569; }
+    .code { font-size: 34px; font-weight: bold; letter-spacing: 10px; color: #0f172a; text-align: center; background-color: #eff6ff; padding: 18px; border-radius: 8px; margin: 25px 0; }
+    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">${heading}</div>
+    <div class="content">
+      <p>${intro}</p>
+      <div class="code">${code}</div>
+      <p style="font-size: 14px; color: #94a3b8;">This code expires in 10 minutes. If you did not request it, you can safely ignore this email.</p>
+    </div>
+    <div class="footer">
+      This is an automated system email. Please do not reply directly to this address.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+/**
+ * Sends a one-time code email (email verification or login 2FA) using Azure ACS if
+ * available, otherwise Ethereal.
+ */
+const sendOtpEmail = async ({ to, purpose, code }) => {
+  const isVerify = purpose === 'EMAIL_VERIFY';
+  const subject = isVerify
+    ? 'Verify your Quirk email address'
+    : 'Your Quirk login verification code';
+  const heading = isVerify ? 'Confirm your email' : 'Your login code';
+  const intro = isVerify
+    ? 'Use the code below to verify your email address and activate your account:'
+    : 'Use the code below to complete your sign-in:';
+  const html = getOtpTemplate(heading, intro, code);
+
+  if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
+    return await sendAzureEmail({ to, name: to, subject, html });
+  }
+  console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
+  return await sendEtherealEmail({ to, subject, html });
+};
+
 module.exports = {
   sendOnboardingEmail,
   sendInvitationEmail,
+  sendOtpEmail,
 };

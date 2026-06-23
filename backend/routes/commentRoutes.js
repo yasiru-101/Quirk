@@ -12,13 +12,14 @@ const {
 } = require('../controllers/commentController');
 
 const { protect } = require('../middleware/auth');
-const rbac = require('../middleware/rbac');
+const { requireTaskAccess } = require('../middleware/membership');
 const validate = require('../middleware/validate');
 const { createCommentSchema } = require('../validations/taskSchemas');
 
-// Require authentication and verify role for comments operations
+// Require authentication for all comment operations. Task-level access is enforced
+// per route via requireTaskAccess (the controller additionally restricts unassigned
+// collaborators).
 router.use(protect);
-router.use(rbac('Project Manager', 'Collaborator'));
 
 /**
  * @openapi
@@ -55,7 +56,7 @@ router.use(rbac('Project Manager', 'Collaborator'));
  *       404:
  *         description: Task not found.
  */
-router.post('/:taskId/comments', validate(createCommentSchema), addComment);
+router.post('/:taskId/comments', requireTaskAccess(), validate(createCommentSchema), addComment);
 
 /**
  * @openapi
@@ -80,6 +81,6 @@ router.post('/:taskId/comments', validate(createCommentSchema), addComment);
  *       404:
  *         description: Task not found.
  */
-router.get('/:taskId/comments', getComments);
+router.get('/:taskId/comments', requireTaskAccess(), getComments);
 
 module.exports = router;

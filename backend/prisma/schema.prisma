@@ -66,6 +66,25 @@ model Invitation {
   @@index([email])
 }
 
+// ─── OtpCode Model ──────────────────────────────────────────────────────────
+// One-time codes for email verification and login 2FA. Only the bcrypt hash of the
+// code is stored, never the code itself. Codes are single-use, time-limited, and
+// attempt-limited.
+model OtpCode {
+  id         String    @id @default(uuid())
+  userId     String
+  codeHash   String
+  purpose    String    // EMAIL_VERIFY, LOGIN_2FA
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
   id                  String              @id @default(uuid())
@@ -75,6 +94,12 @@ model User {
   role                String              @default("Collaborator") // Admin, Project Manager, Collaborator
   mustResetPassword   Boolean             @default(true)
   isActive            Boolean             @default(true)
+
+  // Identity verification & MFA. emailVerified defaults true so administrator-created
+  // and pre-existing accounts are trusted; self-registration explicitly sets it false
+  // until the email is confirmed via a one-time code.
+  emailVerified       Boolean             @default(true)
+  twoFactorEnabled    Boolean             @default(false)
 
   // Extended profile fields (SRS §Onboarding)
   avatarUrl           String?
@@ -87,20 +112,19 @@ model User {
   deletedAt           DateTime?
 
   // Relations
-  ownedWorkspaces          Workspace[]              @relation("WorkspaceOwner")
-  workspaceMemberships     WorkspaceMember[]
-  invitationsSent          Invitation[]             @relation("InvitationInviter")
-  projectsCreated          Project[]                @relation("ProjectCreator")
-  projectMemberships       ProjectMember[]
-  tasksCreated             Task[]                   @relation("TaskCreator")
-  assignments              TaskAssignment[]
-  comments                 Comment[]
-  attachments              Attachment[]
-  notifications            Notification[]
-  timeLogs                 TimeLog[]
-  activityLogs             ActivityLog[]
-  conversationParticipants ConversationParticipant[]
-  chatMessages             ChatMessage[]
+  ownedWorkspaces     Workspace[]         @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+  invitationsSent     Invitation[]        @relation("InvitationInviter")
+  projectsCreated     Project[]           @relation("ProjectCreator")
+  projectMemberships  ProjectMember[]
+  tasksCreated        Task[]              @relation("TaskCreator")
+  assignments         TaskAssignment[]
+  comments            Comment[]
+  attachments         Attachment[]
+  notifications       Notification[]
+  timeLogs            TimeLog[]
+  activityLogs        ActivityLog[]
+  otpCodes            OtpCode[]
 }
 
 // ─── Project Model ───────────────────────────────────────────────────────────

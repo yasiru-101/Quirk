@@ -113,8 +113,76 @@ const requireProjectRole = (...allowedRoles) => async (req, res, next) => {
   }
 };
 
+/**
+ * Resolve whether a user may act on a task at the given project-role level. The task
+ * is resolved to its project and delegated to resolveProjectAccess.
+ *
+ * With no roles, participant-level access is granted to the task's creator, its
+ * assignees, project members, and workspace Owners/Admins. With roles supplied (e.g.
+ * 'Project Manager'), the caller must hold that project role; for a task with no
+ * project, only its creator qualifies.
+ *
+ * @returns {Promise<{ ok: boolean, status?: number }>}
+ */
+const resolveTaskAccess = async (user, taskId, allowedProjectRoles = []) => {
+  if (user.role === PLATFORM_ADMIN) return { ok: true };
+
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { id: true, projectId: true, createdBy: true, deletedAt: true },
+  });
+  if (!task || task.deletedAt) return { ok: false, status: 404 };
+
+  if (allowedProjectRoles.length) {
+    if (!task.projectId) {
+      return task.createdBy === user.id ? { ok: true } : { ok: false, status: 403 };
+    }
+    return resolveProjectAccess(user, task.projectId, allowedProjectRoles);
+  }
+
+  if (task.createdBy === user.id) return { ok: true };
+
+  const assignment = await prisma.taskAssignment.findUnique({
+    where: { taskId_userId: { taskId, userId: user.id } },
+  });
+  if (assignment) return { ok: true };
+
+  if (task.projectId) {
+    const result = await resolveProjectAccess(user, task.projectId, []);
+    if (result.ok) return { ok: true };
+  }
+  return { ok: false, status: 403 };
+};
+
+/**
+ * Guard a route that operates on a task. The task id is read from `req.params.id`
+ * then `req.params.taskId`.
+ *
+ * @param {...string} allowedProjectRoles Project roles required for the action.
+ */
+const requireTaskAccess = (...allowedProjectRoles) => async (req, res, next) => {
+  try {
+    if (!req.user) return deny(res, 401, 'Authentication required.');
+
+    const taskId = req.params.id || req.params.taskId;
+    if (!taskId) return deny(res, 400, 'Task context is required.');
+
+    const result = await resolveTaskAccess(req.user, taskId, allowedProjectRoles);
+    if (!result.ok) {
+      return result.status === 404
+        ? deny(res, 404, 'Task not found.')
+        : deny(res, 403, 'Access denied. You do not have access to this task.');
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   requireWorkspaceRole,
   requireProjectRole,
+  requireTaskAccess,
   resolveProjectAccess,
+  resolveTaskAccess,
 };

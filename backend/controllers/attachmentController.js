@@ -5,6 +5,7 @@
 
 const prisma = require('../config/db');
 const blobService = require('../services/blobService');
+const { resolveTaskAccess } = require('../middleware/membership');
 
 // @desc    Upload a file attachment and create a database record
 // @route   POST /api/attachments/upload
@@ -38,6 +39,16 @@ const uploadFile = async (req, res) => {
       return res.status(400).json({
         message: 'Validation failed',
         errors: { taskId: 'taskId is required when uploading an attachment.' },
+      });
+    }
+
+    // Authorize: the caller must have access to the target task.
+    const access = await resolveTaskAccess(req.user, taskId);
+    if (!access.ok) {
+      return res.status(access.status === 404 ? 404 : 403).json({
+        message: access.status === 404
+          ? 'Task not found'
+          : 'Access denied. You do not have access to this task.',
       });
     }
 
@@ -86,6 +97,14 @@ const getDownloadUrl = async (req, res) => {
     if (!attachment) {
       return res.status(404).json({
         message: 'Attachment not found',
+      });
+    }
+
+    // Authorize: the caller must have access to the attachment's task.
+    const access = await resolveTaskAccess(req.user, attachment.taskId);
+    if (!access.ok) {
+      return res.status(403).json({
+        message: 'Access denied. You do not have access to this attachment.',
       });
     }
 

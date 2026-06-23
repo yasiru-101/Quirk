@@ -105,6 +105,10 @@ const INITIAL_COMMENTS = {
   ]
 };
 
+const INITIAL_PROJECTS = [
+  { id: 1, name: 'hackX 2026', description: 'Main project board', columns: [] }
+];
+
 export function initMockData() {
   if (!localStorage.getItem('quirk_mock_users')) {
     localStorage.setItem('quirk_mock_users', JSON.stringify(INITIAL_USERS));
@@ -114,6 +118,9 @@ export function initMockData() {
   }
   if (!localStorage.getItem('quirk_mock_comments')) {
     localStorage.setItem('quirk_mock_comments', JSON.stringify(INITIAL_COMMENTS));
+  }
+  if (!localStorage.getItem('quirk_mock_projects')) {
+    localStorage.setItem('quirk_mock_projects', JSON.stringify(INITIAL_PROJECTS));
   }
 }
 
@@ -134,6 +141,7 @@ export function handleMockRequest(config) {
   const users = JSON.parse(localStorage.getItem('quirk_mock_users') || '[]');
   const tasks = JSON.parse(localStorage.getItem('quirk_mock_tasks') || '[]');
   const comments = JSON.parse(localStorage.getItem('quirk_mock_comments') || '{}');
+  const projects = JSON.parse(localStorage.getItem('quirk_mock_projects') || '[]');
   const currentUser = JSON.parse(localStorage.getItem('quirk_user') || 'null');
 
   // Helper to save state
@@ -340,6 +348,16 @@ export function handleMockRequest(config) {
     saveComments(comments);
     return newComment;
   }
+
+  // 15. GET /projects
+  if (url === 'projects' && method === 'get') {
+    return { projects };
+  }
+
+  // 16. Stubs for other new entities
+  if (url === 'epics' && method === 'get') return { epics: [] };
+  if (url === 'activity' && method === 'get') return { logs: [] };
+  if (url === 'timeLogs' && method === 'get') return { timeLogs: [] };
 
   return null;
 }

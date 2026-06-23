@@ -121,7 +121,11 @@ const getProjects = async (req, res) => {
           _count: { id: true },
         });
         const completedCount = await prisma.task.count({
-          where: { projectId: p.id, deletedAt: null, status: 'Done' },
+          where: {
+            projectId: p.id,
+            deletedAt: null,
+            column: { name: { in: ['Done', 'Completed'] } },
+          },
         });
         return {
           ...p,

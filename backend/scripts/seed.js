@@ -148,8 +148,7 @@ const seedDatabase = async () => {
         projectId: project.id,
         columnId: columns['In Progress'],
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        priority: 'High',
-        status: 'In Progress'
+        priority: 'High'
       },
       {
         title: 'Setup Backend Server Scaffolding',
@@ -158,8 +157,7 @@ const seedDatabase = async () => {
         projectId: project.id,
         columnId: columns['To Do'],
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-        priority: 'High',
-        status: 'To Do'
+        priority: 'High'
       },
       {
         title: 'Write User Documentation',
@@ -168,8 +166,7 @@ const seedDatabase = async () => {
         projectId: project.id,
         columnId: columns['Completed'],
         dueDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-        priority: 'Low',
-        status: 'Completed'
+        priority: 'Low'
       }
     ];
 

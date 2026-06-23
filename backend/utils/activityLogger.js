@@ -5,7 +5,7 @@
  *
  * @param {string} taskId   - The affected task's UUID
  * @param {string} userId   - The acting user's UUID
- * @param {string} action   - Action key e.g. 'status_changed', 'assigned', 'commented', 'time_logged'
+ * @param {string} action   - Action key e.g. 'column_changed', 'assigned', 'commented', 'time_logged'
  * @param {object} metadata - Arbitrary JSON payload with before/after data
  */
 

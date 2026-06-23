@@ -5,8 +5,7 @@
 
 const { z } = require('zod');
 
-// Allowed status and priority values matching the Prisma Task model
-const VALID_STATUSES = ['To Do', 'In Progress', 'Completed'];
+// Allowed task priority values matching the Prisma Task model.
 const VALID_PRIORITIES = ['Low', 'Medium', 'High'];
 
 // Custom validator to check if a date is in the present/future (with a 1-minute grace period)
@@ -46,12 +45,6 @@ const createTaskSchema = z.object({
     })
     .default('Medium'),
 
-  status: z
-    .enum(VALID_STATUSES, {
-      invalid_type_error: `Status must be one of: ${VALID_STATUSES.join(', ')}`,
-    })
-    .default('To Do'),
-    
   projectId: z.string().uuid('Invalid project ID format').optional(),
   
   tags: z.array(z.string().trim().min(1)).optional().default([]),
@@ -95,12 +88,6 @@ const updateTaskSchema = z
       })
       .optional(),
 
-    status: z
-      .enum(VALID_STATUSES, {
-        invalid_type_error: `Status must be one of: ${VALID_STATUSES.join(', ')}`,
-      })
-      .optional(),
-      
     projectId: z.string().uuid('Invalid project ID format').optional(),
     
     tags: z.array(z.string().trim().min(1)).optional(),
@@ -128,13 +115,12 @@ const assignTaskSchema = z.object({
     .min(1, 'At least one user ID must be provided'),
 });
 
-// ─── Update Status Schema ────────────────────────────────────────────────────
-// Used on: PATCH /api/tasks/:id/status (Collaborators/PM updating status)
-const updateStatusSchema = z.object({
-  status: z.enum(VALID_STATUSES, {
-    required_error: 'Status is required',
-    invalid_type_error: `Status must be one of: ${VALID_STATUSES.join(', ')}`,
-  }),
+// ─── Update Column Schema ────────────────────────────────────────────────────
+// Used on: PATCH /api/tasks/:id/column (Collaborators/PM moving workflow column)
+const updateColumnSchema = z.object({
+  columnId: z
+    .string({ required_error: 'Column ID is required' })
+    .uuid('Invalid column ID format'),
 });
 
 // ─── Create Comment Schema ───────────────────────────────────────────────────
@@ -167,6 +153,6 @@ module.exports = {
   createTaskSchema,
   updateTaskSchema,
   assignTaskSchema,
-  updateStatusSchema,
+  updateColumnSchema,
   createCommentSchema,
 };

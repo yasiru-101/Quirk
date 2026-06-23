@@ -18,7 +18,7 @@ const getNotifications = async (req, res) => {
           select: {
             id: true,
             title: true,
-            status: true,
+            column: { select: { id: true, name: true, order: true, projectId: true } },
           },
         },
       },

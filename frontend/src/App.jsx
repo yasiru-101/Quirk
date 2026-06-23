@@ -20,6 +20,8 @@ import AppLayout      from './components/layout/AppLayout';
 
 // Pages
 import LoginPage          from './pages/LoginPage';
+import RegisterPage       from './pages/RegisterPage';
+import VerifyEmailPage    from './pages/VerifyEmailPage';
 import ResetPasswordPage  from './pages/ResetPasswordPage';
 import DashboardPage      from './pages/DashboardPage';
 import TaskBoardPage      from './pages/TaskBoardPage';
@@ -52,6 +54,8 @@ export default function App() {
                 <Routes>
                   {/* ── Public ─────────────────────────────────────────────── */}
                 <Route path="/login"          element={<LoginPage />} />
+                <Route path="/register"       element={<RegisterPage />} />
+                <Route path="/verify-email"   element={<VerifyEmailPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/onboarding"     element={
                   <ProtectedRoute>

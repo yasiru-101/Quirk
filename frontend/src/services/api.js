@@ -70,11 +70,16 @@ api.interceptors.response.use(
 // Extracts a human-readable message from any Axios error
 export const normalizeError = (error) => {
   if (error?.response?.data) {
-    const { message, errors } = error.response.data;
-    return { message: message || 'An error occurred', fieldErrors: errors || null };
+    const { message, errors, code, email } = error.response.data;
+    return { 
+      message: message || 'An error occurred', 
+      fieldErrors: errors || null,
+      code,
+      email
+    };
   }
-  if (error?.message) return { message: error.message, fieldErrors: null };
-  return { message: 'Network error. Please try again.', fieldErrors: null };
+  if (error?.message) return { message: error.message, fieldErrors: null, code: null, email: null };
+  return { message: 'Network error. Please try again.', fieldErrors: null, code: null, email: null };
 };
 
 export default api;

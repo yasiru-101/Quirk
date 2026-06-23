@@ -38,6 +38,9 @@ export function AuthProvider({ children }) {
   // ── Login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     const { data } = await authService.login(email, password);
+    if (data.twoFactorRequired) {
+      return data;
+    }
     setUser(data.user);
     return data.user;
   }, []);
@@ -51,6 +54,10 @@ export function AuthProvider({ children }) {
     setUser((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const setSession = useCallback((userData) => {
+    setUser(userData);
+  }, []);
+
   const value = {
     user,
     loading,
@@ -60,6 +67,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updateUser,
+    setSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

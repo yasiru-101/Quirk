@@ -12,8 +12,10 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import BrandLogo from '../components/common/BrandLogo';
 
+import { authService } from '../services/authService';
+
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, setSession } = useAuth();
   const { error: toastError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +24,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [twoFactorData, setTwoFactorData] = useState(null);
+  const [otpCode, setOtpCode] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,16 +48,49 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const user = await login(form.email, form.password);
-      if (user.mustResetPassword) {
+      const data = await login(form.email, form.password);
+      if (data.twoFactorRequired) {
+        setTwoFactorData({ pendingToken: data.pendingToken, email: data.email });
+        return;
+      }
+      if (data.mustResetPassword) {
+        navigate('/reset-password', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      const { message, fieldErrors, code, email } = normalizeError(err);
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        navigate('/verify-email', { state: { email: email || form.email }, replace: true });
+        return;
+      }
+      if (fieldErrors) setErrors(fieldErrors);
+      else toastError(message, 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2FASubmit = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length !== 6) {
+      setErrors({ otp: 'Please enter the 6-digit code' });
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+    try {
+      const { data } = await authService.verify2fa(twoFactorData.pendingToken, otpCode);
+      setSession(data.user);
+      if (data.user.mustResetPassword) {
         navigate('/reset-password', { replace: true });
       } else {
         navigate(from, { replace: true });
       }
     } catch (err) {
       const { message, fieldErrors } = normalizeError(err);
-      if (fieldErrors) setErrors(fieldErrors);
-      else toastError(message, 'Login failed');
+      if (fieldErrors?.code) setErrors({ otp: fieldErrors.code });
+      else toastError(message, 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -102,52 +139,97 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <Input
-              id="login-email"
-              label="Email address"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              error={errors.email}
-              autoComplete="email"
-              placeholder="Enter your email"
-              leftIcon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-              }
-            />
+          {twoFactorData ? (
+            <form onSubmit={handle2FASubmit} className="space-y-6" noValidate>
+              <div className="mb-6">
+                <p className="text-sm text-[var(--colors-body)] mb-4">
+                  A verification code has been sent to <span className="font-semibold">{twoFactorData.email}</span>.
+                </p>
+                <Input
+                  id="login-otp"
+                  label="Verification Code"
+                  type="text"
+                  name="otp"
+                  value={otpCode}
+                  onChange={(e) => {
+                    setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setErrors({});
+                  }}
+                  error={errors.otp}
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest h-14"
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={loading}
+                className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
+              >
+                Verify & Sign in
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTwoFactorData(null);
+                  setOtpCode('');
+                  setErrors({});
+                }}
+                className="w-full mt-4 text-sm font-medium text-[var(--colors-primary)] hover:text-[var(--colors-primary-hover)]"
+              >
+                Back to login
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <Input
+                id="login-email"
+                label="Email address"
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                error={errors.email}
+                autoComplete="email"
+                placeholder="Enter your email"
+                leftIcon={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                }
+              />
 
-            <Input
-              id="login-password"
-              label="Password"
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              error={errors.password}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              leftIcon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              }
-            />
+              <Input
+                id="login-password"
+                label="Password"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                error={errors.password}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                leftIcon={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                }
+              />
 
-            <Button
-              type="submit"
-              variant="primary"
-              loading={loading}
-              className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
-            >
-              Sign in
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={loading}
+                className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
+              >
+                Sign in
+              </Button>
+            </form>
+          )}
 
           {/* Quick-login helpers — development builds only; never shipped to production. */}
           {import.meta.env.DEV && (

@@ -125,6 +125,8 @@ model User {
   timeLogs            TimeLog[]
   activityLogs        ActivityLog[]
   otpCodes            OtpCode[]
+  conversationParticipants ConversationParticipant[]
+  chatMessages             ChatMessage[]
 }
 
 // ─── Project Model ───────────────────────────────────────────────────────────

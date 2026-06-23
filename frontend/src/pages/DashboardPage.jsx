@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
 import { ROLES } from '../utils/constants';
-import { formatDate, isOverdue, cn } from '../utils/helpers';
+import { formatDate, getTaskColumnName, isOverdue, isTerminalColumn, cn } from '../utils/helpers';
 
 function StatCard({ label, value, loading }) {
   return (
@@ -53,9 +53,9 @@ export default function DashboardPage() {
         .then(({ data }) => {
           const tasks   = data.tasks ?? [];
           const total   = tasks.length;
-          const inProg  = tasks.filter((t) => t.status === 'In Progress').length;
-          const done    = tasks.filter((t) => t.status === 'Completed').length;
-          const overdue = tasks.filter((t) => isOverdue(t.dueDate) && t.status !== 'Completed').length;
+          const inProg  = tasks.filter((t) => getTaskColumnName(t).toLowerCase() === 'in progress').length;
+          const done    = tasks.filter((t) => isTerminalColumn(getTaskColumnName(t))).length;
+          const overdue = tasks.filter((t) => isOverdue(t.dueDate) && !isTerminalColumn(getTaskColumnName(t))).length;
 
           if (role === ROLES.PROJECT_MANAGER) {
             setStats([
@@ -159,7 +159,7 @@ export default function DashboardPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b-2 border-[var(--colors-ink)]">
-                    {['Task', 'Status', 'Priority', 'Due Date'].map((h) => (
+                    {['Task', 'Column', 'Priority', 'Due Date'].map((h) => (
                       <th key={h} className="py-4 px-2 text-[length:var(--typography-body-sm)] font-bold text-[var(--colors-ink)] uppercase tracking-wider">
                         {h}
                       </th>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                       <td className="py-4 px-2 text-[length:var(--typography-body-md)] font-medium text-[var(--colors-ink)]">{t.title}</td>
                       <td className="py-4 px-2">
                         <span className="bg-[var(--colors-surface-pressed)] text-[var(--colors-ink)] px-3 py-1 text-[length:var(--typography-body-sm)] uppercase tracking-wider rounded-[var(--radius-pill)] whitespace-nowrap">
-                          {t.status}
+                          {getTaskColumnName(t)}
                         </span>
                       </td>
                       <td className="py-4 px-2">
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                           {t.priority}
                         </span>
                       </td>
-                      <td className={cn('py-4 px-2 text-[length:var(--typography-body-sm)]', isOverdue(t.dueDate) && t.status !== 'Completed' ? 'text-[var(--colors-priority-urgent)] font-bold' : 'text-[var(--colors-body)]')}>
+                      <td className={cn('py-4 px-2 text-[length:var(--typography-body-sm)]', isOverdue(t.dueDate) && !isTerminalColumn(getTaskColumnName(t)) ? 'text-[var(--colors-priority-urgent)] font-bold' : 'text-[var(--colors-body)]')}>
                         {formatDate(t.dueDate)}
                       </td>
                     </tr>

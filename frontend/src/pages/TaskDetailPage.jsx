@@ -10,8 +10,9 @@ import { useToast } from '../context/ToastContext';
 import CommentsPanel from '../components/tasks/CommentsPanel';
 import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
-import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue } from '../utils/helpers';
-import { ROLES, TASK_STATUS_LIST } from '../utils/constants';
+import { useProject } from '../context/ProjectContext';
+import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue } from '../utils/helpers';
+import { ROLES } from '../utils/constants';
 import { cn } from '../utils/helpers';
 
 export default function TaskDetailPage() {
@@ -19,7 +20,12 @@ export default function TaskDetailPage() {
   const navigate = useNavigate();
   const { role } = useAuth();
   const { success, error: toastError } = useToast();
+  const { projects } = useProject();
   const isPM = role === ROLES.PROJECT_MANAGER;
+  const columns = projects.flatMap((project) => (project.columns ?? []).map((column) => ({
+    ...column,
+    projectId: column.projectId || project.id,
+  })));
 
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,12 +55,14 @@ export default function TaskDetailPage() {
     );
   }
 
-  const handleStatusChange = async (newStatus) => {
-    setTask((t) => ({ ...t, status: newStatus }));
+  const handleColumnChange = async (columnId) => {
+    const column = columns.find((c) => c.id === columnId);
+    setTask((t) => ({ ...t, columnId, column: column || t.column }));
     try {
-      await taskService.updateTaskStatus(id, newStatus);
+      const { data } = await taskService.updateTaskColumn(id, columnId);
+      setTask(data.task);
     } catch {
-      toastError('Failed to update status.');
+      toastError('Failed to move task.');
     }
   };
 
@@ -87,6 +95,8 @@ export default function TaskDetailPage() {
   if (!task) return null;
 
   const overdue = isOverdue(task.dueDate);
+  const taskColumns = columns.filter((column) => column.projectId === task.projectId);
+  const columnName = getTaskColumnName(task);
 
   return (
     <div id="detail-panel" className="w-[400px] flex-shrink-0 bg-[var(--surface)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden transition-all duration-200 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] z-20">
@@ -140,15 +150,15 @@ export default function TaskDetailPage() {
           </div>
         )}
 
-        {/* Status Dropdown */}
+        {/* Column Dropdown */}
         <div className="space-y-2">
-          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Status</h3>
+          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Column</h3>
           <select
-            value={task.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className={cn('w-full text-sm font-bold px-3 py-2 rounded-lg border outline-none cursor-pointer appearance-none', getStatusColor(task.status))}
+            value={task.columnId || ''}
+            onChange={(e) => handleColumnChange(e.target.value)}
+            className={cn('w-full text-sm font-bold px-3 py-2 rounded-lg border outline-none cursor-pointer appearance-none', getStatusColor(columnName))}
           >
-            {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
+            {taskColumns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
           </select>
         </div>
 
@@ -190,6 +200,8 @@ export default function TaskDetailPage() {
           open={editOpen}
           onClose={() => setEditOpen(false)}
           task={task}
+          projects={projects}
+          columns={columns}
           onSaved={handleSaved}
         />
       )}

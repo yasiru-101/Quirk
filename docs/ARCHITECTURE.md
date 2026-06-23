@@ -130,7 +130,7 @@ selected via the `ViewHeader` tab strip:
 
 | Tab | Component | Data source |
 | --- | --- | --- |
-| Board | `KanbanBoard` | Grouped by `status` |
+| Board | `KanbanBoard` | Grouped by `columnId` |
 | List | `TaskTable` | Flat sorted list |
 | Calendar | `TaskCalendarView` | Mapped to `dueDate` in a month grid |
 | Timeline | `TaskTimelineView` | Gantt bars from `createdAt` → `dueDate` |
@@ -150,7 +150,7 @@ product. Status of the foundational work:
 - [x] Task-level object authorization (resolve a task's project membership).
 - [x] Self-service registration with email verification and optional login 2FA.
 - [x] Calendar and Timeline (Gantt) views for the task board.
-- [ ] Kanban column as the single source of task workflow state.
+- [x] Kanban column as the single source of task workflow state.
 
 Each item ships as an isolated, reviewable change with its own migration, tests,
 and documentation update.

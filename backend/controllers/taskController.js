@@ -1,6 +1,6 @@
 /**
  * @file taskController.js
- * @description Controller handling Task CRUD, status updates, user assignments, and resource cleanups.
+ * @description Controller handling Task CRUD, column updates, user assignments, and resource cleanups.
  * Emits activity log entries via activityLogger after every meaningful mutation.
  */
 
@@ -8,17 +8,87 @@ const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
 const { resolveProjectAccess } = require('../middleware/membership');
 
+const taskResponseInclude = {
+  column: {
+    select: {
+      id: true,
+      name: true,
+      order: true,
+      projectId: true,
+    },
+  },
+  creator: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  },
+  assignments: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+        },
+      },
+    },
+  },
+};
+
+const formatTask = (task) => {
+  const formatted = { ...task };
+  formatted.createdBy = task.creator;
+  formatted.assignees = task.assignments.map((a) => a.user);
+  delete formatted.creator;
+  delete formatted.assignments;
+  return formatted;
+};
+
+const resolveTaskPlacement = async ({ projectId, columnId }) => {
+  if (columnId) {
+    const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!column) {
+      return { error: { status: 400, message: 'Invalid column ID.' } };
+    }
+    if (projectId && column.projectId !== projectId) {
+      return { error: { status: 400, message: 'Column does not belong to the selected project.' } };
+    }
+    return { projectId: projectId || column.projectId, columnId };
+  }
+
+  if (!projectId) {
+    return { projectId: null, columnId: null };
+  }
+
+  const firstColumn = await prisma.kanbanColumn.findFirst({
+    where: { projectId },
+    orderBy: { order: 'asc' },
+  });
+
+  return { projectId, columnId: firstColumn?.id || null };
+};
+
 // @desc    Create a new task
 // @route   POST /api/tasks
 // @access  Private (Project Manager only)
 const createTask = async (req, res) => {
-  const { title, description, dueDate, priority, status, projectId, tags,
+  const { title, description, dueDate, priority, projectId, tags,
           parentTaskId, epicId, columnId, estimatedHours } = req.body;
 
   try {
+    const placement = await resolveTaskPlacement({ projectId, columnId });
+    if (placement.error) {
+      return res.status(placement.error.status).json({ message: placement.error.message });
+    }
+
     // A task created inside a project requires manager access to that project.
-    if (projectId) {
-      const access = await resolveProjectAccess(req.user, projectId, ['Project Manager']);
+    if (placement.projectId) {
+      const access = await resolveProjectAccess(req.user, placement.projectId, ['Project Manager']);
       if (!access.ok) {
         return res.status(access.status === 404 ? 404 : 403).json({
           message: access.status === 404
@@ -34,21 +104,21 @@ const createTask = async (req, res) => {
         description,
         dueDate:        dueDate        ? new Date(dueDate) : null,
         priority:       priority       || 'Medium',
-        status:         status         || 'To Do',
-        projectId:      projectId      || null,
+        projectId:      placement.projectId,
         tags:           tags           || [],
         parentTaskId:   parentTaskId   || null,
         epicId:         epicId         || null,
-        columnId:       columnId       || null,
+        columnId:       placement.columnId,
         estimatedHours: estimatedHours || null,
         createdBy: req.user.id,
       },
+      include: taskResponseInclude,
     });
 
     // Write audit log entry
     await logActivity(task.id, req.user.id, 'task_created', { title });
 
-    return res.status(201).json({ task });
+    return res.status(201).json({ task: formatTask(task) });
   } catch (error) {
     console.error(`Create task error: ${error.message}`);
     return res.status(500).json({
@@ -57,16 +127,16 @@ const createTask = async (req, res) => {
   }
 };
 
-// @desc    Get all tasks with optional status and priority filtering
+// @desc    Get all tasks with optional column and priority filtering
 // @route   GET /api/tasks
 // @access  Private (PM & Collaborator)
 const getTasks = async (req, res) => {
-  const { status, priority, parentTaskId } = req.query;
+  const { columnId, priority, parentTaskId } = req.query;
   const where = {};
 
   try {
     // Apply filters if provided
-    if (status)       where.status       = status;
+    if (columnId)     where.columnId     = columnId;
     if (priority)     where.priority     = priority;
     // parentTaskId filter: 'null' string = top-level tasks only, uuid = subtasks of that parent
     if (parentTaskId === 'null') where.parentTaskId = null;
@@ -88,39 +158,11 @@ const getTasks = async (req, res) => {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-        assignments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                isActive: true,
-              },
-            },
-          },
-        },
+        ...taskResponseInclude,
       },
     });
 
-    // Map tasks to shape expected by frontend (createdBy as object, assignments as assignees array of users)
-    const formattedTasks = tasks.map((task) => {
-      const t = { ...task };
-      t.createdBy = task.creator;
-      t.assignees = task.assignments.map((a) => a.user);
-      delete t.creator;
-      delete t.assignments;
-      return t;
-    });
+    const formattedTasks = tasks.map(formatTask);
 
     return res.status(200).json({
       tasks: formattedTasks,
@@ -145,27 +187,7 @@ const getTaskById = async (req, res) => {
     const task = await prisma.task.findUnique({
       where: { id: targetId },
       include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-        assignments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                isActive: true,
-              },
-            },
-          },
-        },
+        ...taskResponseInclude,
         comments: {
           include: {
             user: {
@@ -189,15 +211,10 @@ const getTaskById = async (req, res) => {
     }
 
     // Combine task details with assignments and comments for response mapped to frontend format
-    const taskObject = { ...task };
-    taskObject.createdBy = task.creator;
-    taskObject.assignees = task.assignments.map((a) => a.user);
+    const taskObject = formatTask(task);
     
     // Convert comment list fields if necessary (already contains .user populated by Prisma relation)
     taskObject.comments = task.comments;
-
-    delete taskObject.creator;
-    delete taskObject.assignments;
 
     return res.status(200).json({
       task: taskObject,
@@ -215,7 +232,7 @@ const getTaskById = async (req, res) => {
 // @access  Private (Project Manager only)
 const updateTask = async (req, res) => {
   const { id } = req.params;
-  const { title, description, dueDate, priority, status, projectId, tags,
+  const { title, description, dueDate, priority, projectId, tags,
           parentTaskId, epicId, columnId, estimatedHours } = req.body;
   const targetId = id;
 
@@ -225,6 +242,14 @@ const updateTask = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    const nextProjectId = projectId !== undefined ? projectId : task.projectId;
+    const placement = columnId !== undefined || projectId !== undefined
+      ? await resolveTaskPlacement({ projectId: nextProjectId, columnId })
+      : { projectId: nextProjectId, columnId: task.columnId };
+    if (placement.error) {
+      return res.status(placement.error.status).json({ message: placement.error.message });
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id: targetId },
       data: {
@@ -232,19 +257,19 @@ const updateTask = async (req, res) => {
         description:    description    !== undefined ? description                    : undefined,
         dueDate:        dueDate        !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
         priority:       priority       !== undefined ? priority                       : undefined,
-        status:         status         !== undefined ? status                         : undefined,
-        projectId:      projectId      !== undefined ? projectId                      : undefined,
+        projectId:      projectId      !== undefined ? placement.projectId            : undefined,
         tags:           tags           !== undefined ? tags                           : undefined,
         parentTaskId:   parentTaskId   !== undefined ? parentTaskId                   : undefined,
         epicId:         epicId         !== undefined ? epicId                         : undefined,
-        columnId:       columnId       !== undefined ? columnId                       : undefined,
+        columnId:       columnId       !== undefined ? placement.columnId             : undefined,
         estimatedHours: estimatedHours !== undefined ? estimatedHours                 : undefined,
       },
+      include: taskResponseInclude,
     });
 
     await logActivity(targetId, req.user.id, 'task_updated', { updatedFields: Object.keys(req.body) });
 
-    return res.status(200).json({ task: updatedTask });
+    return res.status(200).json({ task: formatTask(updatedTask) });
   } catch (error) {
     console.error(`Update task error: ${error.message}`);
     return res.status(500).json({
@@ -253,17 +278,18 @@ const updateTask = async (req, res) => {
   }
 };
 
-// @desc    Update status of a task
-// @route   PATCH /api/tasks/:id/status
+// @desc    Move a task to a workflow column
+// @route   PATCH /api/tasks/:id/column
 // @access  Private (PM or assigned Collaborator)
-const updateTaskStatus = async (req, res) => {
+const updateTaskColumn = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { columnId } = req.body;
   const targetId = id;
 
   try {
     const task = await prisma.task.findUnique({
       where: { id: targetId },
+      include: { column: true },
     });
     if (!task) {
       return res.status(404).json({
@@ -283,29 +309,39 @@ const updateTaskStatus = async (req, res) => {
       });
       if (!isAssigned) {
         return res.status(403).json({
-          message: 'Access denied: You can only update the status of tasks assigned to you.',
+          message: 'Access denied: You can only move tasks assigned to you.',
         });
       }
     }
 
-    // Update status using Prisma
+    const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!column) {
+      return res.status(400).json({ message: 'Invalid column ID.' });
+    }
+    if (task.projectId && column.projectId !== task.projectId) {
+      return res.status(400).json({ message: 'Column does not belong to this task project.' });
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id: targetId },
-      data: { status },
+      data: { columnId, projectId: task.projectId || column.projectId },
+      include: taskResponseInclude,
     });
 
     // Trigger real-time notifications
     const notificationService = require('../services/notificationService');
-    await notificationService.notifyStatusChange(targetId, status, req.user.name, req.user.id);
+    await notificationService.notifyColumnChange(targetId, column.name, req.user.name, req.user.id);
 
-    // Write audit log entry for status change
-    await logActivity(targetId, req.user.id, 'status_changed', { from: task.status, to: status });
+    await logActivity(targetId, req.user.id, 'column_changed', {
+      from: task.column ? { id: task.column.id, name: task.column.name } : null,
+      to: { id: column.id, name: column.name },
+    });
 
-    return res.status(200).json({ task: updatedTask });
+    return res.status(200).json({ task: formatTask(updatedTask) });
   } catch (error) {
-    console.error(`Patch task status error: ${error.message}`);
+    console.error(`Patch task column error: ${error.message}`);
     return res.status(500).json({
-      message: 'Internal server error during task status update',
+      message: 'Internal server error during task column update',
     });
   }
 };
@@ -424,7 +460,7 @@ module.exports = {
   getTasks,
   getTaskById,
   updateTask,
-  updateTaskStatus,
+  updateTaskColumn,
   deleteTask,
   assignUsers,
 };

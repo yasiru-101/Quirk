@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import { TASK_STATUS_LIST, TASK_PRIORITY_LIST, ROLES } from '../../utils/constants';
+import { TASK_PRIORITY_LIST, ROLES } from '../../utils/constants';
 import { normalizeError } from '../../services/api';
 import { taskService } from '../../services/taskService';
 import { useToast } from '../../context/ToastContext';
@@ -19,11 +19,12 @@ const EMPTY_FORM = {
   description: '',
   dueDate: '',
   priority: 'Medium',
-  status: 'To Do',
+  projectId: '',
+  columnId: '',
   assigneeIds: [],
 };
 
-export default function TaskModal({ open, onClose, task = null, onSaved }) {
+export default function TaskModal({ open, onClose, task = null, projects = [], columns = [], onSaved }) {
   const { role } = useAuth();
   const { success, error: toastError } = useToast();
   const isEdit = !!task;
@@ -50,19 +51,32 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
           description: task.description ?? '',
           dueDate:     task.dueDate ? task.dueDate.slice(0, 10) : '',
           priority:    task.priority ?? 'Medium',
-          status:      task.status ?? 'To Do',
+          projectId:   task.projectId ?? '',
+          columnId:    task.columnId ?? '',
           assigneeIds: (task.assignees ?? []).map((u) => u._id),
         });
       } else {
-        setForm(EMPTY_FORM);
+        const defaultProject = projects[0];
+        const defaultColumn = columns.find((column) => column.projectId === defaultProject?.id);
+        setForm({
+          ...EMPTY_FORM,
+          projectId: defaultProject?.id || '',
+          columnId: defaultColumn?.id || '',
+        });
       }
       setErrors({});
     }
-  }, [open, task]);
+  }, [open, task, projects, columns]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((f) => {
+      if (name === 'projectId') {
+        const firstProjectColumn = columns.find((column) => column.projectId === value);
+        return { ...f, projectId: value, columnId: firstProjectColumn?.id || '' };
+      }
+      return { ...f, [name]: value };
+    });
     if (errors[name]) setErrors((er) => ({ ...er, [name]: '' }));
   };
 
@@ -82,6 +96,8 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
     if (form.dueDate && new Date(form.dueDate) < new Date(new Date().toDateString())) {
       errs.dueDate = 'Due date cannot be in the past';
     }
+    if (!form.projectId) errs.projectId = 'Project is required';
+    if (!form.columnId) errs.columnId = 'Column is required';
     return errs;
   };
 
@@ -178,15 +194,17 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-[var(--colors-ink)]">Status</label>
+            <label className="text-sm font-semibold text-[var(--colors-ink)]">Project</label>
             <div className="relative">
               <select
-                name="status"
-                value={form.status}
+                name="projectId"
+                value={form.projectId}
                 onChange={handleChange}
+                disabled={readOnly || isEdit}
                 className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all"
               >
-                {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
+                <option value="">Select project</option>
+                {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -194,7 +212,32 @@ export default function TaskModal({ open, onClose, task = null, onSaved }) {
                 </svg>
               </div>
             </div>
+            {errors.projectId && <p className="text-sm text-red-500">{errors.projectId}</p>}
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-[var(--colors-ink)]">Column</label>
+          <div className="relative">
+            <select
+              name="columnId"
+              value={form.columnId}
+              onChange={handleChange}
+              disabled={readOnly || !form.projectId}
+              className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Select column</option>
+              {columns
+                .filter((column) => column.projectId === form.projectId)
+                .map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
+          {errors.columnId && <p className="text-sm text-red-500">{errors.columnId}</p>}
         </div>
 
         <Input

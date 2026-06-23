@@ -3,14 +3,15 @@
  * @description Mini dashboard task card adhering to the Quirk Mint & Ink design system.
  */
 import React from 'react';
-import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
-import { ROLES, TASK_STATUS_LIST } from '../../utils/constants';
+import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
+import { ROLES } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 
-export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
+export default function TaskCard({ task, columns = [], onColumnChange, onClick, onDelete }) {
   const { role } = useAuth();
   const isPM = role === ROLES.PROJECT_MANAGER;
   const overdue = isOverdue(task.dueDate);
+  const columnName = getTaskColumnName(task);
 
   const renderPriorityIcon = (priority) => {
     const p = priority?.toLowerCase();
@@ -81,16 +82,16 @@ export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
       <div onClick={(e) => e.stopPropagation()} className="mt-2">
         <div className="relative">
           <select
-            value={task.status}
-            onChange={(e) => onStatusChange?.(task._id, e.target.value)}
+            value={task.columnId || ''}
+            onChange={(e) => onColumnChange?.(task._id, e.target.value)}
             className={cn(
               'w-full text-xs font-bold px-3 py-2 rounded-[var(--radius-lg)] cursor-pointer focus-ring outline-none appearance-none transition-all border',
-              getStatusColor(task.status)
+              getStatusColor(columnName)
             )}
-            aria-label="Change task status"
+            aria-label="Change task column"
           >
-            {TASK_STATUS_LIST.map((s) => (
-              <option key={s} value={s}>{s}</option>
+            {columns.map((column) => (
+              <option key={column.id} value={column.id}>{column.name}</option>
             ))}
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">

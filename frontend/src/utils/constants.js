@@ -9,19 +9,6 @@ export const ROLES = {
   COLLABORATOR: 'Collaborator',
 };
 
-// ─── Task Status Constants ────────────────────────────────────────────────────
-export const TASK_STATUS = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed',
-};
-
-export const TASK_STATUS_LIST = [
-  TASK_STATUS.TODO,
-  TASK_STATUS.IN_PROGRESS,
-  TASK_STATUS.COMPLETED,
-];
-
 // ─── Task Priority Constants ──────────────────────────────────────────────────
 export const TASK_PRIORITY = {
   LOW: 'Low',
@@ -38,7 +25,7 @@ export const TASK_PRIORITY_LIST = [
 // ─── Notification Types ───────────────────────────────────────────────────────
 export const NOTIFICATION_TYPE = {
   ASSIGNMENT: 'Assignment',
-  STATUS_CHANGE: 'StatusChange',
+  COLUMN_CHANGE: 'ColumnChange',
   COMMENT: 'Comment',
   DEADLINE: 'Deadline',
   ADMIN: 'Admin',

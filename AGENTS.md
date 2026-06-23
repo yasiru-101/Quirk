@@ -71,7 +71,7 @@ around them:
 - [x] Workspace tenancy, membership roles, invitations, scoped authorization (ADR 0002)
 - [x] Self-service registration, email verification, login 2FA (ADR 0003)
 - [x] Task-level object authorization (ADR 0004)
-- [ ] Kanban column as the single source of task status
+- [x] Kanban column as the single source of task status (ADR 0006)
 
 Feature work that sits cleanly on the current foundation: workspace/project UI,
 the realtime chat/DM module (reuse the Socket.IO room pattern in

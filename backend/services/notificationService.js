@@ -28,7 +28,7 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
             select: {
               id: true,
               title: true,
-              status: true,
+              column: { select: { id: true, name: true, order: true, projectId: true } },
             },
           },
         },
@@ -54,6 +54,7 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
             user: { select: { id: true, name: true, email: true, role: true, isActive: true } },
           },
         },
+        column: { select: { id: true, name: true, order: true, projectId: true } },
       },
     });
 
@@ -73,10 +74,10 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
 };
 
 /**
- * Notify all assigned users and the task creator (except the changer) when a task status changes.
- * Emits 'notification' and 'task:statusChanged' events.
+ * Notify all assigned users and the task creator (except the changer) when a task moves columns.
+ * Emits 'notification' and 'task:columnChanged' events.
  */
-const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => {
+const notifyColumnChange = async (taskId, newColumnName, changerName, changerId) => {
   const targetTaskId = taskId;
   const parsedChangerId = changerId || null;
 
@@ -108,8 +109,8 @@ const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => 
       const notification = await prisma.notification.create({
         data: {
           recipientId: userId,
-          type: 'StatusChange',
-          message: `${changerName} updated the status of "${task.title}" to "${newStatus}"`,
+          type: 'ColumnChange',
+          message: `${changerName} moved "${task.title}" to "${newColumnName}"`,
           relatedTaskId: targetTaskId,
         },
         include: {
@@ -117,7 +118,7 @@ const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => 
             select: {
               id: true,
               title: true,
-              status: true,
+              column: { select: { id: true, name: true, order: true, projectId: true } },
             },
           },
         },
@@ -130,14 +131,15 @@ const notifyStatusChange = async (taskId, newStatus, changerName, changerId) => 
       socketService.emitToUser(userId, 'notification', formatted);
     }
 
-    // Emit live task:statusChanged to all involved users (sync active sessions)
+    // Emit live task:columnChanged to all involved users (sync active sessions)
     const allInvolved = Array.from(new Set([...assignedUserIds, creatorId]));
-    socketService.emitToUsers(allInvolved, 'task:statusChanged', {
+    socketService.emitToUsers(allInvolved, 'task:columnChanged', {
       taskId: targetTaskId,
-      status: newStatus,
+      columnId: task.columnId,
+      columnName: newColumnName,
     });
   } catch (error) {
-    console.error(`Error in notifyStatusChange: ${error.message}`);
+    console.error(`Error in notifyColumnChange: ${error.message}`);
   }
 };
 
@@ -185,7 +187,7 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview)
             select: {
               id: true,
               title: true,
-              status: true,
+              column: { select: { id: true, name: true, order: true, projectId: true } },
             },
           },
         },
@@ -232,11 +234,14 @@ const checkApproachingDeadlines = async () => {
     const now = new Date();
     const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    // Find incomplete tasks due in the next 24 hours using Prisma
+    // Find tasks due in the next 24 hours that are not in terminal workflow columns.
     const tasks = await prisma.task.findMany({
       where: {
         dueDate: { gte: now, lte: next24Hours },
-        status: { not: 'Completed' },
+        OR: [
+          { columnId: null },
+          { column: { name: { notIn: ['Done', 'Completed'] } } },
+        ],
       },
     });
 
@@ -274,13 +279,13 @@ const checkApproachingDeadlines = async () => {
             relatedTaskId: task.id,
           },
           include: {
-            relatedTask: {
-              select: {
-                id: true,
-                title: true,
-                status: true,
-              },
+          relatedTask: {
+            select: {
+              id: true,
+              title: true,
+              column: { select: { id: true, name: true, order: true, projectId: true } },
             },
+          },
           },
         });
 
@@ -298,7 +303,7 @@ const checkApproachingDeadlines = async () => {
 
 module.exports = {
   notifyAssignment,
-  notifyStatusChange,
+  notifyColumnChange,
   notifyComment,
   notifyAdmin,
   checkApproachingDeadlines,

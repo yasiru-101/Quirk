@@ -12,15 +12,15 @@ generator client {
 // ─── Workspace Model ──────────────────────────────────────────────────────────
 // Top-level organisation container. Created during PM/Admin onboarding.
 model Workspace {
-  id          String             @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
   ownerId     String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  owner         User               @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  owner         User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   members       WorkspaceMember[]
   projects      Project[]
   invitations   Invitation[]
@@ -35,11 +35,11 @@ model Workspace {
 model WorkspaceMember {
   workspaceId String
   userId      String
-  role        String    @default("Member") // Owner, Admin, Member
-  joinedAt    DateTime  @default(now())
+  role        String   @default("Member") // Owner, Admin, Member
+  joinedAt    DateTime @default(now())
 
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([workspaceId, userId])
 }
@@ -59,8 +59,8 @@ model Invitation {
   acceptedAt  DateTime?
   createdAt   DateTime  @default(now())
 
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  inviter     User      @relation("InvitationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation("InvitationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, status])
   @@index([email])
@@ -74,82 +74,82 @@ model OtpCode {
   id         String    @id @default(uuid())
   userId     String
   codeHash   String
-  purpose    String    // EMAIL_VERIFY, LOGIN_2FA
+  purpose    String // EMAIL_VERIFY, LOGIN_2FA
   expiresAt  DateTime
   consumedAt DateTime?
   attempts   Int       @default(0)
   createdAt  DateTime  @default(now())
 
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose])
 }
 
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
-  id                  String              @id @default(uuid())
-  name                String
-  email               String              @unique
-  passwordHash        String
-  role                String              @default("Collaborator") // Admin, Project Manager, Collaborator
-  mustResetPassword   Boolean             @default(true)
-  isActive            Boolean             @default(true)
+  id                String  @id @default(uuid())
+  name              String
+  email             String  @unique
+  passwordHash      String
+  role              String  @default("Collaborator") // Admin, Project Manager, Collaborator
+  mustResetPassword Boolean @default(true)
+  isActive          Boolean @default(true)
 
   // Identity verification & MFA. emailVerified defaults true so administrator-created
   // and pre-existing accounts are trusted; self-registration explicitly sets it false
   // until the email is confirmed via a one-time code.
-  emailVerified       Boolean             @default(true)
-  twoFactorEnabled    Boolean             @default(false)
+  emailVerified    Boolean @default(true)
+  twoFactorEnabled Boolean @default(false)
 
   // Extended profile fields (SRS §Onboarding)
-  avatarUrl           String?
-  jobTitle            String?
-  timezone            String?
-  onboardingComplete  Boolean             @default(false)
+  avatarUrl          String?
+  jobTitle           String?
+  timezone           String?
+  onboardingComplete Boolean @default(false)
 
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  deletedAt           DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  ownedWorkspaces     Workspace[]         @relation("WorkspaceOwner")
-  workspaceMemberships WorkspaceMember[]
-  invitationsSent     Invitation[]        @relation("InvitationInviter")
-  projectsCreated     Project[]           @relation("ProjectCreator")
-  projectMemberships  ProjectMember[]
-  tasksCreated        Task[]              @relation("TaskCreator")
-  assignments         TaskAssignment[]
-  comments            Comment[]
-  attachments         Attachment[]
-  notifications       Notification[]
-  timeLogs            TimeLog[]
-  activityLogs        ActivityLog[]
-  otpCodes            OtpCode[]
+  ownedWorkspaces          Workspace[]               @relation("WorkspaceOwner")
+  workspaceMemberships     WorkspaceMember[]
+  invitationsSent          Invitation[]              @relation("InvitationInviter")
+  projectsCreated          Project[]                 @relation("ProjectCreator")
+  projectMemberships       ProjectMember[]
+  tasksCreated             Task[]                    @relation("TaskCreator")
+  assignments              TaskAssignment[]
+  comments                 Comment[]
+  attachments              Attachment[]
+  notifications            Notification[]
+  timeLogs                 TimeLog[]
+  activityLogs             ActivityLog[]
+  otpCodes                 OtpCode[]
   conversationParticipants ConversationParticipant[]
   chatMessages             ChatMessage[]
 }
 
 // ─── Project Model ───────────────────────────────────────────────────────────
 model Project {
-  id           String          @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
   description  String?
   workspaceId  String?
   createdBy    String
-  status       String          @default("active") // active, archived
-  templateType String?         // "Software Development", "Marketing Campaign", "Basic Kanban"
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  status       String    @default("active") // active, archived
+  templateType String? // "Software Development", "Marketing Campaign", "Basic Kanban"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
   // Relations
-  workspace     Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
-  creator       User            @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  members       ProjectMember[]
-  tasks         Task[]
-  columns       KanbanColumn[]
-  epics         Epic[]
-  conversation  Conversation?
+  workspace    Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  creator      User            @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  members      ProjectMember[]
+  tasks        Task[]
+  columns      KanbanColumn[]
+  epics        Epic[]
+  conversation Conversation?
 }
 
 // ─── ProjectMember Model (Many-to-Many Join Table) ───────────────────────────
@@ -159,8 +159,8 @@ model ProjectMember {
   role      String   @default("Collaborator") // Project Manager, Collaborator
   addedAt   DateTime @default(now())
 
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([projectId, userId])
 }
@@ -176,8 +176,8 @@ model KanbanColumn {
   updatedAt DateTime @updatedAt
 
   // Relations
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks     Task[]
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
 
   @@index([projectId, order])
 }
@@ -188,57 +188,56 @@ model Epic {
   id        String   @id @default(uuid())
   projectId String
   name      String
-  color     String?  // Accent hex color for UI display
+  color     String? // Accent hex color for UI display
   createdAt DateTime @default(now())
 
   // Relations
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks     Task[]
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
 }
 
 // ─── Task Model ──────────────────────────────────────────────────────────────
 model Task {
-  id              String            @id @default(uuid())
-  title           String
-  description     String?
-  projectId       String?
-  createdBy       String
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+  projectId   String?
+  createdBy   String
 
   // Workflow positioning
-  columnId        String?           // FK to KanbanColumn; null = ungrouped
-  status          String            @default("To Do") // Kept for backward compat; mirrors column name
+  columnId String? // FK to KanbanColumn; null = ungrouped
 
   // Task attributes (SRS)
-  dueDate         DateTime?
-  priority        String            @default("Medium") // Low, Medium, High, Urgent
-  tags            String[]          @default([])
-  epicId          String?           // FK to Epic
-  estimatedHours  Float?            // SRS §Time Tracking
+  dueDate        DateTime?
+  priority       String    @default("Medium") // Low, Medium, High, Urgent
+  tags           String[]  @default([])
+  epicId         String? // FK to Epic
+  estimatedHours Float? // SRS §Time Tracking
 
   // Subtask support (self-relation)
-  parentTaskId    String?           // null = top-level task; set = subtask
+  parentTaskId String? // null = top-level task; set = subtask
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  deletedAt       DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  project         Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  column          KanbanColumn?     @relation(fields: [columnId], references: [id], onDelete: SetNull)
-  epic            Epic?             @relation(fields: [epicId], references: [id], onDelete: SetNull)
-  creator         User              @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  parent          Task?             @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subtasks        Task[]            @relation("Subtasks")
-  assignments     TaskAssignment[]
-  comments        Comment[]
-  attachments     Attachment[]
-  notifications   Notification[]
-  timeLogs        TimeLog[]
-  activityLogs    ActivityLog[]
+  project       Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  column        KanbanColumn?    @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  epic          Epic?            @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  creator       User             @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  parent        Task?            @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks      Task[]           @relation("Subtasks")
+  assignments   TaskAssignment[]
+  comments      Comment[]
+  attachments   Attachment[]
+  notifications Notification[]
+  timeLogs      TimeLog[]
+  activityLogs  ActivityLog[]
 
   // Dependency relations
-  blocking        TaskDependency[]  @relation("BlockingTask")
-  blockedBy       TaskDependency[]  @relation("BlockedTask")
+  blocking  TaskDependency[] @relation("BlockingTask")
+  blockedBy TaskDependency[] @relation("BlockedTask")
 
   @@index([projectId])
   @@index([parentTaskId])
@@ -248,12 +247,12 @@ model Task {
 // Stores "Task A blocks Task B" relationships (SRS §Task Dependencies).
 model TaskDependency {
   id             String   @id @default(uuid())
-  blockingTaskId String   // The task that is blocking
-  blockedTaskId  String   // The task that is blocked
+  blockingTaskId String // The task that is blocking
+  blockedTaskId  String // The task that is blocked
   createdAt      DateTime @default(now())
 
-  blockingTask   Task     @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
-  blockedTask    Task     @relation("BlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
+  blockingTask Task @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockedTask  Task @relation("BlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
 
   @@unique([blockingTaskId, blockedTaskId])
 }
@@ -264,8 +263,8 @@ model TaskAssignment {
   userId     String
   assignedAt DateTime @default(now())
 
-  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([taskId, userId])
 }
@@ -281,8 +280,8 @@ model TimeLog {
   note      String?
   createdAt DateTime @default(now())
 
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
 }
@@ -293,25 +292,25 @@ model ActivityLog {
   id        String   @id @default(uuid())
   taskId    String
   userId    String
-  action    String   // e.g. "status_changed", "assigned", "commented", "subtask_added"
-  metadata  Json?    // { from, to, comment, assigneeName, etc. }
+  action    String // e.g. "column_changed", "assigned", "commented", "subtask_added"
+  metadata  Json? // { from, to, comment, assigneeName, etc. }
   createdAt DateTime @default(now())
 
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId, createdAt])
 }
 
 // ─── Comment Model ───────────────────────────────────────────────────────────
 model Comment {
-  id          String       @id @default(uuid())
-  taskId      String
-  userId      String
-  content     String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id        String    @id @default(uuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -330,23 +329,23 @@ model Attachment {
   sizeBytes    Int
   createdAt    DateTime @default(now())
 
-  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  comment      Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  uploader     User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+  task     Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploader User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
 }
 
 // ─── Notification Model ──────────────────────────────────────────────────────
 model Notification {
   id            String   @id @default(uuid())
   recipientId   String
-  type          String   // Assignment, StatusChange, Comment, Deadline, Admin
+  type          String // Assignment, ColumnChange, Comment, Deadline, Admin
   message       String
   relatedTaskId String?
   isRead        Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  recipient     User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  relatedTask   Task?    @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
+  recipient   User  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  relatedTask Task? @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
 
   @@index([recipientId, isRead])
 }
@@ -356,16 +355,16 @@ model Notification {
 // workspace members. One conversation per project (enforced by @@unique); DMs are
 // scoped to a shared workspace.
 model Conversation {
-  id          String                    @id @default(uuid())
+  id          String   @id @default(uuid())
   // "PROJECT" – all project members; "DIRECT" – exactly two workspace members
   type        String
-  projectId   String?                   @unique // set when type = PROJECT
-  workspaceId String?                           // set for both types
-  createdAt   DateTime                  @default(now())
-  updatedAt   DateTime                  @updatedAt
+  projectId   String?  @unique // set when type = PROJECT
+  workspaceId String? // set for both types
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  project      Project?                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  workspace    Workspace?               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project      Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspace    Workspace?                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   participants ConversationParticipant[]
   messages     ChatMessage[]
 
@@ -378,8 +377,8 @@ model ConversationParticipant {
   userId         String
   joinedAt       DateTime @default(now())
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId])
@@ -389,17 +388,17 @@ model ConversationParticipant {
 // A single message within a conversation. Soft-deleted messages retain the row
 // so the thread history is not disrupted.
 model ChatMessage {
-  id             String       @id @default(uuid())
+  id             String @id @default(uuid())
   conversationId String
   senderId       String
 
-  content        String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?    // soft delete; content replaced by "[deleted]" on read
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete; content replaced by "[deleted]" on read
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
 
   @@index([conversationId, createdAt])
 }

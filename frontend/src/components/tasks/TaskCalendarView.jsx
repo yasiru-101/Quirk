@@ -16,7 +16,7 @@ import {
   isSameDay, 
   isToday 
 } from 'date-fns';
-import { getStatusColor, getPriorityColor, cn } from '../../utils/helpers';
+import { getStatusColor, getTaskColumnName, cn } from '../../utils/helpers';
 
 export default function TaskCalendarView({ tasks, onTaskClick }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -119,27 +119,30 @@ export default function TaskCalendarView({ tasks, onTaskClick }) {
 
                 {/* Tasks container in the Day cell */}
                 <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 custom-scrollbar">
-                  {dayTasks.map((task) => (
-                    <button
-                      key={task._id}
-                      onClick={() => onTaskClick?.(task)}
-                      className={cn(
-                        "w-full text-left text-[11px] px-2 py-1 rounded-[var(--radius-sm)] border border-[var(--colors-hairline)] truncate transition-all cursor-pointer block hover:scale-[0.98] active:scale-[0.96]",
-                        getStatusColor(task.status)
-                      )}
-                      title={`${task.title} (${task.status})`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", 
-                          task.priority === 'Urgent' ? 'bg-[var(--colors-priority-urgent)]' :
-                          task.priority === 'High' ? 'bg-[var(--colors-priority-high)]' :
-                          task.priority === 'Medium' ? 'bg-[var(--colors-priority-medium)]' :
-                          'bg-[var(--colors-priority-low)]'
-                        )} />
-                        <span className="truncate font-medium text-[var(--colors-ink)]">{task.title}</span>
-                      </div>
-                    </button>
-                  ))}
+                  {dayTasks.map((task) => {
+                    const columnName = getTaskColumnName(task);
+                    return (
+                      <button
+                        key={task._id}
+                        onClick={() => onTaskClick?.(task)}
+                        className={cn(
+                          "w-full text-left text-[11px] px-2 py-1 rounded-[var(--radius-sm)] border border-[var(--colors-hairline)] truncate transition-all cursor-pointer block hover:scale-[0.98] active:scale-[0.96]",
+                          getStatusColor(columnName)
+                        )}
+                        title={`${task.title} (${columnName})`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0",
+                            task.priority === 'Urgent' ? 'bg-[var(--colors-priority-urgent)]' :
+                            task.priority === 'High' ? 'bg-[var(--colors-priority-high)]' :
+                            task.priority === 'Medium' ? 'bg-[var(--colors-priority-medium)]' :
+                            'bg-[var(--colors-priority-low)]'
+                          )} />
+                          <span className="truncate font-medium text-[var(--colors-ink)]">{task.title}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );

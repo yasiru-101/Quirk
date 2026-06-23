@@ -11,7 +11,7 @@ const {
   getTasks,
   getTaskById,
   updateTask,
-  updateTaskStatus,
+  updateTaskColumn,
   deleteTask,
   assignUsers,
 } = require('../controllers/taskController');
@@ -23,7 +23,7 @@ const {
   createTaskSchema,
   updateTaskSchema,
   assignTaskSchema,
-  updateStatusSchema,
+  updateColumnSchema,
 } = require('../validations/taskSchemas');
 
 // Require authentication for all task operations
@@ -61,10 +61,9 @@ router.use(protect);
  *                 type: string
  *                 enum: [Low, Medium, High]
  *                 example: High
- *               status:
+ *               columnId:
  *                 type: string
- *                 enum: [To Do, In Progress, Completed]
- *                 example: To Do
+ *                 format: uuid
  *     responses:
  *       201:
  *         description: Task created successfully.
@@ -80,15 +79,16 @@ router.post('/', validate(createTaskSchema), createTask);
  * /tasks:
  *   get:
  *     summary: List tasks
- *     description: Returns a list of tasks. Supports status and priority filters.
+ *     description: Returns a list of tasks. Supports column and priority filters.
  *     tags: [Tasks]
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - name: status
+ *       - name: columnId
  *         in: query
  *         schema:
  *           type: string
+ *           format: uuid
  *       - name: priority
  *         in: query
  *         schema:
@@ -127,7 +127,7 @@ router.get('/:id', requireTaskAccess(), getTaskById);
  * /tasks/{id}:
  *   put:
  *     summary: Update task details
- *     description: Updates task title, description, due date, priority, or status. Restricted to Project Managers.
+ *     description: Updates task title, description, due date, priority, or workflow column. Restricted to Project Managers.
  *     tags: [Tasks]
  *     security:
  *       - cookieAuth: []
@@ -153,10 +153,10 @@ router.put('/:id', requireTaskAccess('Project Manager'), validate(updateTaskSche
 
 /**
  * @openapi
- * /tasks/{id}/status:
+ * /tasks/{id}/column:
  *   patch:
- *     summary: Update task status
- *     description: Updates only the status field. Allowed for PMs or assigned Collaborators.
+ *     summary: Move task to a workflow column
+ *     description: Updates only the task column. Allowed for PMs or assigned Collaborators.
  *     tags: [Tasks]
  *     security:
  *       - cookieAuth: []
@@ -173,24 +173,24 @@ router.put('/:id', requireTaskAccess('Project Manager'), validate(updateTaskSche
  *           schema:
  *             type: object
  *             required:
- *               - status
+ *               - columnId
  *             properties:
- *               status:
+ *               columnId:
  *                 type: string
- *                 enum: [To Do, In Progress, Completed]
+ *                 format: uuid
  *     responses:
  *       200:
- *         description: Status updated successfully.
+ *         description: Column updated successfully.
  *       403:
  *         description: Forbidden (user is Collaborator but not assigned to task).
  *       404:
  *         description: Task not found.
  */
 router.patch(
-  '/:id/status',
+  '/:id/column',
   requireTaskAccess(),
-  validate(updateStatusSchema),
-  updateTaskStatus
+  validate(updateColumnSchema),
+  updateTaskColumn
 );
 
 /**

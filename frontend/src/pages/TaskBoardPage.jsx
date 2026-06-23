@@ -2,7 +2,7 @@
  * @file TaskBoardPage.jsx
  * @description Task board layout supporting Kanban and list formats.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import TaskTable from '../components/tasks/TaskTable';
@@ -10,28 +10,41 @@ import TaskCalendarView from '../components/tasks/TaskCalendarView';
 import TaskTimelineView from '../components/tasks/TaskTimelineView';
 import TaskModal from '../components/tasks/TaskModal';
 import TaskFilters from '../components/tasks/TaskFilters';
-import Button from '../components/common/Button';
 import ViewHeader from '../components/common/ViewHeader';
 import ViewToolbar from '../components/common/ViewToolbar';
 import { taskService } from '../services/taskService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { cn, isOverdue } from '../utils/helpers';
+import { useProject } from '../context/ProjectContext';
+import { getTaskColumnName, isOverdue, isTerminalColumn } from '../utils/helpers';
 import { ROLES } from '../utils/constants';
 
 export default function TaskBoardPage() {
   const { role } = useAuth();
   const { error: toastError, success } = useToast();
   const { on } = useSocket();
+  const { projects, loading: projectsLoading } = useProject();
   const navigate = useNavigate();
   const isPM = role === ROLES.PROJECT_MANAGER;
 
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', status: '', priority: '' });
+  const [filters, setFilters] = useState({ search: '', columnId: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
+  const columns = useMemo(
+    () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
+      ...column,
+      projectId: column.projectId || project.id,
+      projectName: project.name,
+    }))),
+    [projects]
+  );
+  const columnsById = useMemo(
+    () => new Map(columns.map((column) => [column.id, column])),
+    [columns]
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -43,11 +56,12 @@ export default function TaskBoardPage() {
   }, []);
 
   useEffect(() => {
-    const unsub = on('task:statusChanged', ({ taskId, status }) => {
-      setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, status } : t)));
+    const unsub = on('task:columnChanged', ({ taskId, columnId }) => {
+      const column = columnsById.get(columnId);
+      setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, columnId, column: column || t.column } : t)));
     });
     return unsub;
-  }, [on]);
+  }, [on, columnsById]);
 
   useEffect(() => {
     const unsub = on('task:assigned', (newTask) => {
@@ -64,20 +78,24 @@ export default function TaskBoardPage() {
 
   const filtered = tasks.filter((t) => {
     if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-    if (filters.status === 'Overdue') {
-      if (!isOverdue(t.dueDate) || t.status === 'Completed') return false;
-    } else if (filters.status) {
-      if (t.status !== filters.status) return false;
+    if (filters.columnId === 'Overdue') {
+      if (!isOverdue(t.dueDate) || isTerminalColumn(getTaskColumnName(t))) return false;
+    } else if (filters.columnId) {
+      if (t.columnId !== filters.columnId) return false;
     }
     if (filters.priority && t.priority !== filters.priority) return false;
     return true;
   });
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t)));
+  const handleColumnChange = async (taskId, columnId) => {
+    const column = columnsById.get(columnId);
+    setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, columnId, column: column || t.column } : t)));
     try {
-      await taskService.updateTaskStatus(taskId, newStatus);
-    } catch {}
+      const { data } = await taskService.updateTaskColumn(taskId, columnId);
+      setTasks((prev) => prev.map((t) => (t._id === taskId ? data.task : t)));
+    } catch {
+      toastError('Failed to move task. Please try again.');
+    }
   };
 
   const handleDelete = async (taskId) => {
@@ -118,10 +136,10 @@ export default function TaskBoardPage() {
 
       <ViewToolbar 
         filters={[
-          { id: 'status', label: 'Status', icon: '🏷️' },
+          { id: 'column', label: 'Column', icon: '🏷️' },
           { id: 'assignee', label: 'Assignee', icon: '👤' }
         ]}
-        activeFilters={['status']}
+        activeFilters={['column']}
         actions={
           isPM && (
             <button 
@@ -136,7 +154,8 @@ export default function TaskBoardPage() {
 
       <div className="flex-1 flex overflow-hidden bg-[var(--colors-canvas-soft)]">
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-          {loading ? (
+          <TaskFilters filters={filters} columns={columns} onChange={handleFilterChange} />
+          {loading || projectsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="skeleton h-80 rounded-xl" />
@@ -145,16 +164,18 @@ export default function TaskBoardPage() {
           ) : view === 'kanban' ? (
             <KanbanBoard
               tasks={filtered}
-              onStatusChange={handleStatusChange}
+              columns={columns}
+              onColumnChange={handleColumnChange}
               onCardClick={(task) => navigate(`/tasks/${task._id}`)}
               onDelete={handleDelete}
             />
           ) : view === 'table' ? (
             <TaskTable
               tasks={filtered}
+              columns={columns}
               onEdit={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
+              onColumnChange={handleColumnChange}
               onCreateNew={() => setModal({ open: true, task: null })}
             />
           ) : view === 'calendar' ? (
@@ -165,6 +186,7 @@ export default function TaskBoardPage() {
           ) : (
             <TaskTimelineView
               tasks={filtered}
+              columns={columns}
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           )}
@@ -176,6 +198,8 @@ export default function TaskBoardPage() {
         open={modal.open}
         onClose={() => setModal({ open: false, task: null })}
         task={modal.task}
+        projects={projects}
+        columns={columns}
         onSaved={handleSaved}
       />
     </div>

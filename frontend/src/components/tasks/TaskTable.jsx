@@ -1,16 +1,16 @@
 /**
  * @file TaskTable.jsx
- * @description Spreadsheet table listing tasks, statuses, assigning agents, and actions adhering to the solid premium design.
+ * @description Spreadsheet table listing tasks, workflow columns, assigning agents, and actions adhering to the solid premium design.
  */
 import React from 'react';
-import { getPriorityColor, getStatusColor, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
-import { ROLES, TASK_STATUS_LIST } from '../../utils/constants';
+import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
+import { ROLES } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
 import { ClipboardIcon, FlameIcon, ArrowUpIcon, ArrowDownIcon } from '../common/Icons';
 
-export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onCreateNew }) {
+export default function TaskTable({ tasks, columns, onEdit, onDelete, onColumnChange, onCreateNew }) {
   const { role } = useAuth();
   const isPM = role === ROLES.PROJECT_MANAGER;
 
@@ -44,7 +44,7 @@ export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onC
       <table className="w-full text-[13px] border-collapse">
         <thead className="sticky top-0 z-10">
           <tr>
-            {['Title', 'Status', 'Priority', 'Assigned To', 'Due Date', ...(isPM ? ['Actions'] : [])].map((h) => (
+            {['Title', 'Column', 'Priority', 'Assigned To', 'Due Date', ...(isPM ? ['Actions'] : [])].map((h) => (
               <th
                 key={h}
                 className="text-left px-3 py-2 text-[11px] font-semibold text-[var(--colors-ink-muted)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] whitespace-nowrap"
@@ -57,6 +57,8 @@ export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onC
         <tbody>
             {tasks.map((task) => {
               const overdue = isOverdue(task.dueDate);
+              const taskColumns = columns.filter((column) => column.projectId === task.projectId);
+              const columnName = getTaskColumnName(task);
               return (
                 <tr
                   key={task._id}
@@ -70,19 +72,19 @@ export default function TaskTable({ tasks, onEdit, onDelete, onStatusChange, onC
                     </div>
                   </td>
 
-                  {/* Status */}
+                  {/* Column */}
                   <td className="px-3 py-2 border border-[var(--colors-hairline)]">
                     <div className="relative w-fit">
                       <select
-                        value={task.status}
-                        onChange={(e) => onStatusChange?.(task._id, e.target.value)}
+                        value={task.columnId || ''}
+                        onChange={(e) => onColumnChange?.(task._id, e.target.value)}
                         className={cn(
                           'text-[12px] font-medium px-2 py-1 rounded-[var(--radius-sm)] cursor-pointer outline-none transition-colors focus-ring appearance-none text-center pr-6',
-                          getStatusColor(task.status)
+                          getStatusColor(columnName)
                         )}
                       >
-                        {TASK_STATUS_LIST.map((s) => (
-                          <option key={s} value={s}>{s}</option>
+                        {taskColumns.map((column) => (
+                          <option key={column.id} value={column.id}>{column.name}</option>
                         ))}
                       </select>
                       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">

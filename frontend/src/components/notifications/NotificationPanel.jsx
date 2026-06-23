@@ -172,7 +172,7 @@ function NotificationItem({ notification, onMarkRead }) {
   const renderIcon = () => {
     switch (meta.iconType) {
       case 'assignment':    return <UserIcon className="w-4 h-4" />;
-      case 'status_change': return <RefreshCwIcon className="w-4 h-4" />;
+      case 'column_change': return <RefreshCwIcon className="w-4 h-4" />;
       case 'comment':       return <MessageSquareIcon className="w-4 h-4" />;
       case 'deadline':      return <ClockIcon className="w-4 h-4" />;
       case 'admin':         return <ShieldIcon className="w-4 h-4" />;

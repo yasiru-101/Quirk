@@ -13,14 +13,13 @@ import {
   isToday, 
   isSameDay 
 } from 'date-fns';
-import { getStatusColor, cn } from '../../utils/helpers';
-import { TASK_STATUS_LIST } from '../../utils/constants';
+import { getStatusColor, getTaskColumnName, cn } from '../../utils/helpers';
 
 const DAY_WIDTH = 40; // width of day column in px
 
-export default function TaskTimelineView({ tasks, onTaskClick }) {
+export default function TaskTimelineView({ tasks, columns = [], onTaskClick }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [groupBy, setGroupBy] = useState('status'); // 'status' or 'priority'
+  const [groupBy, setGroupBy] = useState('column');
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -31,15 +30,18 @@ export default function TaskTimelineView({ tasks, onTaskClick }) {
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   // Group definitions
-  const statusGroups = TASK_STATUS_LIST;
+  const columnGroups = Array.from(new Set([
+    ...columns.map((column) => column.name),
+    ...tasks.map(getTaskColumnName),
+  ])).filter(Boolean);
   const priorityGroups = ['Urgent', 'High', 'Medium', 'Low'];
-  const activeGroups = groupBy === 'status' ? statusGroups : priorityGroups;
+  const activeGroups = groupBy === 'column' ? columnGroups : priorityGroups;
 
   // Function to filter tasks belonging to a specific group
   const getTasksInGroup = (group) => {
     return tasks.filter((t) => {
-      if (groupBy === 'status') {
-        return t.status === group;
+      if (groupBy === 'column') {
+        return getTaskColumnName(t) === group;
       } else {
         // Priority check
         return (t.priority || 'Medium') === group;
@@ -123,7 +125,7 @@ export default function TaskTimelineView({ tasks, onTaskClick }) {
               onChange={(e) => setGroupBy(e.target.value)}
               className="pl-3 pr-8 py-1.5 text-[12px] font-bold rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] outline-none focus-ring appearance-none cursor-pointer"
             >
-              <option value="status">Status</option>
+              <option value="column">Column</option>
               <option value="priority">Priority</option>
             </select>
             <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
@@ -211,6 +213,7 @@ export default function TaskTimelineView({ tasks, onTaskClick }) {
                   ) : (
                     groupTasks.map((task) => {
                       const coords = getBarCoordinates(task, days);
+                      const columnName = getTaskColumnName(task);
 
                       return (
                         <div
@@ -244,7 +247,7 @@ export default function TaskTimelineView({ tasks, onTaskClick }) {
                                 onClick={() => onTaskClick?.(task)}
                                 className={cn(
                                   "absolute top-2 h-8 rounded-[var(--radius-sm)] shadow-sm text-left truncate flex items-center px-3 border border-[var(--colors-hairline)] cursor-pointer hover:opacity-90 transition-all font-medium text-[11px] overflow-hidden",
-                                  getStatusColor(task.status),
+                                  getStatusColor(columnName),
                                   task.priority === 'Urgent' ? 'border-l-4 border-l-[var(--colors-priority-urgent)]' :
                                   task.priority === 'High' ? 'border-l-4 border-l-[var(--colors-priority-high)]' :
                                   task.priority === 'Medium' ? 'border-l-4 border-l-[var(--colors-priority-medium)]' :
@@ -254,7 +257,7 @@ export default function TaskTimelineView({ tasks, onTaskClick }) {
                                   left: `${coords.startIdx * DAY_WIDTH + 4}px`,
                                   width: `${(coords.endIdx - coords.startIdx + 1) * DAY_WIDTH - 8}px`,
                                 }}
-                                title={`${task.title} | Priority: ${task.priority} | Status: ${task.status}`}
+                                title={`${task.title} | Priority: ${task.priority} | Column: ${columnName}`}
                               >
                                 <span className="truncate text-[var(--colors-ink)] font-semibold">{task.title}</span>
                               </button>

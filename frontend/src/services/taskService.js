@@ -21,9 +21,9 @@ export const taskService = {
   updateTask: (id, data) =>
     api.put(`/tasks/${id}`, data),
 
-  /** Status-only update (PM + Collaborator) */
-  updateTaskStatus: (id, status) =>
-    api.patch(`/tasks/${id}/status`, { status }),
+  /** Column-only update (PM + assigned Collaborator) */
+  updateTaskColumn: (id, columnId) =>
+    api.patch(`/tasks/${id}/column`, { columnId }),
 
   /** Delete a task (PM only) */
   deleteTask: (id) =>

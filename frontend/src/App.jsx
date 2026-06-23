@@ -12,6 +12,7 @@ import { SocketProvider } from './context/SocketContext';
 import { ToastProvider }  from './context/ToastContext';
 import { ThemeProvider }  from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
+import { ChatProvider }   from './context/ChatContext';
 
 // Guards & Layout
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -31,6 +32,7 @@ import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
+import ChatPage           from './pages/ChatPage';
 
 import { ROLES } from './utils/constants';
 
@@ -46,6 +48,7 @@ export default function App() {
           <SocketProvider>
             <ToastProvider>
               <ProjectProvider>
+                <ChatProvider>
                 <Routes>
                   {/* ── Public ─────────────────────────────────────────────── */}
                 <Route path="/login"          element={<LoginPage />} />
@@ -139,11 +142,22 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   />
+
+                  {/* Chat & DMs */}
+                  <Route
+                    path="chat"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <ChatPage />
+                      </ProtectedRoute>
+                    }
+                  />
                 </Route>
 
                 {/* ── Catch-all ──────────────────────────────────────────── */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              </ChatProvider>
               </ProjectProvider>
             </ToastProvider>
           </SocketProvider>

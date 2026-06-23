@@ -119,6 +119,36 @@ module.exports = (httpServer) => {
       console.error(`[Socket] Error delivering pending notifications: ${error.message}`);
     }
 
+    // Join all conversation rooms the user participates in so chat messages
+    // are delivered in real-time without requiring a client-side join step.
+    try {
+      const participations = await prisma.conversationParticipant.findMany({
+        where: { userId: socket.user.id },
+        select: { conversationId: true },
+      });
+
+      const convRooms = participations.map((p) => `conv:${p.conversationId}`);
+      if (convRooms.length > 0) {
+        socket.join(convRooms);
+        console.log(`[Socket] User ${socket.user.name} joined ${convRooms.length} conversation room(s)`);
+      }
+
+      // Replay the last message from each conversation so the client can show
+      // an unread indicator without a full REST fetch on reconnect.
+      if (participations.length > 0) {
+        const ids = participations.map((p) => p.conversationId);
+        const previews = await prisma.chatMessage.findMany({
+          where: { conversationId: { in: ids }, deletedAt: null },
+          distinct: ['conversationId'],
+          orderBy: { createdAt: 'desc' },
+          include: { sender: { select: { id: true, name: true, avatarUrl: true } } },
+        });
+        socket.emit('chat:previews', previews);
+      }
+    } catch (error) {
+      console.error(`[Socket] Error joining conversation rooms: ${error.message}`);
+    }
+
     socket.on('disconnect', () => {
       console.log(`[Socket] User ${socket.user.name} (${userIdStr}) disconnected`);
     });

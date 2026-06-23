@@ -8,7 +8,7 @@ const router  = express.Router({ mergeParams: true });
 
 const { createTimeLog, getTimeLogs } = require('../controllers/timeLogController');
 const { protect }                    = require('../middleware/auth');
-const rbac                           = require('../middleware/rbac');
+const { requireTaskAccess }          = require('../middleware/membership');
 const validate                       = require('../middleware/validate');
 const { createTimeLogSchema }        = require('../validations/taskSchemas');
 
@@ -39,7 +39,7 @@ router.use(protect);
  *       201: { description: Time logged }
  *       403: { description: Forbidden (collaborator not assigned) }
  */
-router.post('/', rbac('Project Manager', 'Collaborator'), validate(createTimeLogSchema), createTimeLog);
+router.post('/', requireTaskAccess(), validate(createTimeLogSchema), createTimeLog);
 
 /**
  * @openapi
@@ -54,6 +54,6 @@ router.post('/', rbac('Project Manager', 'Collaborator'), validate(createTimeLog
  *     responses:
  *       200: { description: Time logs with running total }
  */
-router.get('/', rbac('Project Manager', 'Collaborator'), getTimeLogs);
+router.get('/', requireTaskAccess(), getTimeLogs);
 
 module.exports = router;

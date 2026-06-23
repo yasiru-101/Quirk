@@ -6,6 +6,7 @@
 
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
+const { resolveProjectAccess } = require('../middleware/membership');
 
 // @desc    Create a new task
 // @route   POST /api/tasks
@@ -15,6 +16,18 @@ const createTask = async (req, res) => {
           parentTaskId, epicId, columnId, estimatedHours } = req.body;
 
   try {
+    // A task created inside a project requires manager access to that project.
+    if (projectId) {
+      const access = await resolveProjectAccess(req.user, projectId, ['Project Manager']);
+      if (!access.ok) {
+        return res.status(access.status === 404 ? 404 : 403).json({
+          message: access.status === 404
+            ? 'Project not found'
+            : 'Access denied. Only a project manager can create tasks in this project.',
+        });
+      }
+    }
+
     const task = await prisma.task.create({
       data: {
         title,
@@ -58,6 +71,18 @@ const getTasks = async (req, res) => {
     // parentTaskId filter: 'null' string = top-level tasks only, uuid = subtasks of that parent
     if (parentTaskId === 'null') where.parentTaskId = null;
     else if (parentTaskId)      where.parentTaskId = parentTaskId;
+
+    // Scope to tasks the caller can access: created by them, assigned to them, in a
+    // project they belong to, or in a workspace they own/administer. Platform admins
+    // see everything.
+    if (req.user.role !== 'Admin') {
+      where.OR = [
+        { createdBy: req.user.id },
+        { assignments: { some: { userId: req.user.id } } },
+        { project: { members: { some: { userId: req.user.id } } } },
+        { project: { workspace: { members: { some: { userId: req.user.id, role: { in: ['Owner', 'Admin'] } } } } } },
+      ];
+    }
 
     const tasks = await prisma.task.findMany({
       where,

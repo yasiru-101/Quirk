@@ -17,7 +17,7 @@ const {
 } = require('../controllers/taskController');
 
 const { protect } = require('../middleware/auth');
-const rbac = require('../middleware/rbac');
+const { requireTaskAccess } = require('../middleware/membership');
 const validate = require('../middleware/validate');
 const {
   createTaskSchema,
@@ -73,7 +73,7 @@ router.use(protect);
  *       403:
  *         description: Forbidden (requires Project Manager role).
  */
-router.post('/', rbac('Project Manager'), validate(createTaskSchema), createTask);
+router.post('/', validate(createTaskSchema), createTask);
 
 /**
  * @openapi
@@ -97,7 +97,7 @@ router.post('/', rbac('Project Manager'), validate(createTaskSchema), createTask
  *       200:
  *         description: List of tasks retrieved.
  */
-router.get('/', rbac('Project Manager', 'Collaborator'), getTasks);
+router.get('/', getTasks);
 
 /**
  * @openapi
@@ -120,7 +120,7 @@ router.get('/', rbac('Project Manager', 'Collaborator'), getTasks);
  *       404:
  *         description: Task not found.
  */
-router.get('/:id', rbac('Project Manager', 'Collaborator'), getTaskById);
+router.get('/:id', requireTaskAccess(), getTaskById);
 
 /**
  * @openapi
@@ -149,7 +149,7 @@ router.get('/:id', rbac('Project Manager', 'Collaborator'), getTaskById);
  *       404:
  *         description: Task not found.
  */
-router.put('/:id', rbac('Project Manager'), validate(updateTaskSchema), updateTask);
+router.put('/:id', requireTaskAccess('Project Manager'), validate(updateTaskSchema), updateTask);
 
 /**
  * @openapi
@@ -188,7 +188,7 @@ router.put('/:id', rbac('Project Manager'), validate(updateTaskSchema), updateTa
  */
 router.patch(
   '/:id/status',
-  rbac('Project Manager', 'Collaborator'),
+  requireTaskAccess(),
   validate(updateStatusSchema),
   updateTaskStatus
 );
@@ -214,7 +214,7 @@ router.patch(
  *       404:
  *         description: Task not found.
  */
-router.delete('/:id', rbac('Project Manager'), deleteTask);
+router.delete('/:id', requireTaskAccess('Project Manager'), deleteTask);
 
 /**
  * @openapi
@@ -252,6 +252,6 @@ router.delete('/:id', rbac('Project Manager'), deleteTask);
  *       404:
  *         description: Task not found.
  */
-router.post('/:id/assign', rbac('Project Manager'), validate(assignTaskSchema), assignUsers);
+router.post('/:id/assign', requireTaskAccess('Project Manager'), validate(assignTaskSchema), assignUsers);
 
 module.exports = router;

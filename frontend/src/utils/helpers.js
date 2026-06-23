@@ -2,7 +2,7 @@
  * @file helpers.js
  * @description Helper utilities (formatting, styling, validators, arrays merge).
  */
-import { TASK_PRIORITY, TASK_STATUS, NOTIFICATION_TYPE } from './constants';
+import { NOTIFICATION_TYPE } from './constants';
 import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from 'date-fns';
 
 // ─── Date Helpers ─────────────────────────────────────────────────────────────
@@ -39,6 +39,13 @@ export const getPriorityColor = (priority) => {
 };
 
 // ─── Status Helpers ───────────────────────────────────────────────────────────
+export const getTaskColumnName = (task) => task?.column?.name || 'Unassigned';
+
+export const isTerminalColumn = (columnName) => {
+  const normalized = columnName?.toLowerCase();
+  return normalized === 'done' || normalized === 'completed';
+};
+
 export const getStatusColor = (status) => {
   switch (status?.toLowerCase()) {
     case 'backlog':     return 'bg-[var(--colors-status-backlog-bg)] text-[var(--colors-status-backlog-text)]';
@@ -55,7 +62,7 @@ export const getStatusColor = (status) => {
 export const getNotificationMeta = (type) => {
   switch (type) {
     case NOTIFICATION_TYPE.ASSIGNMENT:    return { iconType: 'assignment', label: 'Assigned', color: 'text-indigo-400' };
-    case NOTIFICATION_TYPE.STATUS_CHANGE: return { iconType: 'status_change', label: 'Status Update', color: 'text-amber-400' };
+    case NOTIFICATION_TYPE.COLUMN_CHANGE: return { iconType: 'column_change', label: 'Column Update', color: 'text-amber-400' };
     case NOTIFICATION_TYPE.COMMENT:       return { iconType: 'comment', label: 'Comment', color: 'text-sky-400' };
     case NOTIFICATION_TYPE.DEADLINE:      return { iconType: 'deadline', label: 'Deadline', color: 'text-rose-400' };
     case NOTIFICATION_TYPE.ADMIN:         return { iconType: 'admin', label: 'Admin', color: 'text-violet-400' };

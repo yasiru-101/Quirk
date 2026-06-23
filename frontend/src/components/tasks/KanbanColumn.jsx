@@ -8,6 +8,7 @@ import EmptyState from '../common/EmptyState';
 import { ROLES } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
 import { InboxIcon, SparklesIcon } from '../common/Icons';
+import { isTerminalColumn } from '../../utils/helpers';
 
 const COLUMN_META = {
   'Backlog':     { colorVar: 'var(--colors-mute)' },
@@ -21,14 +22,16 @@ const COLUMN_META = {
  * Column renderer mapping card arrays inside column categories. Displays total counts 
  * and presents empty states.
  *
- * @param {string} props.status - Status category of the column
- * @param {object[]} props.tasks - Filtered tasks belonging to column status
- * @param {Function} props.onStatusChange - Callback updating card status
+ * @param {object} props.column - Kanban column metadata
+ * @param {object[]} props.tasks - Filtered tasks belonging to column
+ * @param {Function} props.onColumnChange - Callback updating card column
  * @param {Function} props.onCardClick - Details popup launcher callback
  * @param {Function} props.onDelete - Card delete callback
  */
-export default function KanbanColumn({ status, tasks, onStatusChange, onCardClick, onDelete }) {
-  const meta = COLUMN_META[status] ?? { colorVar: 'var(--colors-mute)' };
+export default function KanbanColumn({ column, columns, tasks, onColumnChange, onCardClick, onDelete }) {
+  const columnName = column?.name || 'Unassigned';
+  const isTerminal = isTerminalColumn(columnName);
+  const meta = COLUMN_META[columnName] ?? { colorVar: 'var(--colors-mute)' };
   const { role } = useAuth();
   const isPM = role === ROLES.PROJECT_MANAGER;
 
@@ -37,7 +40,7 @@ export default function KanbanColumn({ status, tasks, onStatusChange, onCardClic
       {/* Column header */}
       <div className="kanban-col-header">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.colorVar }} />
-        <span>{status}</span>
+        <span>{columnName}</span>
         <span className="col-count">
           {tasks.length}
         </span>
@@ -57,22 +60,22 @@ export default function KanbanColumn({ status, tasks, onStatusChange, onCardClic
           e.preventDefault();
           e.currentTarget.classList.remove('bg-[var(--colors-canvas-soft)]');
           const taskId = e.dataTransfer.getData('taskId');
-          if (taskId && onStatusChange) {
-            onStatusChange(taskId, status);
+          if (taskId && onColumnChange) {
+            onColumnChange(taskId, column.id);
           }
         }}
       >
         {tasks.length === 0 ? (
           <div className="pt-4">
             <EmptyState
-              icon={status === 'Completed' ? <SparklesIcon className="w-6 h-6 text-[var(--colors-mute)]" /> : <InboxIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
-              title={status === 'Completed' ? 'Nothing done yet' : 'Empty column'}
+              icon={isTerminal ? <SparklesIcon className="w-6 h-6 text-[var(--colors-mute)]" /> : <InboxIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
+              title={isTerminal ? 'Nothing done yet' : 'Empty column'}
               description={
-                status === 'To Do' || status === 'Backlog'
+                columnName === 'To Do' || columnName === 'Backlog'
                   ? isPM
                     ? 'Create a new task to get started.'
                     : 'No tasks assigned here yet.'
-                  : status === 'In Progress'
+                  : columnName === 'In Progress'
                   ? 'Tasks being worked on will appear here.'
                   : 'Completed tasks will show up here.'
               }
@@ -83,7 +86,8 @@ export default function KanbanColumn({ status, tasks, onStatusChange, onCardClic
             <TaskCard
               key={task._id}
               task={task}
-              onStatusChange={onStatusChange}
+              columns={columns}
+              onColumnChange={onColumnChange}
               onClick={() => onCardClick?.(task)}
               onDelete={onDelete}
             />

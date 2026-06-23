@@ -1,14 +1,14 @@
 /**
  * @file TaskFilters.jsx
- * @description Horizontal workspace toolbar containing search inputs and status drop downs.
+ * @description Horizontal workspace toolbar containing search inputs and column drop downs.
  */
 import React from 'react';
 import Input from '../common/Input';
-import { TASK_STATUS_LIST, TASK_PRIORITY_LIST } from '../../utils/constants';
+import { TASK_PRIORITY_LIST } from '../../utils/constants';
 
 /**
  * Filter/search bar for the task workspace.
- * @param {object} filters - { search, status, priority }
+ * @param {object} filters - { search, columnId, priority }
  * @param {Function} onChange(name, value)
  */
 /**
@@ -17,7 +17,7 @@ import { TASK_STATUS_LIST, TASK_PRIORITY_LIST } from '../../utils/constants';
  * @param {object} props.filters - Active filters config state
  * @param {Function} props.onChange - Trigger signaling active criteria shifts
  */
-export default function TaskFilters({ filters, onChange }) {
+export default function TaskFilters({ filters, columns = [], onChange }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Search */}
@@ -36,19 +36,19 @@ export default function TaskFilters({ filters, onChange }) {
         />
       </div>
 
-      {/* Status filter — includes a virtual "Overdue" option */}
+      {/* Column filter includes a virtual "Overdue" option */}
       <select
-        value={filters.status}
-        onChange={(e) => onChange('status', e.target.value)}
+        value={filters.columnId}
+        onChange={(e) => onChange('columnId', e.target.value)}
         className={`h-10 px-3 pr-8 rounded-lg bg-canvas-soft border text-sm outline-none transition-colors cursor-pointer
-          ${filters.status === 'Overdue'
+          ${filters.columnId === 'Overdue'
             ? 'border-rose-500/60 text-rose-400 focus:border-rose-500'
             : 'border-surface-pressed/50 text-body focus:border-primary focus:ring-1 focus:ring-primary'}`}
-        aria-label="Filter by status"
+        aria-label="Filter by column"
       >
-        <option value="">All Statuses</option>
-        {TASK_STATUS_LIST.map((s) => <option key={s}>{s}</option>)}
-        {/* Virtual filter — not a real DB status; handled in parent via isOverdue() */}
+        <option value="">All Columns</option>
+        {columns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
+        {/* Virtual filter handled in parent via isOverdue() */}
         <option value="Overdue">⚠ Overdue</option>
       </select>
 
@@ -64,9 +64,9 @@ export default function TaskFilters({ filters, onChange }) {
       </select>
 
       {/* Clear filters */}
-      {(filters.search || filters.status || filters.priority) && (
+      {(filters.search || filters.columnId || filters.priority) && (
         <button
-          onClick={() => { onChange('search', ''); onChange('status', ''); onChange('priority', ''); }}
+          onClick={() => { onChange('search', ''); onChange('columnId', ''); onChange('priority', ''); }}
           className="text-xs text-mute hover:text-body transition-colors px-3 h-10 rounded-lg hover:bg-hairline"
         >
           Clear filters

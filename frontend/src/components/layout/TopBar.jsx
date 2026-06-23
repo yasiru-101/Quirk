@@ -26,8 +26,9 @@ export default function TopBar() {
   const navigate = useNavigate();
   const crumbs = BREADCRUMBS[pathname] ?? ['Quirk', 'Overview'];
   const [panelOpen, setPanelOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { activeWorkspace } = useProject();
 
   const handleNewTask = () => {
@@ -91,8 +92,38 @@ export default function TopBar() {
             New task
           </button>
 
-          <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-xs font-bold text-[var(--colors-ink)]">
-            {getInitials(user?.name)}
+          <div className="relative">
+            <button
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-xs font-bold text-[var(--colors-ink)] focus-ring transition hover:bg-[var(--colors-surface-pressed)]"
+            >
+              {getInitials(user?.name)}
+            </button>
+            {profileMenuOpen && (
+              <div className="absolute right-0 top-12 w-48 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-2 shadow-lg z-50">
+                <div className="px-4 py-2 border-b border-[var(--colors-hairline)] mb-1">
+                  <p className="truncate text-sm font-semibold text-[var(--colors-ink)]">{user?.name}</p>
+                  <p className="truncate text-xs text-[var(--colors-ink-muted)]">{user?.role}</p>
+                </div>
+                <button
+                  onClick={() => { setProfileMenuOpen(false); navigate('/settings'); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition"
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    if (!window.confirm('Sign out of Quirk?')) return;
+                    await logout();
+                    navigate('/login');
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

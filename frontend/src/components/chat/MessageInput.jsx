@@ -52,7 +52,7 @@ export default function MessageInput() {
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={disabled ? 'Select a conversation…' : 'Type a message… (Enter to send, Shift+Enter for new line)'}
+          placeholder={disabled ? 'Select a conversation' : 'Type a message (Enter to send, Shift+Enter for new line)'}
           rows={1}
           className="flex-1 bg-transparent text-sm text-white placeholder-[rgba(255,255,255,0.3)] outline-none resize-none max-h-32 overflow-y-auto leading-relaxed"
           style={{ minHeight: '24px' }}
@@ -78,7 +78,7 @@ export default function MessageInput() {
         </button>
       </div>
       <p className="text-[10px] text-[rgba(255,255,255,0.2)] mt-1.5 px-1">
-        Enter to send · Shift+Enter for new line
+        Enter to send. Shift+Enter for new line.
       </p>
     </div>
   );

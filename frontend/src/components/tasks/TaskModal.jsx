@@ -167,7 +167,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
           name="description"
           value={form.description}
           onChange={handleChange}
-          placeholder="Add more context or details…"
+          placeholder="Add more context or details"
           rows={3}
           disabled={readOnly}
         />

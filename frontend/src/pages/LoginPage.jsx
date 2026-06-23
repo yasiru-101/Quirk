@@ -1,7 +1,6 @@
 /**
  * @file LoginPage.jsx
- * @description Premium authentication portal with a split-screen layout.
- * Strictly adheres to the Green/Uber hybrid theme without using glassmorphism.
+ * @description Authentication portal with a split-screen layout.
  */
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,7 +10,6 @@ import { normalizeError } from '../services/api';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import BrandLogo from '../components/common/BrandLogo';
-
 import { authService } from '../services/authService';
 
 export default function LoginPage() {
@@ -27,24 +25,27 @@ export default function LoginPage() {
   const [twoFactorData, setTwoFactorData] = useState(null);
   const [otpCode, setOtpCode] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-    if (errors[name]) setErrors((err) => ({ ...err, [name]: '' }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    if (errors[name]) setErrors((current) => ({ ...current, [name]: '' }));
   };
 
   const validate = () => {
-    const errs = {};
-    if (!form.email) errs.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Enter a valid email address';
-    if (!form.password) errs.password = 'Password is required';
-    return errs;
+    const nextErrors = {};
+    if (!form.email) nextErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(form.email)) nextErrors.email = 'Enter a valid email address';
+    if (!form.password) nextErrors.password = 'Password is required';
+    return nextErrors;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -53,11 +54,7 @@ export default function LoginPage() {
         setTwoFactorData({ pendingToken: data.pendingToken, email: data.email });
         return;
       }
-      if (data.mustResetPassword) {
-        navigate('/reset-password', { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      navigate(data.mustResetPassword ? '/reset-password' : from, { replace: true });
     } catch (err) {
       const { message, fieldErrors, code, email } = normalizeError(err);
       if (code === 'EMAIL_NOT_VERIFIED') {
@@ -71,8 +68,8 @@ export default function LoginPage() {
     }
   };
 
-  const handle2FASubmit = async (e) => {
-    e.preventDefault();
+  const handle2FASubmit = async (event) => {
+    event.preventDefault();
     if (!otpCode || otpCode.length !== 6) {
       setErrors({ otp: 'Please enter the 6-digit code' });
       return;
@@ -82,11 +79,7 @@ export default function LoginPage() {
     try {
       const { data } = await authService.verify2fa(twoFactorData.pendingToken, otpCode);
       setSession(data.user);
-      if (data.user.mustResetPassword) {
-        navigate('/reset-password', { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      navigate(data.user.mustResetPassword ? '/reset-password' : from, { replace: true });
     } catch (err) {
       const { message, fieldErrors } = normalizeError(err);
       if (fieldErrors?.code) setErrors({ otp: fieldErrors.code });
@@ -96,79 +89,66 @@ export default function LoginPage() {
     }
   };
 
-  const autofill = (email, password = 'Password@123') => {
+  const autofill = (email, password) => {
     setForm({ email, password });
     setErrors({});
   };
 
   return (
-    <div className="min-h-screen flex bg-[var(--colors-canvas)] animate-in">
-      
-      {/* ── Left Panel (Brand Image) ── */}
-      <div className="hidden lg:flex w-[45%] xl:w-1/2 relative bg-[var(--colors-ink)]">
+    <div className="flex min-h-screen animate-in bg-[var(--colors-canvas)]">
+      <div className="relative hidden w-[45%] bg-[var(--colors-ink)] lg:flex xl:w-1/2">
         <img
           src="/login screen.webp"
-          alt="Workspace Preview"
-          className="absolute inset-0 w-full h-full object-cover opacity-90"
+          alt="Quirk workspace preview"
+          className="absolute inset-0 h-full w-full object-cover opacity-90"
           draggable={false}
         />
-        {/* Subtle gradient overlay to ensure the image feels integrated but not obscured */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,0.6)] via-transparent to-[rgba(0,0,0,0.2)] mix-blend-multiply" />
-        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/25" />
         <div className="absolute bottom-12 left-12 right-12 text-white">
-          <h2 className="text-3xl xl:text-4xl font-bold tracking-tight mb-4 drop-shadow-md">
-            Supercharge your workflow.
+          <h2 className="mb-4 text-3xl font-normal tracking-normal xl:text-4xl">
+            A calmer way to run team work.
           </h2>
-          <p className="text-lg text-[rgba(255,255,255,0.8)] max-w-md drop-shadow-sm">
-            Everything your team needs to plan, track, and execute projects flawlessly in one beautifully crafted workspace.
+          <p className="max-w-md text-lg text-white/78">
+            Plan tasks, track workflow columns, and keep team discussion close to the work.
           </p>
         </div>
       </div>
 
-      {/* ── Right Panel (Login Form) ── */}
-      <div className="flex-1 flex flex-col justify-center p-8 sm:p-12 lg:p-16 xl:p-24 relative overflow-y-auto">
-        
-        <div className="w-full max-w-[420px] mx-auto slide-up">
+      <div className="relative flex flex-1 flex-col justify-center overflow-y-auto p-8 sm:p-12 lg:p-16 xl:p-24">
+        <div className="mx-auto w-full max-w-[420px] slide-up">
           <div className="mb-10">
-            <BrandLogo size="xl" className="-ml-2 mb-2" />
-            <h1 className="text-[var(--typography-display-lg)] font-bold text-[var(--colors-ink)] tracking-tight">
+            <BrandLogo size="xl" className="mb-2" />
+            <h1 className="text-[length:var(--typography-display-2)] font-normal text-[var(--colors-ink)]">
               Sign in
             </h1>
-            <p className="mt-3 text-[var(--typography-body-lg)] text-[var(--colors-body)]">
-              Welcome back! Please enter your details.
+            <p className="mt-3 text-[length:var(--typography-body-lg)] text-[var(--colors-body)]">
+              Welcome back. Enter your details to continue.
             </p>
           </div>
 
           {twoFactorData ? (
             <form onSubmit={handle2FASubmit} className="space-y-6" noValidate>
-              <div className="mb-6">
-                <p className="text-sm text-[var(--colors-body)] mb-4">
-                  A verification code has been sent to <span className="font-semibold">{twoFactorData.email}</span>.
-                </p>
-                <Input
-                  id="login-otp"
-                  label="Verification Code"
-                  type="text"
-                  name="otp"
-                  value={otpCode}
-                  onChange={(e) => {
-                    setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                    setErrors({});
-                  }}
-                  error={errors.otp}
-                  autoComplete="one-time-code"
-                  placeholder="000000"
-                  maxLength={6}
-                  className="text-center text-2xl tracking-widest h-14"
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="primary"
-                loading={loading}
-                className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
-              >
-                Verify & Sign in
+              <p className="text-sm text-[var(--colors-body)]">
+                A verification code has been sent to <span className="font-semibold">{twoFactorData.email}</span>.
+              </p>
+              <Input
+                id="login-otp"
+                label="Verification code"
+                type="text"
+                name="otp"
+                value={otpCode}
+                onChange={(event) => {
+                  setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6));
+                  setErrors({});
+                }}
+                error={errors.otp}
+                autoComplete="one-time-code"
+                placeholder="000000"
+                maxLength={6}
+                className="h-14 text-center text-2xl tracking-widest"
+              />
+              <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
+                Verify and sign in
               </Button>
               <button
                 type="button"
@@ -177,7 +157,7 @@ export default function LoginPage() {
                   setOtpCode('');
                   setErrors({});
                 }}
-                className="w-full mt-4 text-sm font-medium text-[var(--colors-primary)] hover:text-[var(--colors-primary-hover)]"
+                className="w-full text-sm font-semibold text-[var(--colors-primary-active)] hover:underline"
               >
                 Back to login
               </button>
@@ -194,12 +174,6 @@ export default function LoginPage() {
                 error={errors.email}
                 autoComplete="email"
                 placeholder="Enter your email"
-                leftIcon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                }
               />
 
               <Input
@@ -211,47 +185,28 @@ export default function LoginPage() {
                 onChange={handleChange}
                 error={errors.password}
                 autoComplete="current-password"
-                placeholder="••••••••"
-                leftIcon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                }
+                placeholder="Enter your password"
               />
 
-              <Button
-                type="submit"
-                variant="primary"
-                loading={loading}
-                className="w-full h-12 text-base font-semibold mt-2 shadow-[0_4px_14px_var(--colors-primary-glow)]"
-              >
+              <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
                 Sign in
               </Button>
             </form>
           )}
 
-          {/* Quick-login helpers — development builds only; never shipped to production. */}
           {import.meta.env.DEV && (
-            <div className="mt-12 pt-8 border-t border-[var(--colors-hairline)]">
-              <p className="text-[11px] font-bold text-[var(--colors-mute)] uppercase tracking-widest mb-4">
-                Quick Test Accounts
+            <div className="mt-12 border-t border-[var(--colors-hairline)] pt-8">
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-[var(--colors-mute)]">
+                Quick test accounts
               </p>
               <div className="grid grid-cols-3 gap-3">
-                <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>
-                  Admin
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>
-                  PM
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>
-                  Collab
-                </Button>
+                <Button variant="secondary" size="sm" onClick={() => autofill('admin@quirk.app', 'AdminPass123!')}>Admin</Button>
+                <Button variant="secondary" size="sm" onClick={() => autofill('pm@quirk.app', 'ManagerPass123!')}>PM</Button>
+                <Button variant="secondary" size="sm" onClick={() => autofill('dev@quirk.app', 'CollabPass123!')}>Collab</Button>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

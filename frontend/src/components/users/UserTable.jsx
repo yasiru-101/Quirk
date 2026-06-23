@@ -18,7 +18,6 @@ const ROLE_LIST = [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR];
 
 const EMPTY_FORM = { name: '', email: '', role: ROLES.COLLABORATOR };
 
-// ── Create / Edit Panel ───────────────────────────────────────────────────────
 function UserFormModal({ open, onClose, user = null, onSaved }) {
   const { success, error: toastError } = useToast();
   const isEdit = !!user;
@@ -132,7 +131,7 @@ function UserFormModal({ open, onClose, user = null, onSaved }) {
               </svg>
             </div>
           </div>
-          {errors.role && <p className="text-xs text-[var(--colors-priority-urgent)] mt-1 font-medium">⚠ {errors.role}</p>}
+          {errors.role && <p className="text-xs text-[var(--colors-priority-urgent)] mt-1 font-medium">{errors.role}</p>}
         </div>
          {!isEdit && (
           <div className="flex items-start gap-3 bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] rounded-lg p-4 mt-2">
@@ -147,7 +146,6 @@ function UserFormModal({ open, onClose, user = null, onSaved }) {
   );
 }
 
-// ── Main Table ────────────────────────────────────────────────────────────────
 export default function UserTable({ search }) {
   const { success, error: toastError, warning } = useToast();
   const [users, setUsers] = useState([]);

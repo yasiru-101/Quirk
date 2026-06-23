@@ -56,7 +56,7 @@ api.interceptors.response.use(
         );
         return api(originalRequest);
       } catch {
-        // Refresh also failed — dispatch a custom event so AuthContext can log out
+        // Refresh also failed, dispatch a custom event so AuthContext can log out.
         window.dispatchEvent(new CustomEvent('auth:expired'));
         return Promise.reject(error);
       }

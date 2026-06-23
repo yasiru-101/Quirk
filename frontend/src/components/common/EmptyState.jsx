@@ -1,6 +1,6 @@
 /**
  * @file EmptyState.jsx
- * @description Placeholder component used when search yields no result or columns are empty.
+ * @description Empty state component used when search yields no result or columns are empty.
  */
 import React from 'react';
 

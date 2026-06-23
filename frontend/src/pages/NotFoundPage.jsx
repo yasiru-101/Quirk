@@ -20,7 +20,7 @@ export default function NotFoundPage() {
             <Button variant="primary" size="lg" className="w-full sm:w-auto">Return to Dashboard</Button>
           </Link>
         </div>
-        <p className="text-[11px] font-mono text-[var(--colors-mute)] pt-6 uppercase tracking-widest">HTTP 404 — Not Found</p>
+        <p className="text-[11px] font-mono text-[var(--colors-mute)] pt-6 uppercase tracking-widest">HTTP 404 Not Found</p>
       </div>
     </div>
   );

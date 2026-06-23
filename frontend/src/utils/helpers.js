@@ -7,7 +7,7 @@ import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from 'date-f
 
 // ─── Date Helpers ─────────────────────────────────────────────────────────────
 export const formatDate = (date) => {
-  if (!date) return '—';
+  if (!date) return 'Not set';
   return format(new Date(date), 'MMM d, yyyy');
 };
 

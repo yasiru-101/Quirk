@@ -20,7 +20,7 @@ export default function ForbiddenPage() {
             <Button variant="primary" size="lg" className="w-full sm:w-auto">Return to Dashboard</Button>
           </Link>
         </div>
-        <p className="text-[11px] font-mono text-[var(--colors-mute)] pt-6 uppercase tracking-widest">HTTP 403 — Forbidden</p>
+        <p className="text-[11px] font-mono text-[var(--colors-mute)] pt-6 uppercase tracking-widest">HTTP 403 Forbidden</p>
       </div>
     </div>
   );

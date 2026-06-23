@@ -186,6 +186,7 @@ export default function TaskBoardPage() {
           ) : (
             <TaskTimelineView
               tasks={filtered}
+              columns={columns}
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           )}

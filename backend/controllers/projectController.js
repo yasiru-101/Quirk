@@ -311,11 +311,25 @@ const addMember = async (req, res) => {
 
     const memberRole = role === 'Project Manager' ? 'Project Manager' : 'Collaborator';
 
-    // Upsert to avoid duplicate member error
-    await prisma.projectMember.upsert({
-      where: { projectId_userId: { projectId: req.params.id, userId } },
-      create: { projectId: req.params.id, userId, role: memberRole },
-      update: { role: memberRole },
+    // Upsert to avoid duplicate member error.
+    await prisma.$transaction(async (tx) => {
+      await tx.projectMember.upsert({
+        where: { projectId_userId: { projectId: req.params.id, userId } },
+        create: { projectId: req.params.id, userId, role: memberRole },
+        update: { role: memberRole },
+      });
+
+      const conversation = await tx.conversation.findUnique({
+        where: { projectId: req.params.id },
+        select: { id: true },
+      });
+      if (conversation) {
+        await tx.conversationParticipant.upsert({
+          where: { conversationId_userId: { conversationId: conversation.id, userId } },
+          create: { conversationId: conversation.id, userId },
+          update: {},
+        });
+      }
     });
     return res.status(200).json({ message: 'Member added successfully' });
   } catch (error) {
@@ -329,8 +343,20 @@ const addMember = async (req, res) => {
 // @access PM | Admin
 const removeMember = async (req, res) => {
   try {
-    await prisma.projectMember.deleteMany({
-      where: { projectId: req.params.id, userId: req.params.userId },
+    await prisma.$transaction(async (tx) => {
+      await tx.projectMember.deleteMany({
+        where: { projectId: req.params.id, userId: req.params.userId },
+      });
+
+      const conversation = await tx.conversation.findUnique({
+        where: { projectId: req.params.id },
+        select: { id: true },
+      });
+      if (conversation) {
+        await tx.conversationParticipant.deleteMany({
+          where: { conversationId: conversation.id, userId: req.params.userId },
+        });
+      }
     });
     return res.status(200).json({ message: 'Member removed successfully' });
   } catch (error) {

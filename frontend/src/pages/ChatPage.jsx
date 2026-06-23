@@ -12,6 +12,7 @@ import { useChat } from '../context/ChatContext';
 import ConversationList from '../components/chat/ConversationList';
 import MessageThread from '../components/chat/MessageThread';
 import MessageInput from '../components/chat/MessageInput';
+import { useProject } from '../context/ProjectContext';
 
 // ─── New DM modal ─────────────────────────────────────────────────────────────
 import { useEffect } from 'react';
@@ -167,14 +168,59 @@ function ConversationHeader() {
   );
 }
 
+function ProjectRoomLauncher() {
+  const { projects, activeWorkspace } = useProject();
+  const { openProjectConversation, activeConversationId } = useChat();
+  const [opening, setOpening] = useState(null);
+
+  if (!activeWorkspace) {
+    return (
+      <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3 text-xs text-white/35">
+        Create or select a workspace to see project rooms.
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">Project rooms</p>
+      <div className="space-y-1">
+        {projects.slice(0, 5).map((project) => (
+          <button
+            key={project.id}
+            type="button"
+            onClick={async () => {
+              setOpening(project.id);
+              try {
+                await openProjectConversation(project.id);
+              } finally {
+                setOpening(null);
+              }
+            }}
+            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition ${
+              activeConversationId && opening !== project.id
+                ? 'text-white/58 hover:bg-white/5 hover:text-white'
+                : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/8 text-[11px] font-bold text-white">
+              {(project.name || 'P').slice(0, 1).toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{project.name}</span>
+            {opening === project.id && <span className="h-3 w-3 animate-spin rounded-full border border-[var(--colors-primary)] border-t-transparent" />}
+          </button>
+        ))}
+        {!projects.length && <p className="py-2 text-xs text-white/35">No projects in this workspace yet.</p>}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ChatPage() {
   const { activeConversationId } = useChat();
+  const { activeWorkspaceId } = useProject();
   const [showDmModal, setShowDmModal] = useState(false);
-
-  // Read the active workspace from localStorage (set by WorkspaceContext / sidebar)
-  const workspaceId =
-    typeof window !== 'undefined' ? localStorage.getItem('activeWorkspaceId') : null;
 
   return (
     <div className="flex h-full overflow-hidden bg-[#0C120E]">
@@ -198,6 +244,7 @@ export default function ChatPage() {
             </svg>
           </button>
         </div>
+        <ProjectRoomLauncher />
         <ConversationList />
       </aside>
 
@@ -214,7 +261,7 @@ export default function ChatPage() {
 
       {/* ── DM picker modal ──────────────────────────────────────────── */}
       {showDmModal && (
-        <NewDmModal workspaceId={workspaceId} onClose={() => setShowDmModal(false)} />
+        <NewDmModal workspaceId={activeWorkspaceId} onClose={() => setShowDmModal(false)} />
       )}
     </div>
   );

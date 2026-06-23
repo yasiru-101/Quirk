@@ -21,13 +21,29 @@ import { getTaskColumnName, isOverdue, isTerminalColumn } from '../utils/helpers
 import { ROLES } from '../utils/constants';
 
 export default function TaskBoardPage() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { error: toastError, success } = useToast();
   const { on } = useSocket();
-  const { projects, loading: projectsLoading } = useProject();
+  const { projects, loading: projectsLoading, canManageWorkspace } = useProject();
   const navigate = useNavigate();
   const location = useLocation();
-  const isPM = role === ROLES.PROJECT_MANAGER;
+  const scopedProjectId = new URLSearchParams(location.search).get('projectId') || '';
+  const scopedProject = useMemo(
+    () => projects.find((project) => project.id === scopedProjectId),
+    [projects, scopedProjectId]
+  );
+
+  const visibleProjects = useMemo(
+    () => (scopedProject ? [scopedProject] : projects),
+    [projects, scopedProject]
+  );
+
+  const canManageProject = (project) =>
+    role === ROLES.ADMIN ||
+    canManageWorkspace ||
+    project?.members?.some((member) => (member.userId === user?.id || member.user?.id === user?.id) && member.role === ROLES.PROJECT_MANAGER);
+
+  const canCreateTask = visibleProjects.some(canManageProject);
 
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
@@ -36,12 +52,12 @@ export default function TaskBoardPage() {
   const [modal, setModal] = useState({ open: false, task: null });
 
   const columns = useMemo(
-    () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
+    () => visibleProjects.flatMap((project) => (project.columns ?? []).map((column) => ({
       ...column,
       projectId: column.projectId || project.id,
       projectName: project.name,
     }))),
-    [projects]
+    [visibleProjects]
   );
 
   const columnsById = useMemo(
@@ -52,11 +68,11 @@ export default function TaskBoardPage() {
   useEffect(() => {
     setLoading(true);
     taskService
-      .getTasks()
+      .getTasks(scopedProjectId ? { projectId: scopedProjectId } : {})
       .then(({ data }) => setTasks(data.tasks ?? []))
       .catch(() => toastError('Failed to load tasks. Please refresh.'))
       .finally(() => setLoading(false));
-  }, [toastError]);
+  }, [scopedProjectId, toastError]);
 
   useEffect(() => {
     const openCreateModal = () => setModal({ open: true, task: null });
@@ -138,7 +154,7 @@ export default function TaskBoardPage() {
     <div className="flex h-full flex-col overflow-hidden animate-in">
       <ViewHeader
         title="Task Board"
-        subtitle="Manage work across board, list, calendar, and timeline views."
+        subtitle={scopedProject ? `Project-specific tasks for ${scopedProject.name}.` : 'Manage work across board, list, calendar, and timeline views.'}
         tabs={[
           { id: 'kanban', label: 'Board' },
           { id: 'table', label: 'List' },
@@ -156,7 +172,7 @@ export default function TaskBoardPage() {
         ]}
         activeFilters={['column']}
         actions={
-          isPM && (
+          canCreateTask && (
             <button
               onClick={() => setModal({ open: true, task: null })}
               className="rounded-full bg-[var(--colors-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring"
@@ -213,7 +229,7 @@ export default function TaskBoardPage() {
         open={modal.open}
         onClose={() => setModal({ open: false, task: null })}
         task={modal.task}
-        projects={projects}
+        projects={visibleProjects}
         columns={columns}
         onSaved={handleSaved}
       />

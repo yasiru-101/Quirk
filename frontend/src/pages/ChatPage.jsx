@@ -136,11 +136,12 @@ function ConversationHeader() {
   const active = conversations.find((c) => c.id === activeConversationId);
   if (!active) return null;
 
+  const currentUserId = user?._id || user?.id;
   let title = 'Conversation';
   if (active.type === 'PROJECT') {
     title = active.project?.name ?? 'Project chat';
   } else {
-    const other = (active.participants ?? []).find((p) => p.id !== user?.id);
+    const other = (active.participants ?? []).find((p) => (p._id || p.id) !== currentUserId);
     title = other?.name ?? 'Direct Message';
   }
 

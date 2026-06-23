@@ -38,15 +38,37 @@ const taskResponseInclude = {
       },
     },
   },
+  project: { select: { id: true, name: true, workspaceId: true } },
 };
 
 const formatTask = (task) => {
   const formatted = { ...task };
   formatted.createdBy = task.creator;
   formatted.assignees = task.assignments.map((a) => a.user);
+  if (task.project) {
+    formatted.projectName = task.project.name;
+  }
   delete formatted.creator;
   delete formatted.assignments;
   return formatted;
+};
+
+const parseDate = (value) => {
+  if (!value) return null;
+  return new Date(value);
+};
+
+const ensureProjectAssignees = async (projectId, assigneeIds) => {
+  if (!assigneeIds?.length) return null;
+  if (!projectId) {
+    return { assigneeIds: 'Assignees require a selected project.' };
+  }
+  const validAssignees = await prisma.projectMember.count({
+    where: { projectId, userId: { in: assigneeIds } },
+  });
+  return validAssignees === assigneeIds.length
+    ? null
+    : { assigneeIds: 'Assignees must be members of the selected project.' };
 };
 
 const resolveTaskPlacement = async ({ projectId, columnId }) => {
@@ -78,7 +100,7 @@ const resolveTaskPlacement = async ({ projectId, columnId }) => {
 // @access  Private (Project Manager only)
 const createTask = async (req, res) => {
   const { title, description, dueDate, priority, projectId, tags,
-          parentTaskId, epicId, columnId, estimatedHours } = req.body;
+          parentTaskId, epicId, columnId, estimatedHours, assigneeIds = [] } = req.body;
 
   try {
     const placement = await resolveTaskPlacement({ projectId, columnId });
@@ -98,25 +120,50 @@ const createTask = async (req, res) => {
       }
     }
 
-    const task = await prisma.task.create({
-      data: {
-        title,
-        description,
-        dueDate:        dueDate        ? new Date(dueDate) : null,
-        priority:       priority       || 'Medium',
-        projectId:      placement.projectId,
-        tags:           tags           || [],
-        parentTaskId:   parentTaskId   || null,
-        epicId:         epicId         || null,
-        columnId:       placement.columnId,
-        estimatedHours: estimatedHours || null,
-        createdBy: req.user.id,
-      },
-      include: taskResponseInclude,
+    const assigneeErrors = await ensureProjectAssignees(placement.projectId, assigneeIds);
+    if (assigneeErrors) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: assigneeErrors,
+      });
+    }
+
+    const task = await prisma.$transaction(async (tx) => {
+      const created = await tx.task.create({
+        data: {
+          title,
+          description,
+          dueDate:        parseDate(dueDate),
+          priority:       priority       || 'Medium',
+          projectId:      placement.projectId,
+          tags:           tags           || [],
+          parentTaskId:   parentTaskId   || null,
+          epicId:         epicId         || null,
+          columnId:       placement.columnId,
+          estimatedHours: estimatedHours || null,
+          createdBy: req.user.id,
+        },
+      });
+
+      if (assigneeIds.length) {
+        await tx.taskAssignment.createMany({
+          data: assigneeIds.map((userId) => ({ taskId: created.id, userId })),
+          skipDuplicates: true,
+        });
+      }
+
+      return tx.task.findUnique({
+        where: { id: created.id },
+        include: taskResponseInclude,
+      });
     });
 
     // Write audit log entry
     await logActivity(task.id, req.user.id, 'task_created', { title });
+    if (assigneeIds.length) {
+      const notificationService = require('../services/notificationService');
+      await notificationService.notifyAssignment(task.id, assigneeIds, req.user.name);
+    }
 
     return res.status(201).json({ task: formatTask(task) });
   } catch (error) {
@@ -131,13 +178,14 @@ const createTask = async (req, res) => {
 // @route   GET /api/tasks
 // @access  Private (PM & Collaborator)
 const getTasks = async (req, res) => {
-  const { columnId, priority, parentTaskId } = req.query;
+  const { columnId, priority, parentTaskId, projectId } = req.query;
   const where = {};
 
   try {
     // Apply filters if provided
     if (columnId)     where.columnId     = columnId;
     if (priority)     where.priority     = priority;
+    if (projectId)    where.projectId    = projectId;
     // parentTaskId filter: 'null' string = top-level tasks only, uuid = subtasks of that parent
     if (parentTaskId === 'null') where.parentTaskId = null;
     else if (parentTaskId)      where.parentTaskId = parentTaskId;
@@ -233,7 +281,7 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
   const { id } = req.params;
   const { title, description, dueDate, priority, projectId, tags,
-          parentTaskId, epicId, columnId, estimatedHours } = req.body;
+          parentTaskId, epicId, columnId, estimatedHours, assigneeIds } = req.body;
   const targetId = id;
 
   try {
@@ -250,24 +298,52 @@ const updateTask = async (req, res) => {
       return res.status(placement.error.status).json({ message: placement.error.message });
     }
 
-    const updatedTask = await prisma.task.update({
-      where: { id: targetId },
-      data: {
-        title:          title          !== undefined ? title                          : undefined,
-        description:    description    !== undefined ? description                    : undefined,
-        dueDate:        dueDate        !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
-        priority:       priority       !== undefined ? priority                       : undefined,
-        projectId:      projectId      !== undefined ? placement.projectId            : undefined,
-        tags:           tags           !== undefined ? tags                           : undefined,
-        parentTaskId:   parentTaskId   !== undefined ? parentTaskId                   : undefined,
-        epicId:         epicId         !== undefined ? epicId                         : undefined,
-        columnId:       columnId       !== undefined ? placement.columnId             : undefined,
-        estimatedHours: estimatedHours !== undefined ? estimatedHours                 : undefined,
-      },
-      include: taskResponseInclude,
+    const assigneeErrors = await ensureProjectAssignees(placement.projectId, assigneeIds);
+    if (assigneeErrors) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: assigneeErrors,
+      });
+    }
+
+    const updatedTask = await prisma.$transaction(async (tx) => {
+      await tx.task.update({
+        where: { id: targetId },
+        data: {
+          title:          title          !== undefined ? title                          : undefined,
+          description:    description    !== undefined ? description                    : undefined,
+          dueDate:        dueDate        !== undefined ? parseDate(dueDate)             : undefined,
+          priority:       priority       !== undefined ? priority                       : undefined,
+          projectId:      projectId      !== undefined ? placement.projectId            : undefined,
+          tags:           tags           !== undefined ? tags                           : undefined,
+          parentTaskId:   parentTaskId   !== undefined ? parentTaskId                   : undefined,
+          epicId:         epicId         !== undefined ? epicId                         : undefined,
+          columnId:       columnId       !== undefined ? placement.columnId             : undefined,
+          estimatedHours: estimatedHours !== undefined ? estimatedHours                 : undefined,
+        },
+      });
+
+      if (assigneeIds) {
+        await tx.taskAssignment.deleteMany({ where: { taskId: targetId } });
+        if (assigneeIds.length) {
+          await tx.taskAssignment.createMany({
+            data: assigneeIds.map((userId) => ({ taskId: targetId, userId })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.task.findUnique({
+        where: { id: targetId },
+        include: taskResponseInclude,
+      });
     });
 
     await logActivity(targetId, req.user.id, 'task_updated', { updatedFields: Object.keys(req.body) });
+    if (assigneeIds?.length) {
+      const notificationService = require('../services/notificationService');
+      await notificationService.notifyAssignment(targetId, assigneeIds, req.user.name);
+    }
 
     return res.status(200).json({ task: formatTask(updatedTask) });
   } catch (error) {
@@ -414,17 +490,11 @@ const assignUsers = async (req, res) => {
       });
     }
 
-    // 2. Validate that all provided userIds belong to active, existing users
-    const validUsersCount = await prisma.user.count({
-      where: {
-        id: { in: parsedUserIds },
-        isActive: true,
-      },
-    });
-
-    if (validUsersCount !== userIds.length) {
+    const assignmentErrors = await ensureProjectAssignees(task.projectId, parsedUserIds);
+    if (assignmentErrors) {
       return res.status(400).json({
-        message: 'Validation failed: One or more assigned users do not exist or are deactivated.',
+        message: 'Validation failed',
+        errors: assignmentErrors,
       });
     }
 

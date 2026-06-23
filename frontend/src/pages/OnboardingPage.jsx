@@ -7,6 +7,10 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import BrandLogo from '../components/common/BrandLogo';
+import { useProject } from '../context/ProjectContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { normalizeError } from '../services/api';
 
 const STEPS = [
   {
@@ -30,12 +34,62 @@ const STEPS = [
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [workspaceName, setWorkspaceName] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [templateType, setTemplateType] = useState('Basic Kanban');
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { createWorkspace, createProject, refreshProjects } = useProject();
+  const { updateUser } = useAuth();
+  const { error: toastError, success } = useToast();
   const totalSteps = STEPS.length;
   const step = STEPS[currentStep - 1];
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+  const nextStep = () => {
+    const nextErrors = {};
+    if (currentStep === 2 && !workspaceName.trim()) {
+      nextErrors.workspaceName = 'Workspace name is required';
+    }
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
+    setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+  };
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+
+  const finishOnboarding = async () => {
+    if (!workspaceName.trim()) {
+      setCurrentStep(2);
+      setErrors({ workspaceName: 'Workspace name is required' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const workspace = await createWorkspace({
+        name: workspaceName.trim(),
+        description: 'Primary workspace created during onboarding.',
+      });
+      await createProject({
+        name: projectName.trim() || 'First project',
+        description: 'Starter project for tasks, assignments, and workflow columns.',
+        templateType,
+        workspaceId: workspace.id,
+      });
+      await refreshProjects();
+      updateUser({ onboardingComplete: true });
+      success('Workspace and starter project created');
+      navigate('/projects', { replace: true });
+    } catch (err) {
+      const { message, fieldErrors } = normalizeError(err);
+      if (fieldErrors) setErrors(fieldErrors);
+      toastError(message, 'Setup failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--colors-canvas)] p-6">
@@ -88,19 +142,39 @@ export default function OnboardingPage() {
                   <Input
                     label="Workspace name"
                     value={workspaceName}
-                    onChange={(event) => setWorkspaceName(event.target.value)}
+                    onChange={(event) => {
+                      setWorkspaceName(event.target.value);
+                      setErrors((current) => ({ ...current, workspaceName: '' }));
+                    }}
                     placeholder="Acme product team"
+                    error={errors.workspaceName || errors.name}
                     hint="You can update this later from settings."
                   />
                 )}
 
                 {currentStep === 3 && (
-                  <div className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-5">
-                    <div className="grid gap-3 sm:grid-cols-4">
-                      {['Backlog', 'To Do', 'In Progress', 'Done'].map((column) => (
-                        <div key={column} className="rounded-[var(--radius-lg)] bg-[var(--colors-canvas)] p-3 text-sm font-semibold text-[var(--colors-ink)] shadow-[var(--shadow-soft)]">
-                          {column}
-                        </div>
+                  <div className="space-y-5 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-5">
+                    <Input
+                      label="Starter project"
+                      value={projectName}
+                      onChange={(event) => setProjectName(event.target.value)}
+                      placeholder="Website redesign"
+                      hint="We will create this project inside your workspace."
+                    />
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {['Basic Kanban', 'Software Development', 'Marketing Campaign'].map((template) => (
+                        <button
+                          key={template}
+                          type="button"
+                          onClick={() => setTemplateType(template)}
+                          className={`rounded-[var(--radius-lg)] border p-4 text-left text-sm font-semibold transition focus-ring ${
+                            templateType === template
+                              ? 'border-[var(--colors-primary)] bg-[var(--colors-primary-glow)] text-[var(--colors-primary-active)]'
+                              : 'border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)]'
+                          }`}
+                        >
+                          {template}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -110,7 +184,9 @@ export default function OnboardingPage() {
                   <div className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-6">
                     <p className="text-sm font-semibold text-[var(--colors-ink)]">Workspace</p>
                     <p className="mt-2 text-2xl font-normal text-[var(--colors-ink)]">{workspaceName || 'Quirk workspace'}</p>
-                    <p className="mt-3 text-sm text-[var(--colors-body)]">Your first project can now define columns, tasks, and assignments.</p>
+                    <p className="mt-3 text-sm text-[var(--colors-body)]">
+                      We will create {projectName || 'First project'} with the {templateType} template.
+                    </p>
                   </div>
                 )}
               </div>
@@ -126,8 +202,8 @@ export default function OnboardingPage() {
                 Continue
               </Button>
             ) : (
-              <Button variant="primary" onClick={() => navigate('/dashboard')}>
-                Go to dashboard
+              <Button variant="primary" loading={submitting} onClick={finishOnboarding}>
+                Create workspace
               </Button>
             )}
           </div>

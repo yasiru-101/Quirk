@@ -28,7 +28,9 @@ const createProjectSchema = z.object({
     .optional()
     .default('Basic Kanban'),
 
-  workspaceId: z.string().uuid('Invalid workspace ID format').optional(),
+  workspaceId: z
+    .string({ required_error: 'Workspace is required' })
+    .uuid('Invalid workspace ID format'),
 });
 
 // ─── Update Project Schema ────────────────────────────────────────────────────

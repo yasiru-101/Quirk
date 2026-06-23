@@ -6,14 +6,30 @@
 const { z } = require('zod');
 
 // Allowed task priority values matching the Prisma Task model.
-const VALID_PRIORITIES = ['Low', 'Medium', 'High'];
+const VALID_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
 // Custom validator to check if a date is in the present/future (with a 1-minute grace period)
 const isFutureOrPresentDate = (val) => {
   if (!val) return true;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(`${val}T00:00:00.000`).getTime() >= today.getTime();
+  }
   const dateVal = new Date(val);
   return dateVal.getTime() >= Date.now() - 60000;
 };
+
+const optionalDateString = z
+  .string()
+  .refine((val) => !val || !Number.isNaN(new Date(val).getTime()), {
+    message: 'Due date must be a valid date',
+  })
+  .refine(isFutureOrPresentDate, {
+    message: 'Due date must be in the future or present',
+  })
+  .optional()
+  .or(z.string().length(0));
 
 // ─── Create Task Schema ──────────────────────────────────────────────────────
 // Used on: POST /api/tasks (PM creates a task)
@@ -30,14 +46,7 @@ const createTaskSchema = z.object({
     .max(1000, 'Description cannot exceed 1000 characters')
     .optional(),
 
-  dueDate: z
-    .string()
-    .datetime({ message: 'Due date must be a valid ISO datetime string' })
-    .refine(isFutureOrPresentDate, {
-      message: 'Due date must be in the future or present',
-    })
-    .optional()
-    .or(z.string().length(0)), // Allow empty string as optional
+  dueDate: optionalDateString,
 
   priority: z
     .enum(VALID_PRIORITIES, {
@@ -54,6 +63,8 @@ const createTaskSchema = z.object({
   epicId:         z.string().uuid('Invalid epic ID format').optional(),
   columnId:       z.string().uuid('Invalid column ID format').optional(),
   estimatedHours: z.number().positive('Estimated hours must be positive').optional(),
+
+  assigneeIds: z.array(z.string().uuid('Invalid user ID format')).optional().default([]),
 });
 
 // ─── Update Task Schema ──────────────────────────────────────────────────────
@@ -73,14 +84,7 @@ const updateTaskSchema = z
       .max(1000, 'Description cannot exceed 1000 characters')
       .optional(),
 
-    dueDate: z
-      .string()
-      .datetime({ message: 'Due date must be a valid ISO datetime string' })
-      .refine(isFutureOrPresentDate, {
-        message: 'Due date must be in the future or present',
-      })
-      .optional()
-      .or(z.string().length(0)),
+    dueDate: optionalDateString,
 
     priority: z
       .enum(VALID_PRIORITIES, {
@@ -97,6 +101,8 @@ const updateTaskSchema = z
     epicId:         z.string().uuid('Invalid epic ID format').optional(),
     columnId:       z.string().uuid('Invalid column ID format').optional(),
     estimatedHours: z.number().positive('Estimated hours must be positive').optional(),
+
+    assigneeIds: z.array(z.string().uuid('Invalid user ID format')).optional(),
   })
   .refine(
     // Require at least one field to prevent empty updates

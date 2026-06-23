@@ -6,6 +6,9 @@
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
 
+const isWorkspaceManager = (membership) =>
+  membership && ['Owner', 'Admin'].includes(membership.role);
+
 // ─── Helper: verify project exists and (optionally) check PM ownership ────────
 const findProject = async (id, res) => {
   const project = await prisma.project.findUnique({
@@ -29,14 +32,15 @@ const findProject = async (id, res) => {
 const createProject = async (req, res) => {
   const { name, description, templateType, workspaceId } = req.body;
   try {
-    // A project may only be created inside a workspace the caller belongs to.
-    if (workspaceId && req.user.role !== 'Admin') {
+    // Projects belong to a workspace. Workspace Owners/Admins can create projects;
+    // platform Admins bypass this for support and migration work.
+    if (req.user.role !== 'Admin') {
       const membership = await prisma.workspaceMember.findUnique({
         where: { workspaceId_userId: { workspaceId, userId: req.user.id } },
       });
-      if (!membership) {
+      if (!isWorkspaceManager(membership)) {
         return res.status(403).json({
-          message: 'Access denied. You are not a member of this workspace.',
+          message: 'Access denied. Only workspace Owners and Admins can create projects.',
         });
       }
     }
@@ -47,7 +51,7 @@ const createProject = async (req, res) => {
           name,
           description,
           templateType,
-          workspaceId: workspaceId || null,
+          workspaceId,
           createdBy: req.user.id,
         },
       });
@@ -88,9 +92,11 @@ const createProject = async (req, res) => {
 // @access All authenticated roles
 const getProjects = async (req, res) => {
   try {
+    const { workspaceId } = req.query;
     // Platform Admins see everything; everyone else sees only projects they belong
     // to, or projects in workspaces they own or administer.
     const where = { deletedAt: null };
+    if (workspaceId) where.workspaceId = workspaceId;
     if (req.user.role !== 'Admin') {
       where.OR = [
         { members: { some: { userId: req.user.id } } },
@@ -107,6 +113,7 @@ const getProjects = async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         creator:  { select: { id: true, name: true, email: true } },
+        workspace: { select: { id: true, name: true } },
         columns:  { orderBy: { order: 'asc' }, select: { id: true, name: true, order: true } },
         members:  { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
         _count:   { select: { tasks: true } },
@@ -287,8 +294,20 @@ const addMember = async (req, res) => {
     const project = await findProject(req.params.id, res);
     if (!project) return;
 
-    const user = await prisma.user.findUnique({ where: { id: userId, isActive: true } });
+    const user = await prisma.user.findFirst({ where: { id: userId, isActive: true } });
     if (!user) return res.status(404).json({ message: 'User not found or inactive' });
+
+    if (project.workspaceId) {
+      const workspaceMember = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: project.workspaceId, userId } },
+      });
+      if (!workspaceMember) {
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: { userId: 'Project members must belong to the project workspace.' },
+        });
+      }
+    }
 
     const memberRole = role === 'Project Manager' ? 'Project Manager' : 'Collaborator';
 

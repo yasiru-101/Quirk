@@ -38,6 +38,11 @@ No secret is stored in the repository.
   `sameSite=strict` cookies; refresh rotates both tokens.
 - Administrator-created accounts must reset their temporary password on first login
   before any other route is reachable.
+- Self-service registrations must verify their email before they can sign in, and may
+  enable email-based login 2FA. One-time codes are bcrypt-hashed at rest, single-use,
+  expire in 10 minutes, and lock after 5 failed attempts; the 2FA step is bound to the
+  password step by a short-lived signed pending token. See
+  [ADR 0003](./adr/0003-registration-email-verification-and-2fa.md).
 
 ## Authorization
 

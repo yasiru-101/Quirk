@@ -59,6 +59,8 @@ Two layers work together:
    resolve the caller's membership of the workspace or project in the request:
    - `requireWorkspaceRole(...roles)` for `/workspaces/:id/...`
    - `requireProjectRole(...roles)` for `/projects/:id/...`
+   - `requireTaskAccess(...roles)` for tasks and their sub-resources (comments,
+     time logs, activity, attachments), resolving the task's project membership
 
 Membership roles are scoped, not global:
 
@@ -81,6 +83,11 @@ have access to projects within their workspace. See
 - Accounts created by an administrator start with `mustResetPassword = true`; the
   user is forced to set a new password on first login before any other route is
   reachable.
+- Self-service registration creates an unverified account and emails a one-time
+  code; login is blocked until the email is verified. Users may optionally enable
+  email-based login 2FA. Both flows use the shared one-time-code primitive (bcrypt
+  hashed, single-use, time- and attempt-limited). See
+  [ADR 0003](./adr/0003-registration-email-verification-and-2fa.md).
 
 ## Realtime
 
@@ -97,8 +104,8 @@ product. Status of the foundational work:
 - [x] Workspace tenancy with invitation-based onboarding.
 - [x] Per-workspace and per-project membership roles with object-level
   authorization on workspace and project resources.
-- [ ] Task-level object authorization (resolve a task's project membership).
-- [ ] Self-service registration with email verification and optional login 2FA.
+- [x] Task-level object authorization (resolve a task's project membership).
+- [x] Self-service registration with email verification and optional login 2FA.
 - [ ] Kanban column as the single source of task workflow state.
 
 Each item ships as an isolated, reviewable change with its own migration, tests,

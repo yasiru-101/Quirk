@@ -69,8 +69,8 @@ around them:
 
 - [x] UUID identifier consistency (ADR 0001)
 - [x] Workspace tenancy, membership roles, invitations, scoped authorization (ADR 0002)
-- [ ] Task-level object authorization
-- [ ] Self-service registration, email verification, login 2FA
+- [x] Self-service registration, email verification, login 2FA (ADR 0003)
+- [x] Task-level object authorization (ADR 0004)
 - [ ] Kanban column as the single source of task status
 
 Feature work that sits cleanly on the current foundation: workspace/project UI,

@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const prisma = require('../config/db');
+const otpService = require('../services/otpService');
+const emailService = require('../services/emailService');
 
 // Helper to generate access token (15 mins)
 // JWT_SECRET must be configured in .env — no hardcoded fallback for security
@@ -21,6 +23,11 @@ const generateRefreshToken = (user) => {
     { expiresIn: '7d' }
   );
 };
+
+// Short-lived token proving the password step succeeded. It binds the second
+// factor to the same login attempt so a code alone cannot authenticate.
+const generatePendingToken = (user) =>
+  jwt.sign({ id: user.id, purpose: '2fa_pending' }, process.env.JWT_SECRET, { expiresIn: '5m' });
 
 // Helper to set token cookies
 const setTokenCookies = (res, accessToken, refreshToken) => {
@@ -90,6 +97,32 @@ const login = async (req, res) => {
       return res.status(401).json({
         message: 'Invalid credentials',
         errors: { email: 'Invalid email or password' },
+      });
+    }
+
+    // Block sign-in until a self-registered user has confirmed their email.
+    if (!user.emailVerified) {
+      const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
+      emailService
+        .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
+        .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
+      return res.status(403).json({
+        message: 'Please verify your email address to continue. A new code has been sent.',
+        code: 'EMAIL_NOT_VERIFIED',
+        email: user.email,
+      });
+    }
+
+    // If 2FA is enabled, defer sign-in until the second factor is verified.
+    if (user.twoFactorEnabled) {
+      const code = await otpService.issueCode(user.id, otpService.PURPOSES.LOGIN_2FA);
+      emailService
+        .sendOtpEmail({ to: user.email, purpose: 'LOGIN_2FA', code })
+        .catch((e) => console.error(`[Auth] 2FA email failed: ${e.message}`));
+      return res.status(200).json({
+        twoFactorRequired: true,
+        pendingToken: generatePendingToken(user),
+        email: user.email,
       });
     }
 
@@ -262,10 +295,216 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Register a new self-service account
+// @route   POST /api/auth/register
+// @access  Public
+const register = async (req, res) => {
+  const { name, email, password } = req.body;
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: { email: 'An account with this email already exists' },
+      });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        role: 'Collaborator',
+        mustResetPassword: false, // the user chose their own password
+        emailVerified: false,     // must confirm via an emailed code
+      },
+    });
+
+    const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
+    emailService
+      .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
+      .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
+
+    return res.status(201).json({
+      message: 'Account created. Check your email for a verification code.',
+      email: user.email,
+    });
+  } catch (error) {
+    console.error(`Register error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error during registration' });
+  }
+};
+
+// @desc    Verify email with a one-time code and complete sign-in
+// @route   POST /api/auth/verify-email
+// @access  Public
+const verifyEmail = async (req, res) => {
+  const { email, code } = req.body;
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid verification request' });
+    }
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'This email is already verified. Please log in.' });
+    }
+
+    const result = await otpService.verifyCode(user.id, otpService.PURPOSES.EMAIL_VERIFY, code);
+    if (!result.ok) {
+      return res.status(400).json({ message: result.reason, errors: { code: result.reason } });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+
+    const accessToken = generateAccessToken(updated);
+    const refreshToken = generateRefreshToken(updated);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const userResponse = { ...updated };
+    delete userResponse.passwordHash;
+    return res.status(200).json({ user: userResponse });
+  } catch (error) {
+    console.error(`Verify email error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error during email verification' });
+  }
+};
+
+// @desc    Resend an email-verification code
+// @route   POST /api/auth/resend-verification
+// @access  Public
+const resendVerification = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Respond identically whether or not the account exists, to avoid revealing
+    // which email addresses are registered.
+    if (user && !user.emailVerified) {
+      const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
+      emailService
+        .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
+        .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
+    }
+    return res.status(200).json({
+      message: 'If the account exists and is unverified, a new code has been sent.',
+    });
+  } catch (error) {
+    console.error(`Resend verification error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// @desc    Complete a login that requires a second factor
+// @route   POST /api/auth/verify-2fa
+// @access  Public (requires the pending token issued by /login)
+const verifyTwoFactor = async (req, res) => {
+  const { pendingToken, code } = req.body;
+  try {
+    let decoded;
+    try {
+      decoded = jwt.verify(pendingToken, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Your login session expired. Please sign in again.' });
+    }
+    if (decoded.purpose !== '2fa_pending') {
+      return res.status(401).json({ message: 'Invalid login session.' });
+    }
+
+    const result = await otpService.verifyCode(decoded.id, otpService.PURPOSES.LOGIN_2FA, code);
+    if (!result.ok) {
+      return res.status(400).json({ message: result.reason, errors: { code: result.reason } });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: 'Account unavailable' });
+    }
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const userResponse = { ...user };
+    delete userResponse.passwordHash;
+    return res.status(200).json({ user: userResponse });
+  } catch (error) {
+    console.error(`Verify 2FA error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error during two-factor verification' });
+  }
+};
+
+// @desc    Begin enabling 2FA by sending a confirmation code
+// @route   POST /api/auth/2fa/enable
+// @access  Private
+const enableTwoFactor = async (req, res) => {
+  try {
+    const code = await otpService.issueCode(req.user.id, otpService.PURPOSES.LOGIN_2FA);
+    emailService
+      .sendOtpEmail({ to: req.user.email, purpose: 'LOGIN_2FA', code })
+      .catch((e) => console.error(`[Auth] 2FA email failed: ${e.message}`));
+    return res.status(200).json({ message: 'A verification code has been sent to your email.' });
+  } catch (error) {
+    console.error(`Enable 2FA error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// @desc    Confirm and activate 2FA with the emailed code
+// @route   POST /api/auth/2fa/confirm
+// @access  Private
+const confirmTwoFactor = async (req, res) => {
+  const { code } = req.body;
+  try {
+    const result = await otpService.verifyCode(req.user.id, otpService.PURPOSES.LOGIN_2FA, code);
+    if (!result.ok) {
+      return res.status(400).json({ message: result.reason, errors: { code: result.reason } });
+    }
+    await prisma.user.update({ where: { id: req.user.id }, data: { twoFactorEnabled: true } });
+    return res.status(200).json({ message: 'Two-factor authentication is now enabled.' });
+  } catch (error) {
+    console.error(`Confirm 2FA error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// @desc    Disable 2FA (requires the current password)
+// @route   POST /api/auth/2fa/disable
+// @access  Private
+const disableTwoFactor = async (req, res) => {
+  const { password } = req.body;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: { password: 'Incorrect password' },
+      });
+    }
+    await prisma.user.update({ where: { id: req.user.id }, data: { twoFactorEnabled: false } });
+    return res.status(200).json({ message: 'Two-factor authentication has been disabled.' });
+  } catch (error) {
+    console.error(`Disable 2FA error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   login,
   me,
   logout,
   refresh,
   resetPassword,
+  register,
+  verifyEmail,
+  resendVerification,
+  verifyTwoFactor,
+  enableTwoFactor,
+  confirmTwoFactor,
+  disableTwoFactor,
 };

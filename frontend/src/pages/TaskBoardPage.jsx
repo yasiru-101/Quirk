@@ -196,6 +196,7 @@ export default function TaskBoardPage() {
             <KanbanBoard
               tasks={filtered}
               columns={columns}
+              canManageTasks={canCreateTask}
               onColumnChange={handleColumnChange}
               onCardClick={(task) => navigate(`/tasks/${task._id}`)}
               onDelete={handleDelete}
@@ -204,6 +205,7 @@ export default function TaskBoardPage() {
             <TaskTable
               tasks={filtered}
               columns={columns}
+              canManageTasks={canCreateTask}
               onEdit={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
               onColumnChange={handleColumnChange}

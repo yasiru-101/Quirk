@@ -15,7 +15,7 @@ import KanbanColumn from './KanbanColumn';
  * @param {Function} props.onCardClick - Action when selecting a task card
  * @param {Function} props.onDelete - Action deleting task cards (exclusive to Project Managers)
  */
-export default function KanbanBoard({ tasks, columns, onColumnChange, onCardClick, onDelete }) {
+export default function KanbanBoard({ tasks, columns, canManageTasks = false, onColumnChange, onCardClick, onDelete }) {
   const grouped = columns.reduce((acc, column) => {
     acc[column.id] = tasks.filter((t) => t.columnId === column.id);
     return acc;
@@ -29,6 +29,7 @@ export default function KanbanBoard({ tasks, columns, onColumnChange, onCardClic
           column={column}
           columns={columns}
           tasks={grouped[column.id] ?? []}
+          canManageTasks={canManageTasks}
           onColumnChange={onColumnChange}
           onCardClick={onCardClick}
           onDelete={onDelete}

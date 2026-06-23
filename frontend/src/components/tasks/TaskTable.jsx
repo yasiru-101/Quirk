@@ -4,24 +4,19 @@
  */
 import React from 'react';
 import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
-import { ROLES } from '../../utils/constants';
-import { useAuth } from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
 import { ClipboardIcon, FlameIcon, ArrowUpIcon, ArrowDownIcon } from '../common/Icons';
 
-export default function TaskTable({ tasks, columns, onEdit, onDelete, onColumnChange, onCreateNew }) {
-  const { role } = useAuth();
-  const isPM = role === ROLES.PROJECT_MANAGER;
-
+export default function TaskTable({ tasks, columns, canManageTasks = false, onEdit, onDelete, onColumnChange, onCreateNew }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
         icon={<ClipboardIcon className="w-6 h-6 text-[var(--colors-mute)]" />}
         title="No tasks found"
-        description={isPM ? 'Create your first task to get the team moving.' : 'No tasks have been assigned to you yet.'}
+        description={canManageTasks ? 'Create your first task to get the team moving.' : 'No tasks have been assigned to you yet.'}
         action={
-          isPM && (
+          canManageTasks && (
             <Button variant="primary" size="sm" onClick={onCreateNew}>
               New task
             </Button>
@@ -44,7 +39,7 @@ export default function TaskTable({ tasks, columns, onEdit, onDelete, onColumnCh
       <table className="w-full border-collapse text-[13px]">
         <thead className="sticky top-0 z-10">
           <tr>
-            {['Title', 'Column', 'Priority', 'Assigned To', 'Due Date', ...(isPM ? ['Actions'] : [])].map((heading) => (
+            {['Title', 'Project', 'Column', 'Priority', 'Assigned To', 'Due Date', ...(canManageTasks ? ['Actions'] : [])].map((heading) => (
               <th
                 key={heading}
                 className="whitespace-nowrap border-b border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--colors-ink-muted)]"
@@ -67,6 +62,10 @@ export default function TaskTable({ tasks, columns, onEdit, onDelete, onColumnCh
                     <span className="h-2 w-2 rounded-full bg-[var(--colors-primary)]" />
                     <p className="truncate font-medium">{task.title}</p>
                   </div>
+                </td>
+
+                <td className="whitespace-nowrap px-4 py-3 text-[12px] font-semibold text-[var(--colors-ink-muted)]">
+                  {task.projectName || task.project?.name || 'No project'}
                 </td>
 
                 <td className="px-4 py-3">
@@ -116,7 +115,7 @@ export default function TaskTable({ tasks, columns, onEdit, onDelete, onColumnCh
                   </span>
                 </td>
 
-                {isPM && (
+                {canManageTasks && (
                   <td className="w-[92px] px-4 py-3">
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button

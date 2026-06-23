@@ -9,9 +9,9 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 
 // Setup PostgreSQL Connection Pool
-// Cloud Postgres (e.g. Supabase, Azure) requires TLS; the local Docker Postgres
-// used for development does not. Enable SSL unless connecting to localhost, or
-// honour an explicit DATABASE_SSL=false override.
+// Managed cloud Postgres (e.g. Azure Database for PostgreSQL) requires TLS; the
+// local Docker Postgres used for development does not. Enable SSL unless connecting
+// to localhost, or honour an explicit DATABASE_SSL=false override.
 const connectionString = process.env.DATABASE_URL || '';
 const isLocalDb = /@(localhost|127\.0\.0\.1|postgres)[:/]/.test(connectionString);
 const useSsl =
@@ -19,15 +19,22 @@ const useSsl =
     ? false
     : process.env.DATABASE_SSL === 'true' || !isLocalDb;
 
-// Pool sizing matters on managed Postgres (e.g. Supabase) where the connection
-// limit is small. An oversized pool — multiplied across replicas — exhausts the
-// upstream limit; once every client connection is busy, node-pg queues new
-// queries *indefinitely* (no default acquire timeout), so heavier requests like
-// the task list hang while a single-query login still succeeds. We therefore cap
-// the pool and fail fast on acquisition instead of hanging.
+// Pool sizing matters on managed Postgres where the connection limit is small.
+// An oversized pool — multiplied across replicas — exhausts the upstream limit;
+// once every client connection is busy, node-pg queues new queries *indefinitely*
+// (no default acquire timeout), so heavier requests like the task list hang while
+// a single-query login still succeeds. We therefore cap the pool and fail fast on
+// acquisition instead of hanging.
+
+// Verify the server's TLS certificate by default to prevent man-in-the-middle
+// attacks on the database connection. DATABASE_SSL_REJECT_UNAUTHORIZED=false is a
+// deliberate escape hatch, only for the rare case where a trusted CA chain is
+// genuinely unavailable.
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+
 const pool = new Pool({
   connectionString,
-  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  ssl: useSsl ? { rejectUnauthorized } : false,
   max: parseInt(process.env.DB_POOL_MAX || '5', 10),
   connectionTimeoutMillis: parseInt(process.env.DB_CONN_TIMEOUT_MS || '10000', 10),
   idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || '30000', 10),

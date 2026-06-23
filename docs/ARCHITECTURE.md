@@ -49,6 +49,29 @@ backend/
 All entity identifiers are opaque UUID strings and are never numerically coerced.
 See [ADR 0001](./adr/0001-use-uuid-identifiers-end-to-end.md).
 
+## Authorization
+
+Two layers work together:
+
+1. **Role guard** (`middleware/rbac.js`) — coarse checks against the global
+   `User.role`. Used for platform-level user administration under `/users`.
+2. **Membership guards** (`middleware/membership.js`) — object-level checks that
+   resolve the caller's membership of the workspace or project in the request:
+   - `requireWorkspaceRole(...roles)` for `/workspaces/:id/...`
+   - `requireProjectRole(...roles)` for `/projects/:id/...`
+
+Membership roles are scoped, not global:
+
+| Scope     | Roles                                |
+| --------- | ------------------------------------ |
+| Workspace | `Owner`, `Admin`, `Member`           |
+| Project   | `Project Manager`, `Collaborator`    |
+| Platform  | `Admin` (system-wide administration) |
+
+A platform `Admin` bypasses membership checks. Workspace Owners/Admins implicitly
+have access to projects within their workspace. See
+[ADR 0002](./adr/0002-workspace-tenancy-and-scoped-authorization.md).
+
 ## Authentication and sessions
 
 - Passwords are hashed with bcrypt (cost factor 12).
@@ -69,13 +92,14 @@ and replayed when they reconnect.
 ## Roadmap
 
 The system is being expanded from a single-tenant tool into a multi-tenant SaaS
-product. Planned foundational work, tracked as it lands:
+product. Status of the foundational work:
 
-- Workspace tenancy with create-or-join-by-invite onboarding.
-- Per-workspace and per-project membership roles, with object-level
-  authorization on every resource.
-- Self-service registration with email verification and optional login 2FA.
-- Kanban column as the single source of task workflow state.
+- [x] Workspace tenancy with invitation-based onboarding.
+- [x] Per-workspace and per-project membership roles with object-level
+  authorization on workspace and project resources.
+- [ ] Task-level object authorization (resolve a task's project membership).
+- [ ] Self-service registration with email verification and optional login 2FA.
+- [ ] Kanban column as the single source of task workflow state.
 
 Each item ships as an isolated, reviewable change with its own migration, tests,
 and documentation update.

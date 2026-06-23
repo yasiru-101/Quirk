@@ -16,6 +16,7 @@ const commentRoutes       = require('./routes/commentRoutes');
 const attachmentRoutes    = require('./routes/attachmentRoutes');
 const notificationRoutes  = require('./routes/notificationRoutes');
 const projectRoutes       = require('./routes/projectRoutes');
+const workspaceRoutes     = require('./routes/workspaceRoutes');
 const activityRoutes      = require('./routes/activityRoutes');
 const timeLogRoutes       = require('./routes/timeLogRoutes');
 const errorHandler        = require('./middleware/errorHandler');
@@ -68,6 +69,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Health Check (Kubernetes readiness/liveness probe) ─────────────────────
+// Declared before the rate limiters: the kube-probe polls this endpoint every
+// few seconds from a single source IP, which would otherwise exhaust the limiter
+// and return 429. A failed liveness probe restarts the pod, so throttling the
+// health check causes a crash loop.
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // General Rate Limiter (Prevent general API brute-force)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -95,11 +105,6 @@ serveSwagger(app);
 // ─── Static File Serving (Local uploads fallback for development) ───────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─── Health Check (Kubernetes readiness/liveness probe) ─────────────────────
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);
 app.use('/api/users',         userRoutes);
@@ -110,6 +115,7 @@ app.use('/api/tasks/:id/timelogs', timeLogRoutes);   // Time tracking per task
 app.use('/api/attachments',   attachmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/projects',      projectRoutes);         // Projects, columns, epics, members
+app.use('/api/workspaces',    workspaceRoutes);       // Workspaces, members, invitations
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

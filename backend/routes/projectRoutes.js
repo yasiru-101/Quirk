@@ -15,7 +15,7 @@ const {
 
 const { createEpic, getEpics, deleteEpic } = require('../controllers/epicController');
 const { protect } = require('../middleware/auth');
-const rbac     = require('../middleware/rbac');
+const { requireProjectRole } = require('../middleware/membership');
 const validate = require('../middleware/validate');
 const { createProjectSchema, updateProjectSchema, createColumnSchema } = require('../validations/projectSchemas');
 
@@ -47,7 +47,7 @@ router.use(protect);
  *       201: { description: Project created }
  *       403: { description: Forbidden }
  */
-router.post('/', rbac('Project Manager', 'Admin'), validate(createProjectSchema), createProject);
+router.post('/', validate(createProjectSchema), createProject);
 
 /**
  * @openapi
@@ -76,7 +76,7 @@ router.get('/', getProjects);
  *       200: { description: Project details with columns, members, and epics }
  *       404: { description: Not found }
  */
-router.get('/:id', getProjectById);
+router.get('/:id', requireProjectRole(), getProjectById);
 
 /**
  * @openapi
@@ -91,7 +91,7 @@ router.get('/:id', getProjectById);
  *     responses:
  *       200: { description: Project updated }
  */
-router.put('/:id', rbac('Project Manager', 'Admin'), validate(updateProjectSchema), updateProject);
+router.put('/:id', requireProjectRole('Project Manager'), validate(updateProjectSchema), updateProject);
 
 /**
  * @openapi
@@ -106,20 +106,20 @@ router.put('/:id', rbac('Project Manager', 'Admin'), validate(updateProjectSchem
  *     responses:
  *       200: { description: Project deleted }
  */
-router.delete('/:id', rbac('Project Manager', 'Admin'), deleteProject);
+router.delete('/:id', requireProjectRole('Project Manager'), deleteProject);
 
 // ─── Kanban Columns ───────────────────────────────────────────────────────────
-router.post('/:id/columns', rbac('Project Manager'), validate(createColumnSchema), createColumn);
-router.put('/:id/columns/:colId', rbac('Project Manager'), updateColumn);
-router.delete('/:id/columns/:colId', rbac('Project Manager'), deleteColumn);
+router.post('/:id/columns', requireProjectRole('Project Manager'), validate(createColumnSchema), createColumn);
+router.put('/:id/columns/:colId', requireProjectRole('Project Manager'), updateColumn);
+router.delete('/:id/columns/:colId', requireProjectRole('Project Manager'), deleteColumn);
 
 // ─── Epics ────────────────────────────────────────────────────────────────────
-router.post('/:id/epics',          rbac('Project Manager', 'Admin'), createEpic);
-router.get('/:id/epics',           getEpics);
-router.delete('/:id/epics/:epicId', rbac('Project Manager', 'Admin'), deleteEpic);
+router.post('/:id/epics',          requireProjectRole('Project Manager'), createEpic);
+router.get('/:id/epics',           requireProjectRole(), getEpics);
+router.delete('/:id/epics/:epicId', requireProjectRole('Project Manager'), deleteEpic);
 
 // ─── Project Members ──────────────────────────────────────────────────────────
-router.post('/:id/members',            rbac('Project Manager', 'Admin'), addMember);
-router.delete('/:id/members/:userId',  rbac('Project Manager', 'Admin'), removeMember);
+router.post('/:id/members',            requireProjectRole('Project Manager'), addMember);
+router.delete('/:id/members/:userId',  requireProjectRole('Project Manager'), removeMember);
 
 module.exports = router;

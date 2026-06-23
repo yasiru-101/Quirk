@@ -8,6 +8,7 @@ import NotificationBell from '../notifications/NotificationBell';
 import NotificationPanel from '../notifications/NotificationPanel';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { useProject } from '../../context/ProjectContext';
 import { getInitials } from '../../utils/helpers';
 
 const BREADCRUMBS = {
@@ -27,6 +28,7 @@ export default function TopBar() {
   const [panelOpen, setPanelOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const { activeWorkspace } = useProject();
 
   const handleNewTask = () => {
     const createTask = Date.now();
@@ -41,7 +43,7 @@ export default function TopBar() {
     <>
       <header className="sticky top-0 z-30 flex h-[60px] flex-shrink-0 items-center justify-between border-b border-[var(--colors-hairline)] bg-[rgba(255,255,255,0.86)] px-6 backdrop-blur-xl dark:bg-[rgba(10,11,13,0.86)]">
         <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--colors-ink-muted)]">
-          <span>{crumbs[0]}</span>
+          <span>{activeWorkspace?.name || crumbs[0]}</span>
           <span className="text-[color:var(--colors-ink-faint)]">/</span>
           <span className="text-[color:var(--colors-ink)]">{crumbs[1]}</span>
         </div>

@@ -4,12 +4,8 @@
  */
 import React from 'react';
 import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
-import { ROLES } from '../../utils/constants';
-import { useAuth } from '../../context/AuthContext';
 
-export default function TaskCard({ task, columns = [], onColumnChange, onClick, onDelete }) {
-  const { role } = useAuth();
-  const isPM = role === ROLES.PROJECT_MANAGER;
+export default function TaskCard({ task, columns = [], canManage = false, onColumnChange, onClick, onDelete }) {
   const overdue = isOverdue(task.dueDate);
   const columnName = getTaskColumnName(task);
 
@@ -29,7 +25,7 @@ export default function TaskCard({ task, columns = [], onColumnChange, onClick, 
         <span className={cn('kc-tag font-bold', getPriorityColor(task.priority))}>
           {task.priority}
         </span>
-        {isPM && (
+        {canManage && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(task._id); }}
             className="z-10 ml-auto text-[var(--colors-mute)] opacity-0 transition-all hover:text-[var(--colors-priority-urgent)] focus-ring group-hover:opacity-100"

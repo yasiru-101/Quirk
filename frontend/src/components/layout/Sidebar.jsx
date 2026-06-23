@@ -5,6 +5,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useProject } from '../../context/ProjectContext';
 import { getInitials, cn } from '../../utils/helpers';
 import { ROLES } from '../../utils/constants';
 
@@ -83,6 +84,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, logout } = useAuth();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole } = useProject();
   const navigate = useNavigate();
   const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
@@ -132,8 +134,27 @@ export default function Sidebar({ collapsed, onToggle }) {
       {!collapsed && (
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
-          <p className="mt-2 truncate text-sm font-semibold text-white">{user?.workspace?.name || 'Quirk workspace'}</p>
-          <p className="mt-1 text-xs text-white/50">Focused execution, one board at a time.</p>
+          {workspaces.length > 1 ? (
+            <div className="relative mt-2">
+              <select
+                value={activeWorkspaceId}
+                onChange={(event) => setActiveWorkspaceId(event.target.value)}
+                className="h-10 w-full appearance-none rounded-[var(--radius-md)] border border-white/10 bg-black/20 px-3 pr-8 text-sm font-semibold text-white outline-none transition focus:border-[var(--colors-primary)]"
+              >
+                {workspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/45">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+          ) : (
+            <p className="mt-2 truncate text-sm font-semibold text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
+          )}
+          <p className="mt-2 text-xs text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
         </div>
       )}
 

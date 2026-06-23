@@ -5,8 +5,6 @@
 import React from 'react';
 import TaskCard from './TaskCard';
 import EmptyState from '../common/EmptyState';
-import { ROLES } from '../../utils/constants';
-import { useAuth } from '../../context/AuthContext';
 import { InboxIcon, SparklesIcon } from '../common/Icons';
 import { isTerminalColumn } from '../../utils/helpers';
 
@@ -28,12 +26,10 @@ const COLUMN_META = {
  * @param {Function} props.onCardClick - Details popup launcher callback
  * @param {Function} props.onDelete - Card delete callback
  */
-export default function KanbanColumn({ column, columns, tasks, onColumnChange, onCardClick, onDelete }) {
+export default function KanbanColumn({ column, columns, tasks, canManageTasks = false, onColumnChange, onCardClick, onDelete }) {
   const columnName = column?.name || 'Unassigned';
   const isTerminal = isTerminalColumn(columnName);
   const meta = COLUMN_META[columnName] ?? { colorVar: 'var(--colors-mute)' };
-  const { role } = useAuth();
-  const isPM = role === ROLES.PROJECT_MANAGER;
 
   return (
     <div className="kanban-col">
@@ -72,7 +68,7 @@ export default function KanbanColumn({ column, columns, tasks, onColumnChange, o
               title={isTerminal ? 'Nothing done yet' : 'Empty column'}
               description={
                 columnName === 'To Do' || columnName === 'Backlog'
-                  ? isPM
+                  ? canManageTasks
                     ? 'Create a new task to get started.'
                     : 'No tasks assigned here yet.'
                   : columnName === 'In Progress'
@@ -87,6 +83,7 @@ export default function KanbanColumn({ column, columns, tasks, onColumnChange, o
               key={task._id}
               task={task}
               columns={columns}
+              canManage={canManageTasks}
               onColumnChange={onColumnChange}
               onClick={() => onCardClick?.(task)}
               onDelete={onDelete}

@@ -17,10 +17,9 @@ import { ROLES } from '../utils/constants';
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { success, error: toastError } = useToast();
-  const { projects } = useProject();
-  const isPM = role === ROLES.PROJECT_MANAGER;
+  const { projects, canManageWorkspace } = useProject();
 
   const columns = useMemo(
     () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
@@ -98,6 +97,9 @@ export default function TaskDetailPage() {
   const overdue = isOverdue(task.dueDate);
   const taskColumns = columns.filter((column) => column.projectId === task.projectId);
   const columnName = getTaskColumnName(task);
+  const taskProject = projects.find((project) => project.id === task.projectId);
+  const projectMembership = taskProject?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id);
+  const canManageTask = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
 
   return (
     <aside id="detail-panel" className="shadow-[-18px_0_45px_rgba(10,11,13,0.08)]">
@@ -114,7 +116,7 @@ export default function TaskDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-1">
-            {isPM && (
+            {canManageTask && (
               <button
                 onClick={() => setEditOpen(true)}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
@@ -194,7 +196,7 @@ export default function TaskDetailPage() {
           <CommentsPanel taskId={task._id} />
         </section>
 
-        {isPM && (
+        {canManageTask && (
           <div className="border-t border-red-100 pt-5 dark:border-red-900/30">
             <Button variant="danger" className="w-full text-sm" onClick={handleDelete}>
               Delete task
@@ -203,7 +205,7 @@ export default function TaskDetailPage() {
         )}
       </div>
 
-      {isPM && (
+      {canManageTask && (
         <TaskModal
           open={editOpen}
           onClose={() => setEditOpen(false)}

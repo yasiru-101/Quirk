@@ -2,7 +2,7 @@
  * @file TaskModal.jsx
  * @description Form dialogue allowing Project Managers to create or modify tasks.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -11,7 +11,7 @@ import { normalizeError } from '../../services/api';
 import { taskService } from '../../services/taskService';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { userService } from '../../services/userService';
+import { useProject } from '../../context/ProjectContext';
 import { getInitials } from '../../utils/helpers';
 
 const EMPTY_FORM = {
@@ -25,23 +25,19 @@ const EMPTY_FORM = {
 };
 
 export default function TaskModal({ open, onClose, task = null, projects = [], columns = [], onSaved }) {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const { canManageWorkspace } = useProject();
   const { success, error: toastError } = useToast();
   const isEdit = !!task;
-  const isPM = role === ROLES.PROJECT_MANAGER;
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [availableUsers, setAvailableUsers] = useState([]);
 
-  useEffect(() => {
-    if (!open) return;
-    userService
-      .getUsers()
-      .then(({ data }) => setAvailableUsers(data.users ?? []))
-      .catch(() => setAvailableUsers([]));
-  }, [open]);
+  const canManageProject = (project) =>
+    role === ROLES.ADMIN ||
+    canManageWorkspace ||
+    project?.members?.some((member) => (member.userId === user?.id || member.user?.id === user?.id) && member.role === ROLES.PROJECT_MANAGER);
 
   useEffect(() => {
     if (open) {
@@ -56,7 +52,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
           assigneeIds: (task.assignees ?? []).map((u) => u._id),
         });
       } else {
-        const defaultProject = projects[0];
+        const defaultProject = projects.find(canManageProject) || projects[0];
         const defaultColumn = columns.find((column) => column.projectId === defaultProject?.id);
         setForm({
           ...EMPTY_FORM,
@@ -67,6 +63,25 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
       setErrors({});
     }
   }, [open, task, projects, columns]);
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === form.projectId),
+    [projects, form.projectId]
+  );
+
+  const projectMembership = useMemo(
+    () => selectedProject?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id),
+    [selectedProject, user?.id]
+  );
+
+  const canManageTask = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
+
+  const availableUsers = useMemo(() => {
+    const members = selectedProject?.members || [];
+    return members
+      .map((member) => member.user)
+      .filter(Boolean);
+  }, [selectedProject]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -97,6 +112,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
       errs.dueDate = 'Due date cannot be in the past';
     }
     if (!form.projectId) errs.projectId = 'Project is required';
+    else if (!canManageTask) errs.projectId = 'You need Project Manager access to create tasks in this project';
     if (!form.columnId) errs.columnId = 'Column is required';
     return errs;
   };
@@ -129,7 +145,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
     }
   };
 
-  const readOnly = !isPM;
+  const readOnly = isEdit && !canManageTask;
 
   return (
     <Modal
@@ -201,7 +217,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
                 value={form.projectId}
                 onChange={handleChange}
                 disabled={readOnly || isEdit}
-                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all"
+                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Select project</option>
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
@@ -256,6 +272,11 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
             Assignees {readOnly && <span className="text-[var(--colors-mute)] font-normal ml-1">(read-only)</span>}
           </label>
           <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+            {!availableUsers.length && (
+              <div className="rounded-xl border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-4 py-3 text-sm text-[var(--colors-body)]">
+                Select a project with members before assigning work.
+              </div>
+            )}
             {availableUsers.map((u) => {
               const selected = form.assigneeIds.includes(u._id);
               return (

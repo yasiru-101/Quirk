@@ -2,19 +2,125 @@
  * @file ProjectsPage.jsx
  * @description Project overview using workspace project data.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
+import Modal from '../components/common/Modal';
+import Input from '../components/common/Input';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
+import { useToast } from '../context/ToastContext';
+import { normalizeError } from '../services/api';
 import { ROLES } from '../utils/constants';
+
+const EMPTY_PROJECT = {
+  name: '',
+  description: '',
+  templateType: 'Basic Kanban',
+};
 
 export default function ProjectsPage() {
   const { role } = useAuth();
-  const { projects, loading } = useProject();
+  const {
+    projects,
+    loading,
+    activeWorkspace,
+    activeWorkspaceRole,
+    canManageWorkspace,
+    createProject,
+    updateProject,
+    deleteProject,
+  } = useProject();
+  const { success, error: toastError } = useToast();
   const navigate = useNavigate();
-  const canCreate = role === ROLES.PROJECT_MANAGER || role === ROLES.ADMIN;
+  const canCreate = role === ROLES.ADMIN || canManageWorkspace;
+  const [modal, setModal] = useState({ open: false, project: null });
+  const [form, setForm] = useState(EMPTY_PROJECT);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const openCreate = () => {
+    setForm(EMPTY_PROJECT);
+    setErrors({});
+    setModal({ open: true, project: null });
+  };
+
+  const openEdit = (project) => {
+    setForm({
+      name: project.name || '',
+      description: project.description || '',
+      templateType: project.templateType || 'Basic Kanban',
+    });
+    setErrors({});
+    setModal({ open: true, project });
+  };
+
+  const closeModal = () => {
+    setModal({ open: false, project: null });
+    setErrors({});
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    if (errors[name]) setErrors((current) => ({ ...current, [name]: '' }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim()) {
+      setErrors({ name: 'Project name is required' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (modal.project) {
+        await updateProject(modal.project.id, {
+          name: form.name.trim(),
+          description: form.description.trim(),
+        });
+        success('Project updated');
+      } else {
+        await createProject({
+          name: form.name.trim(),
+          description: form.description.trim(),
+          templateType: form.templateType,
+        });
+        success('Project created');
+      }
+      closeModal();
+    } catch (err) {
+      const { message, fieldErrors } = normalizeError(err);
+      if (fieldErrors) setErrors(fieldErrors);
+      toastError(message, modal.project ? 'Update failed' : 'Create failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const archiveProject = async (project) => {
+    if (!window.confirm(`Archive ${project.name}? Tasks remain available, but the project is hidden from active work.`)) return;
+    try {
+      await updateProject(project.id, { status: 'archived' });
+      success('Project archived');
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Archive failed');
+    }
+  };
+
+  const removeProject = async (project) => {
+    if (!window.confirm(`Delete ${project.name}? This cannot be undone.`)) return;
+    try {
+      await deleteProject(project.id);
+      success('Project deleted');
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Delete failed');
+    }
+  };
 
   return (
     <div className="page-shell animate-in space-y-8">
@@ -25,11 +131,14 @@ export default function ProjectsPage() {
             Projects
           </h1>
           <p className="mt-2 max-w-2xl text-[var(--colors-body)]">
-            Browse active project spaces and the Kanban workflows attached to each one.
+            Browse active project spaces in {activeWorkspace?.name || 'your workspace'} and the Kanban workflows attached to each one.
           </p>
+          {activeWorkspaceRole && (
+            <p className="mt-2 text-sm text-[var(--colors-ink-muted)]">Your workspace role: {activeWorkspaceRole}</p>
+          )}
         </div>
         {canCreate && (
-          <Button variant="primary">
+          <Button variant="primary" onClick={openCreate}>
             New project
           </Button>
         )}
@@ -45,23 +154,32 @@ export default function ProjectsPage() {
         <EmptyState
           title="No projects yet"
           description="Create a project to define a workflow and start organizing tasks."
-          action={canCreate && <Button variant="primary">New project</Button>}
+          action={canCreate && <Button variant="primary" onClick={openCreate}>New project</Button>}
         />
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => (
-            <button
+            <article
               key={project.id}
-              onClick={() => navigate(`/projects/${project.id}`)}
-              className="feature-card group min-h-56 text-left focus-ring"
+              className="feature-card group min-h-56 text-left"
             >
               <div className="mb-8 flex items-start justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--colors-surface-dark)] text-sm font-bold text-white">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--colors-surface-dark)] text-sm font-bold text-white focus-ring"
+                  aria-label={`Open ${project.name}`}
+                >
                   {(project.name || 'P').slice(0, 1).toUpperCase()}
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="pill">{project.columns?.length || 0} columns</span>
+                  {project.status === 'archived' && <span className="pill">Archived</span>}
                 </div>
-                <span className="pill">{project.columns?.length || 0} columns</span>
               </div>
-              <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">{project.name}</h2>
+              <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="text-left focus-ring">
+                <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">{project.name}</h2>
+              </button>
               <p className="mt-2 line-clamp-2 text-sm text-[var(--colors-body)]">
                 {project.description || 'A focused workspace for tasks, owners, and workflow columns.'}
               </p>
@@ -70,10 +188,69 @@ export default function ProjectsPage() {
                   <span key={column.id} className="pill bg-[var(--colors-canvas)]">{column.name}</span>
                 ))}
               </div>
-            </button>
+              {canCreate && (
+                <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--colors-hairline)] pt-4">
+                  <Button variant="utility" size="sm" onClick={() => navigate(`/projects/${project.id}`)}>Open</Button>
+                  <Button variant="utility" size="sm" onClick={() => openEdit(project)}>Edit</Button>
+                  {project.status !== 'archived' && (
+                    <Button variant="utility" size="sm" onClick={() => archiveProject(project)}>Archive</Button>
+                  )}
+                  <Button variant="danger" size="sm" onClick={() => removeProject(project)}>Delete</Button>
+                </div>
+              )}
+            </article>
           ))}
         </div>
       )}
+
+      <Modal
+        open={modal.open}
+        onClose={closeModal}
+        title={modal.project ? 'Edit project' : 'New project'}
+        footer={
+          <div className="flex w-full justify-end gap-3">
+            <Button variant="secondary" onClick={closeModal}>Cancel</Button>
+            <Button variant="primary" loading={saving} onClick={handleSubmit}>
+              {modal.project ? 'Save project' : 'Create project'}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          <Input
+            label="Project name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            error={errors.name}
+            placeholder="Mobile app launch"
+          />
+          <Input
+            label="Description"
+            type="textarea"
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            error={errors.description}
+            placeholder="What this project is responsible for"
+          />
+          {!modal.project && (
+            <div className="flex flex-col gap-2">
+              <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Template</label>
+              <select
+                name="templateType"
+                value={form.templateType}
+                onChange={handleChange}
+                className="h-12 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
+              >
+                <option>Basic Kanban</option>
+                <option>Software Development</option>
+                <option>Marketing Campaign</option>
+              </select>
+            </div>
+          )}
+        </form>
+      </Modal>
     </div>
   );
 }

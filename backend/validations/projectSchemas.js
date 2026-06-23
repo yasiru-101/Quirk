@@ -67,4 +67,14 @@ const createColumnSchema = z.object({
   order: z.number().int().nonnegative().optional(),
 });
 
-module.exports = { createProjectSchema, updateProjectSchema, createColumnSchema };
+const updateColumnSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Column name cannot be empty')
+    .max(50, 'Column name cannot exceed 50 characters')
+    .optional(),
+  order: z.number().int().nonnegative().optional(),
+});
+
+module.exports = { createProjectSchema, updateProjectSchema, createColumnSchema, updateColumnSchema };

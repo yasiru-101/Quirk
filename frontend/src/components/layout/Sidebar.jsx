@@ -2,12 +2,17 @@
  * @file Sidebar.jsx
  * @description Left navigation sidebar for primary app navigation and session controls.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
 import { getInitials, cn } from '../../utils/helpers';
 import { ROLES } from '../../utils/constants';
+import BrandLogo from '../common/BrandLogo';
+import Modal from '../common/Modal';
+import Input from '../common/Input';
+import Button from '../common/Button';
+import { normalizeError } from '../../services/api';
 
 const NAV_ITEMS = [
   {
@@ -74,50 +79,82 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, createWorkspace } = useProject();
   const navigate = useNavigate();
   const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
+  const [workspaceForm, setWorkspaceForm] = useState({ name: '', description: '' });
+  const [workspaceErrors, setWorkspaceErrors] = useState({});
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+
+  const closeWorkspaceModal = () => {
+    setWorkspaceModalOpen(false);
+    setWorkspaceForm({ name: '', description: '' });
+    setWorkspaceErrors({});
+  };
+
+  const handleCreateWorkspace = async (event) => {
+    event.preventDefault();
+    if (!workspaceForm.name.trim()) {
+      setWorkspaceErrors({ name: 'Workspace name is required' });
+      return;
+    }
+    setCreatingWorkspace(true);
+    try {
+      await createWorkspace({
+        name: workspaceForm.name.trim(),
+        description: workspaceForm.description.trim() || undefined,
+      });
+      closeWorkspaceModal();
+      navigate('/projects');
+    } catch (err) {
+      const { fieldErrors, message } = normalizeError(err);
+      setWorkspaceErrors(fieldErrors || { name: message });
+    } finally {
+      setCreatingWorkspace(false);
+    }
+  };
 
   return (
-    <aside
-      className={cn(
-        'relative flex h-full flex-col flex-shrink-0 overflow-hidden bg-[var(--colors-surface-dark)] text-white transition-all duration-300',
-        collapsed ? 'w-[76px]' : 'w-[268px]'
-      )}
-    >
-      <div className="flex h-[76px] flex-shrink-0 items-center gap-3 px-5">
-        {collapsed ? (
-          <img src="/logo icon.webp" alt="Quirk" className="mx-auto h-9 w-9 rounded-xl object-contain" draggable={false} />
-        ) : (
-          <img src="/full logo  - white.webp" alt="Quirk" className="h-9 w-auto object-contain" draggable={false} />
+    <>
+      <aside
+        className={cn(
+          'relative flex h-full flex-col flex-shrink-0 overflow-hidden bg-[var(--colors-surface-dark)] text-white transition-all duration-300',
+          collapsed ? 'w-[76px]' : 'w-[268px]'
         )}
-        {!collapsed && (
+      >
+        <div className={cn('flex h-[76px] flex-shrink-0 items-center gap-3 px-4', collapsed && 'justify-center')}>
+          {collapsed ? (
+            <BrandLogo showText={false} size="md" variant="light" />
+          ) : (
+            <BrandLogo size="lg" variant="light" className="w-[150px]" />
+          )}
           <button
             onClick={onToggle}
-            className="ml-auto rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
-            aria-label="Collapse sidebar"
+            className={cn(
+              'rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring',
+              !collapsed && 'ml-auto'
+            )}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={collapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6'} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={onToggle}
-            className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
-            aria-label="Expand sidebar"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
-      </div>
+        </div>
 
       {!collapsed && (
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
+            <button
+              type="button"
+              onClick={() => setWorkspaceModalOpen(true)}
+              className="rounded-full border border-white/10 px-2 py-1 text-[11px] font-bold text-white/65 transition hover:bg-white/10 hover:text-white focus-ring"
+            >
+              Add
+            </button>
+          </div>
           {workspaces.length > 1 ? (
             <div className="relative mt-2">
               <select
@@ -170,6 +207,42 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>
       </nav>
 
-    </aside>
+      </aside>
+
+      <Modal
+        open={workspaceModalOpen}
+        onClose={closeWorkspaceModal}
+        title="New workspace"
+        footer={
+          <div className="flex w-full justify-end gap-3">
+            <Button type="button" variant="secondary" onClick={closeWorkspaceModal}>Cancel</Button>
+            <Button type="button" variant="primary" loading={creatingWorkspace} onClick={handleCreateWorkspace}>Create workspace</Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleCreateWorkspace} className="space-y-5" noValidate>
+          <Input
+            label="Workspace name"
+            name="name"
+            value={workspaceForm.name}
+            onChange={(event) => {
+              setWorkspaceForm((current) => ({ ...current, name: event.target.value }));
+              setWorkspaceErrors((current) => ({ ...current, name: '' }));
+            }}
+            error={workspaceErrors.name}
+            placeholder="Acme Product Team"
+          />
+          <Input
+            label="Description"
+            type="textarea"
+            name="description"
+            value={workspaceForm.description}
+            onChange={(event) => setWorkspaceForm((current) => ({ ...current, description: event.target.value }))}
+            error={workspaceErrors.description}
+            placeholder="What this workspace is responsible for"
+          />
+        </form>
+      </Modal>
+    </>
   );
 }

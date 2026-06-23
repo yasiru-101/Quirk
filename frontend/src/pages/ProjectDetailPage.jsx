@@ -7,9 +7,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
+import Input from '../components/common/Input';
+import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { normalizeError } from '../services/api';
+import api, { normalizeError } from '../services/api';
 import { ROLES } from '../utils/constants';
 
 export default function ProjectDetailPage() {
@@ -20,12 +22,16 @@ export default function ProjectDetailPage() {
     setActiveProject,
     workspaceMembers,
     canManageWorkspace,
+    refreshProjects,
     addProjectMember,
     removeProjectMember,
   } = useProject();
   const { role, user } = useAuth();
   const { success, error: toastError } = useToast();
   const [memberForm, setMemberForm] = useState({ userId: '', role: 'Collaborator' });
+  const [columnDrafts, setColumnDrafts] = useState({});
+  const [newColumnName, setNewColumnName] = useState('');
+  const [savingColumn, setSavingColumn] = useState(null);
   const project = useMemo(() => projects.find((item) => item.id === id), [id, projects]);
   const projectMembership = project?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id);
   const isPM = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
@@ -37,6 +43,80 @@ export default function ProjectDetailPage() {
     if (project) setActiveProject(project);
     return () => setActiveProject(null);
   }, [project, setActiveProject]);
+
+  useEffect(() => {
+    if (!project) return;
+    setColumnDrafts(Object.fromEntries((project.columns ?? []).map((column) => [column.id, column.name])));
+  }, [project]);
+
+  const saveColumn = async (column) => {
+    const nextName = columnDrafts[column.id]?.trim();
+    if (!nextName || nextName === column.name) return;
+    setSavingColumn(column.id);
+    try {
+      await api.put(`/projects/${project.id}/columns/${column.id}`, { name: nextName, order: column.order });
+      await refreshProjects();
+      success('Workflow column updated');
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Column update failed');
+    } finally {
+      setSavingColumn(null);
+    }
+  };
+
+  const moveColumn = async (column, direction) => {
+    const columns = [...(project.columns ?? [])].sort((a, b) => a.order - b.order);
+    const index = columns.findIndex((item) => item.id === column.id);
+    const swapWith = columns[index + direction];
+    if (!swapWith) return;
+    setSavingColumn(column.id);
+    try {
+      await Promise.all([
+        api.put(`/projects/${project.id}/columns/${column.id}`, { order: swapWith.order }),
+        api.put(`/projects/${project.id}/columns/${swapWith.id}`, { order: column.order }),
+      ]);
+      await refreshProjects();
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Column reorder failed');
+    } finally {
+      setSavingColumn(null);
+    }
+  };
+
+  const addColumn = async (event) => {
+    event.preventDefault();
+    const name = newColumnName.trim();
+    if (!name) return;
+    setSavingColumn('new');
+    try {
+      await api.post(`/projects/${project.id}/columns`, { name });
+      setNewColumnName('');
+      await refreshProjects();
+      success('Workflow column added');
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Column create failed');
+    } finally {
+      setSavingColumn(null);
+    }
+  };
+
+  const deleteColumn = async (column) => {
+    if (!window.confirm(`Delete "${column.name}"? Tasks in this column will become unassigned.`)) return;
+    setSavingColumn(column.id);
+    try {
+      await api.delete(`/projects/${project.id}/columns/${column.id}`);
+      await refreshProjects();
+      success('Workflow column deleted');
+    } catch (err) {
+      const { message } = normalizeError(err);
+      toastError(message, 'Column delete failed');
+    } finally {
+      setSavingColumn(null);
+    }
+  };
 
   if (!project) {
     return (
@@ -91,13 +171,43 @@ export default function ProjectDetailPage() {
           <span className="pill">Project board</span>
         </div>
         <div className="grid gap-3 md:grid-cols-4">
-          {(project.columns ?? []).map((column) => (
+          {(project.columns ?? []).map((column, index) => (
             <div key={column.id} className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
-              <p className="font-semibold text-[var(--colors-ink)]">{column.name}</p>
+              {isPM ? (
+                <div className="space-y-3">
+                  <Input
+                    value={columnDrafts[column.id] ?? column.name}
+                    onChange={(event) => setColumnDrafts((current) => ({ ...current, [column.id]: event.target.value }))}
+                    onBlur={() => saveColumn(column)}
+                    className="h-10 text-sm"
+                    aria-label={`Rename ${column.name}`}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="utility" size="sm" disabled={index === 0 || savingColumn === column.id} onClick={() => moveColumn(column, -1)}>Up</Button>
+                    <Button type="button" variant="utility" size="sm" disabled={index === (project.columns?.length ?? 1) - 1 || savingColumn === column.id} onClick={() => moveColumn(column, 1)}>Down</Button>
+                    <Button type="button" variant="danger" size="sm" disabled={(project.columns?.length ?? 0) <= 1 || savingColumn === column.id} onClick={() => deleteColumn(column)}>Delete</Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="font-semibold text-[var(--colors-ink)]">{column.name}</p>
+              )}
               <p className="mt-2 text-sm text-[var(--colors-body)]">Tasks in this column inherit this workflow state.</p>
             </div>
           ))}
         </div>
+        {isPM && (
+          <form onSubmit={addColumn} className="mt-5 flex flex-col gap-3 border-t border-[var(--colors-hairline)] pt-5 sm:flex-row">
+            <Input
+              value={newColumnName}
+              onChange={(event) => setNewColumnName(event.target.value)}
+              placeholder="Add workflow column"
+              className="h-11"
+            />
+            <Button type="submit" variant="primary" disabled={!newColumnName.trim() || savingColumn === 'new'}>
+              Add column
+            </Button>
+          </form>
+        )}
       </section>
 
       <section className="feature-card">
@@ -153,24 +263,24 @@ export default function ProjectDetailPage() {
               }
             }}
           >
-            <select
+            <SelectField
               value={memberForm.userId}
               onChange={(event) => setMemberForm((current) => ({ ...current, userId: event.target.value }))}
-              className="h-11 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] px-3 text-sm text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
+              selectClassName="bg-[var(--colors-canvas)]"
             >
               <option value="">Select workspace member</option>
               {assignableMembers.map((member) => (
                 <option key={member.userId} value={member.userId}>{member.user?.name} ({member.user?.email})</option>
               ))}
-            </select>
-            <select
+            </SelectField>
+            <SelectField
               value={memberForm.role}
               onChange={(event) => setMemberForm((current) => ({ ...current, role: event.target.value }))}
-              className="h-11 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] px-3 text-sm text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
+              selectClassName="bg-[var(--colors-canvas)]"
             >
               <option>Collaborator</option>
               <option>Project Manager</option>
-            </select>
+            </SelectField>
             <Button type="submit" variant="primary" disabled={!memberForm.userId}>Add member</Button>
           </form>
         )}

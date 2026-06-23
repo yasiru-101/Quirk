@@ -85,8 +85,11 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 - The sidebar is the primary app switchboard.
 - It shows a real workspace switcher when the user belongs to more than one
   workspace.
+- The workspace block always exposes workspace creation so a user can add another
+  tenant context without leaving the app shell.
 - The workspace block shows the active workspace name and the caller's workspace
   role.
+- The collapse and expand control stays beside the logo in both sidebar states.
 - Role-specific navigation may hide platform-only modules, but workspace/project
   permissions must still be enforced by the backend.
 
@@ -100,11 +103,13 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 ## Projects
 
 - Project cards show the project initial, name, description, column count,
-  workflow chips, and project status.
+  workflow chips, overflow count, and project status.
 - Workspace Owners/Admins and platform Admins can create, edit, archive, and
   delete projects.
+- Project creation offers either a template or a blank Basic Kanban start.
 - Project detail pages show workflow columns, project metrics, and project member
-  assignment.
+  assignment. Project Managers and workspace managers can add, rename, reorder,
+  and delete workflow columns after creation.
 - Project Managers can manage members and create tasks only inside projects they
   manage unless they also hold workspace Owner/Admin permissions.
 
@@ -119,6 +124,16 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 - General Tasks shows all accessible tasks. Project-specific task links use
   `/tasks?projectId=<id>` and filter both tasks and workflow columns.
 - Calendar and timeline views consume the same task query as the board/list views.
+- Clicking a task in board, list, calendar, timeline, or dashboard views opens the
+  task modal. Managers can edit task fields; collaborators with access can read
+  details, comment, and use the column move controls allowed by the backend.
+
+## Analytics
+
+- Analytics should answer operational business questions, not only count rows.
+- Useful signals include completion rate, overdue risk, near-term due work,
+  assignment coverage, average active task age, project delivery health, and a
+  short list of tasks needing attention.
 
 ## Chat
 

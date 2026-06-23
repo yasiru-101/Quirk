@@ -11,21 +11,17 @@ import { cn } from '../../utils/helpers';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
-  const sideW = collapsed ? 72 + 16 : 260 + 16; // width + left margin (16px)
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--colors-ink)] flex">
-      {/* Floating Sidebar */}
+    <div className="h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--colors-ink)] flex">
+      {/* Seamless Sidebar */}
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
 
       {/* Main Content Area */}
-      <div
-        className="flex-1 flex flex-col min-h-screen transition-all duration-300 relative"
-        style={{ marginLeft: sideW }}
-      >
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative bg-[var(--bg-surface)] border-l border-[var(--colors-hairline)]">
         <TopBar />
 
-        <main className="flex-1 p-8 pt-6 max-w-7xl mx-auto w-full animate-in">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto animate-in">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>

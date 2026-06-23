@@ -1,6 +1,6 @@
 /**
  * @file Modal.jsx
- * @description Accessible popover dialogue overlay with backdrop lock, focus-trap, and premium animations.
+ * @description Accessible dialog overlay with backdrop lock and restrained motion.
  */
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -50,14 +50,13 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`w-full ${sizeMap[size]} scale-in flex flex-col max-h-[90vh] outline-none card`}
+        className={`w-full ${sizeMap[size]} scale-in flex flex-col max-h-[90vh] outline-none card shadow-[var(--shadow-modal)] overflow-hidden`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--colors-hairline)]">
-          <h2 className="text-[var(--typography-display-sm)] font-semibold text-[var(--colors-ink)]">{title}</h2>
+          <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors p-1.5 rounded-full hover:bg-[var(--colors-canvas-softer)] focus-ring active:scale-95"
+            className="text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors p-2 rounded-full hover:bg-[var(--colors-canvas-softer)] focus-ring active:scale-95"
             aria-label="Close modal"
           >
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -66,10 +65,8 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
 
-        {/* Footer */}
         {footer !== undefined ? (
           footer && <div className="px-6 py-5 border-t border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] rounded-b-[var(--radius-xl)]">{footer}</div>
         ) : null}

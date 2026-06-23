@@ -7,17 +7,14 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import ErrorBoundary from '../common/ErrorBoundary';
-import { cn } from '../../utils/helpers';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--colors-ink)] flex">
-      {/* Seamless Sidebar */}
+    <div className="h-screen overflow-hidden app-shell text-[var(--colors-ink)] flex">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative bg-[var(--bg-surface)] border-l border-[var(--colors-hairline)]">
         <TopBar />
 

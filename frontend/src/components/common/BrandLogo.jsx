@@ -32,8 +32,8 @@ export default function BrandLogo({ size = 'md', showText = true, variant, class
     <div className={cn('flex items-center overflow-hidden', heightClass, className)}>
       <img
         src={showText ? fullLogoSrc : iconSrc}
-        alt="Quirk Logo"
-        className="w-auto h-[250%] object-contain object-left -ml-2"
+        alt="Quirk logo"
+        className="h-full w-auto object-contain object-left"
         draggable={false}
       />
     </div>

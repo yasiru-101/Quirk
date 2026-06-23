@@ -8,6 +8,7 @@ import { cn } from '../../utils/helpers';
 export default function Button({
   children,
   variant = 'primary',
+  size = 'md',
   loading = false,
   className,
   disabled,
@@ -23,9 +24,16 @@ export default function Button({
     danger: 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/20 active:scale-95 rounded-full px-6 py-2.5 font-medium',
   };
 
+  const sizes = {
+    sm: 'min-h-9 px-4 text-sm',
+    md: '',
+    lg: 'min-h-12 px-7',
+    icon: 'min-h-10 w-10 px-0',
+  };
+
   return (
     <button
-      className={cn(base, variants[variant], className)}
+      className={cn(base, variants[variant], sizes[size], className)}
       disabled={disabled || loading}
       {...rest}
     >

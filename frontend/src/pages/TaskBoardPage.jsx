@@ -1,9 +1,9 @@
 /**
  * @file TaskBoardPage.jsx
- * @description Task board layout supporting Kanban and list formats.
+ * @description Task board layout supporting Kanban, list, calendar, and timeline views.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import TaskTable from '../components/tasks/TaskTable';
 import TaskCalendarView from '../components/tasks/TaskCalendarView';
@@ -26,6 +26,7 @@ export default function TaskBoardPage() {
   const { on } = useSocket();
   const { projects, loading: projectsLoading } = useProject();
   const navigate = useNavigate();
+  const location = useLocation();
   const isPM = role === ROLES.PROJECT_MANAGER;
 
   const [view, setView] = useState('kanban');
@@ -33,6 +34,7 @@ export default function TaskBoardPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ search: '', columnId: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
+
   const columns = useMemo(
     () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
       ...column,
@@ -41,6 +43,7 @@ export default function TaskBoardPage() {
     }))),
     [projects]
   );
+
   const columnsById = useMemo(
     () => new Map(columns.map((column) => [column.id, column])),
     [columns]
@@ -53,7 +56,19 @@ export default function TaskBoardPage() {
       .then(({ data }) => setTasks(data.tasks ?? []))
       .catch(() => toastError('Failed to load tasks. Please refresh.'))
       .finally(() => setLoading(false));
+  }, [toastError]);
+
+  useEffect(() => {
+    const openCreateModal = () => setModal({ open: true, task: null });
+    window.addEventListener('task:create', openCreateModal);
+    return () => window.removeEventListener('task:create', openCreateModal);
   }, []);
+
+  useEffect(() => {
+    if (!location.state?.createTask) return;
+    setModal({ open: true, task: null });
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state?.createTask, navigate]);
 
   useEffect(() => {
     const unsub = on('task:columnChanged', ({ taskId, columnId }) => {
@@ -73,17 +88,18 @@ export default function TaskBoardPage() {
     return unsub;
   }, [on]);
 
-  const handleFilterChange = (name, value) =>
+  const handleFilterChange = (name, value) => {
     setFilters((f) => ({ ...f, [name]: value }));
+  };
 
-  const filtered = tasks.filter((t) => {
-    if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+  const filtered = tasks.filter((task) => {
+    if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
     if (filters.columnId === 'Overdue') {
-      if (!isOverdue(t.dueDate) || isTerminalColumn(getTaskColumnName(t))) return false;
-    } else if (filters.columnId) {
-      if (t.columnId !== filters.columnId) return false;
+      if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
+    } else if (filters.columnId && task.columnId !== filters.columnId) {
+      return false;
     }
-    if (filters.priority && t.priority !== filters.priority) return false;
+    if (filters.priority && task.priority !== filters.priority) return false;
     return true;
   });
 
@@ -119,46 +135,45 @@ export default function TaskBoardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden animate-in">
-      <ViewHeader 
-        icon="✨"
+    <div className="flex h-full flex-col overflow-hidden animate-in">
+      <ViewHeader
         title="Task Board"
-        subtitle="Manage and track your tasks."
+        subtitle="Manage work across board, list, calendar, and timeline views."
         tabs={[
-          { id: 'kanban', label: 'Board', icon: '⏸' },
-          { id: 'table', label: 'List', icon: '📋' },
-          { id: 'calendar', label: 'Calendar', icon: '📅' },
-          { id: 'timeline', label: 'Timeline', icon: '📈' }
+          { id: 'kanban', label: 'Board' },
+          { id: 'table', label: 'List' },
+          { id: 'calendar', label: 'Calendar' },
+          { id: 'timeline', label: 'Timeline' },
         ]}
         activeTab={view}
         onTabChange={setView}
       />
 
-      <ViewToolbar 
+      <ViewToolbar
         filters={[
-          { id: 'column', label: 'Column', icon: '🏷️' },
-          { id: 'assignee', label: 'Assignee', icon: '👤' }
+          { id: 'column', label: 'Column' },
+          { id: 'assignee', label: 'Assignee' },
         ]}
         activeFilters={['column']}
         actions={
           isPM && (
-            <button 
+            <button
               onClick={() => setModal({ open: true, task: null })}
-              className="text-[var(--colors-ink-muted)] text-[12.5px] hover:text-[var(--colors-primary-active)] flex items-center gap-1 font-medium"
+              className="rounded-full bg-[var(--colors-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring"
             >
-              + Add Task
+              Add task
             </button>
           )
         }
       />
 
-      <div className="flex-1 flex overflow-hidden bg-[var(--colors-canvas-soft)]">
+      <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
           <TaskFilters filters={filters} columns={columns} onChange={handleFilterChange} />
           {loading || projectsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="skeleton h-80 rounded-xl" />
+                <div key={i} className="h-80 animate-pulse rounded-[var(--radius-xl)] bg-[var(--colors-surface-pressed)]" />
               ))}
             </div>
           ) : view === 'kanban' ? (

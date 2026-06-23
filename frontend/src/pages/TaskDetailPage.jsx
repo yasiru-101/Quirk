@@ -1,8 +1,8 @@
 /**
  * @file TaskDetailPage.jsx
- * @description Detailed workspace screen showing task specifications, comments, and attachments.
+ * @description Detailed task side panel with column, assignee, activity, and task controls.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../services/taskService';
 import { useAuth } from '../context/AuthContext';
@@ -11,9 +11,8 @@ import CommentsPanel from '../components/tasks/CommentsPanel';
 import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
 import { useProject } from '../context/ProjectContext';
-import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue } from '../utils/helpers';
+import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../utils/helpers';
 import { ROLES } from '../utils/constants';
-import { cn } from '../utils/helpers';
 
 export default function TaskDetailPage() {
   const { id } = useParams();
@@ -22,10 +21,14 @@ export default function TaskDetailPage() {
   const { success, error: toastError } = useToast();
   const { projects } = useProject();
   const isPM = role === ROLES.PROJECT_MANAGER;
-  const columns = projects.flatMap((project) => (project.columns ?? []).map((column) => ({
-    ...column,
-    projectId: column.projectId || project.id,
-  })));
+
+  const columns = useMemo(
+    () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
+      ...column,
+      projectId: column.projectId || project.id,
+    }))),
+    [projects]
+  );
 
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,22 +45,9 @@ export default function TaskDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (fetchError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 animate-in text-center space-y-4">
-        <div className="text-4xl">⚠️</div>
-        <h2 className="text-sm font-bold text-[var(--colors-ink)]">Task not found</h2>
-        <p className="text-xs text-[var(--colors-body)] max-w-xs">The task could not be loaded. It may have been deleted or you may not have access.</p>
-        <button onClick={() => navigate('/tasks')} className="text-xs font-semibold text-[var(--colors-primary)] hover:text-[var(--colors-primary-deep)] transition-colors underline underline-offset-2">
-          ← Back to tasks
-        </button>
-      </div>
-    );
-  }
-
   const handleColumnChange = async (columnId) => {
-    const column = columns.find((c) => c.id === columnId);
-    setTask((t) => ({ ...t, columnId, column: column || t.column }));
+    const column = columns.find((item) => item.id === columnId);
+    setTask((current) => ({ ...current, columnId, column: column || current.column }));
     try {
       const { data } = await taskService.updateTaskColumn(id, columnId);
       setTask(data.task);
@@ -77,18 +67,29 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleSaved = (saved) => setTask(saved);
+  if (fetchError) {
+    return (
+      <aside id="detail-panel">
+        <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+          <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">Task not found</h2>
+          <p className="mt-2 max-w-xs text-sm text-[var(--colors-body)]">The task could not be loaded. It may have been deleted or you may not have access.</p>
+          <Button variant="secondary" size="sm" className="mt-6" onClick={() => navigate('/tasks')}>
+            Back to tasks
+          </Button>
+        </div>
+      </aside>
+    );
+  }
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-in max-w-5xl mx-auto">
-        <div className="skeleton h-10 w-1/2 rounded" />
-        <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
+      <aside id="detail-panel">
+        <div className="space-y-4 p-5">
+          <div className="h-8 w-2/3 animate-pulse rounded-full bg-[var(--colors-surface-pressed)]" />
+          <div className="h-4 w-full animate-pulse rounded-full bg-[var(--colors-surface-pressed)]" />
+          <div className="h-40 animate-pulse rounded-[var(--radius-xl)] bg-[var(--colors-surface-pressed)]" />
         </div>
-        <div className="skeleton h-64 rounded-xl" />
-      </div>
+      </aside>
     );
   }
 
@@ -99,100 +100,107 @@ export default function TaskDetailPage() {
   const columnName = getTaskColumnName(task);
 
   return (
-    <div id="detail-panel" className="w-[400px] flex-shrink-0 bg-[var(--surface)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden transition-all duration-200 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] z-20">
-      
-      {/* ── dp-header ── */}
-      <div className="flex flex-col gap-3 p-5 border-b border-[var(--border)] bg-[var(--surface)] shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider', getPriorityColor(task.priority))}>
-              {task.priority} Priority
+    <aside id="detail-panel" className="shadow-[-18px_0_45px_rgba(10,11,13,0.08)]">
+      <div className="flex shrink-0 flex-col gap-4 border-b border-[var(--colors-hairline)] bg-[var(--colors-canvas)] p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn('rounded-full border px-2.5 py-1 text-[11px] font-bold', getPriorityColor(task.priority))}>
+              {task.priority}
             </span>
             {overdue && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-400">
+              <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-[var(--colors-priority-urgent)] dark:border-red-900/60 dark:bg-red-950/30">
                 Overdue
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
             {isPM && (
-              <button onClick={() => setEditOpen(true)} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-faint)] hover:text-[var(--text-primary)] transition-colors" title="Edit">
-                ✏️
+              <button
+                onClick={() => setEditOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
+                title="Edit"
+                aria-label="Edit task"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                </svg>
               </button>
             )}
-            <button onClick={() => navigate('/tasks')} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--bg-faint)] hover:text-[var(--text-primary)] transition-colors" title="Close">
-              ✕
+            <button
+              onClick={() => navigate('/tasks')}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
+              title="Close"
+              aria-label="Close task details"
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
         </div>
 
-        <h2 className="text-[18px] font-bold text-[var(--text-primary)] leading-snug">{task.title}</h2>
-        <div className="flex items-center gap-4 text-xs font-medium text-[var(--text-muted)]">
-          <div className="flex items-center gap-1">
-            <span>📅 {formatDate(task.dueDate)}</span>
+        <h2 className="text-[length:var(--typography-title)] font-semibold leading-snug text-[var(--colors-ink)]">{task.title}</h2>
+        <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-[var(--colors-ink-muted)]">
+          <div className="rounded-[var(--radius-lg)] bg-[var(--colors-canvas-soft)] p-3">
+            <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-[var(--colors-ink-faint)]">Due</p>
+            <p>{formatDate(task.dueDate)}</p>
           </div>
-          <div className="flex items-center gap-1">
-            <span>👤 {task.createdBy?.name || '—'}</span>
+          <div className="rounded-[var(--radius-lg)] bg-[var(--colors-canvas-soft)] p-3">
+            <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-[var(--colors-ink-faint)]">Created by</p>
+            <p>{task.createdBy?.name || 'Unassigned'}</p>
           </div>
         </div>
       </div>
 
-      {/* ── dp-body ── */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        
-        {/* Description Section */}
+      <div className="flex-1 space-y-6 overflow-y-auto p-5">
         {task.description && (
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Description</h3>
-            <p className="text-sm text-[var(--text-primary)] leading-relaxed bg-[var(--bg-faint)] p-3 rounded-lg border border-[var(--border)]">
+          <section className="space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Description</h3>
+            <p className="rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4 text-sm leading-relaxed text-[var(--colors-ink)]">
               {task.description}
             </p>
-          </div>
+          </section>
         )}
 
-        {/* Column Dropdown */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Column</h3>
+        <section className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Column</h3>
           <select
             value={task.columnId || ''}
-            onChange={(e) => handleColumnChange(e.target.value)}
-            className={cn('w-full text-sm font-bold px-3 py-2 rounded-lg border outline-none cursor-pointer appearance-none', getStatusColor(columnName))}
+            onChange={(event) => handleColumnChange(event.target.value)}
+            className={cn('w-full cursor-pointer appearance-none rounded-full border px-4 py-2.5 text-sm font-bold outline-none focus-ring', getStatusColor(columnName))}
           >
             {taskColumns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
           </select>
-        </div>
+        </section>
 
-        {/* Assignees */}
         {task.assignees?.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Assignees</h3>
-            <div className="flex flex-col gap-2 bg-[var(--bg-faint)] p-3 rounded-lg border border-[var(--border)]">
-              {task.assignees.map((u) => (
-                <div key={u._id} className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white flex items-center justify-center text-[10px] font-bold">
-                    {getInitials(u.name)}
+          <section className="space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Assignees</h3>
+            <div className="space-y-2 rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-3">
+              {task.assignees.map((user) => (
+                <div key={user._id} className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--colors-surface-dark)] text-[10px] font-bold text-white">
+                    {getInitials(user.name)}
                   </div>
-                  <span className="text-sm font-medium text-[var(--text-primary)]">{u.name}</span>
+                  <span className="text-sm font-semibold text-[var(--colors-ink)]">{user.name}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Comments Panel */}
-        <div className="space-y-2 pt-4 border-t border-[var(--border)]">
-          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Activity</h3>
+        <section className="space-y-2 border-t border-[var(--colors-hairline)] pt-5">
+          <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Activity</h3>
           <CommentsPanel taskId={task._id} />
-        </div>
+        </section>
 
         {isPM && (
-          <div className="pt-6 mt-6 border-t border-rose-100 dark:border-rose-900/30">
+          <div className="border-t border-red-100 pt-5 dark:border-red-900/30">
             <Button variant="danger" className="w-full text-sm" onClick={handleDelete}>
-              Delete Task
+              Delete task
             </Button>
           </div>
         )}
-
       </div>
 
       {isPM && (
@@ -202,9 +210,9 @@ export default function TaskDetailPage() {
           task={task}
           projects={projects}
           columns={columns}
-          onSaved={handleSaved}
+          onSaved={setTask}
         />
       )}
-    </div>
+    </aside>
   );
 }

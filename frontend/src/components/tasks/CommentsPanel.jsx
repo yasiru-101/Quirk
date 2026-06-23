@@ -45,8 +45,8 @@ export default function CommentsPanel({ taskId }) {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-[var(--typography-body-md-strong)] font-bold text-[var(--colors-ink)] flex items-center gap-3">
-        <span>💬</span> Comments
+      <h3 className="flex items-center gap-3 text-[length:var(--typography-body-md)] font-bold text-[var(--colors-ink)]">
+        Comments
         <span className="text-[10px] font-bold text-[var(--colors-ink)] bg-[var(--colors-canvas-softer)] border border-[var(--colors-hairline)] px-2 py-0.5 rounded-full shadow-sm">
           {comments.length}
         </span>
@@ -66,8 +66,7 @@ export default function CommentsPanel({ taskId }) {
           ))
         ) : comments.length === 0 ? (
           <div className="py-8 text-center border border-dashed border-[var(--colors-hairline)] rounded-[var(--radius-xl)] bg-[var(--colors-canvas-softer)]">
-            <span className="text-2xl mb-2 inline-block">📭</span>
-            <p className="text-sm font-medium text-[var(--colors-body)]">No comments yet. Start the conversation!</p>
+            <p className="text-sm font-medium text-[var(--colors-body)]">No comments yet. Start the conversation.</p>
           </div>
         ) : (
           comments.map((c) => (
@@ -93,7 +92,7 @@ export default function CommentsPanel({ taskId }) {
                         rel="noreferrer"
                         className="text-[11px] font-bold text-[var(--colors-primary-deep)] hover:text-[var(--colors-ink)] bg-[var(--colors-primary-glow)] px-3 py-1.5 rounded-full transition-colors border border-[var(--colors-primary)]"
                       >
-                        📎 {a.originalName}
+                        {a.originalName}
                       </a>
                     ))}
                   </div>
@@ -118,7 +117,7 @@ export default function CommentsPanel({ taskId }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handlePost();
               }}
-              placeholder="Add a comment… (Ctrl+Enter to send)"
+              placeholder="Add a comment (Ctrl+Enter to send)"
               rows={3}
             />
 

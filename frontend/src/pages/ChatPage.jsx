@@ -3,8 +3,8 @@
  * @description Full-page chat and direct-message UI.
  *
  * Layout:
- *   Left panel  – conversation list + new DM button
- *   Right panel – message thread + composer
+ *   Left panel: conversation list and new DM button
+ *   Right panel: message thread and composer
  */
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -76,7 +76,7 @@ function NewDmModal({ onClose, workspaceId }) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search members…"
+            placeholder="Search members"
             className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-3 py-2 text-sm text-white placeholder-[rgba(255,255,255,0.3)] outline-none focus:border-[var(--colors-primary)] transition-colors"
             autoFocus
           />

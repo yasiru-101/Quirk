@@ -32,7 +32,7 @@ export default function UserManagementPage() {
           <Input
             id="user-search"
             type="search"
-            placeholder="Search by name, email, or role…"
+            placeholder="Search by name, email, or role"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={

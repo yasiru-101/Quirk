@@ -33,7 +33,10 @@ export default function BrandLogo({ size = 'md', showText = true, variant, class
       <img
         src={showText ? fullLogoSrc : iconSrc}
         alt="Quirk logo"
-        className="h-full w-auto object-contain object-left"
+        className={cn(
+          "h-full w-auto object-contain object-left transition-transform",
+          showText ? "scale-[1.7] origin-left" : ""
+        )}
         draggable={false}
       />
     </div>

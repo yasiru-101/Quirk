@@ -150,6 +150,13 @@ export default function TaskBoardPage() {
     });
   };
 
+  const displayColumns = useMemo(() => {
+    if (filters.columnId && filters.columnId !== 'Overdue') {
+      return columns.filter(c => c.id === filters.columnId);
+    }
+    return columns;
+  }, [columns, filters.columnId]);
+
   return (
     <div className="flex h-full flex-col overflow-hidden animate-in">
       <ViewHeader
@@ -195,7 +202,7 @@ export default function TaskBoardPage() {
           ) : view === 'kanban' ? (
             <KanbanBoard
               tasks={filtered}
-              columns={columns}
+              columns={displayColumns}
               canManageTasks={canCreateTask}
               onColumnChange={handleColumnChange}
               onCardClick={(task) => navigate(`/tasks/${task._id}`)}

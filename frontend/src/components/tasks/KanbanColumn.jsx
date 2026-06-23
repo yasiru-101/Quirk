@@ -33,18 +33,35 @@ export default function KanbanColumn({ status, tasks, onStatusChange, onCardClic
   const isPM = role === ROLES.PROJECT_MANAGER;
 
   return (
-    <div className="flex flex-col rounded-[var(--radius-lg)] bg-[var(--colors-canvas-softer)] min-h-[500px] w-[var(--board-col-width)] flex-shrink-0">
+    <div className="kanban-col">
       {/* Column header */}
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="kanban-col-header">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.colorVar }} />
-        <span className="text-[var(--typography-body-sm-strong)] font-semibold text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)] uppercase tracking-wider">{status}</span>
-        <span className="ml-auto text-[10px] text-[var(--colors-ink)] dark:text-[var(--colors-on-dark)] font-medium bg-[var(--colors-canvas)] border border-[var(--colors-hairline)] px-1.5 py-0.5 rounded-full">
+        <span>{status}</span>
+        <span className="col-count">
           {tasks.length}
         </span>
       </div>
 
       {/* Cards */}
-      <div className="flex-1 overflow-y-auto p-3 pt-0 space-y-3">
+      <div 
+        className="kanban-cards"
+        onDragOver={(e) => {
+          e.preventDefault(); // necessary to allow dropping
+          e.currentTarget.classList.add('bg-[var(--colors-canvas-soft)]');
+        }}
+        onDragLeave={(e) => {
+          e.currentTarget.classList.remove('bg-[var(--colors-canvas-soft)]');
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('bg-[var(--colors-canvas-soft)]');
+          const taskId = e.dataTransfer.getData('taskId');
+          if (taskId && onStatusChange) {
+            onStatusChange(taskId, status);
+          }
+        }}
+      >
         {tasks.length === 0 ? (
           <div className="pt-4">
             <EmptyState

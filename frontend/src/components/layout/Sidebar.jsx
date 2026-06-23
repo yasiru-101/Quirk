@@ -88,8 +88,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <aside
       className={cn(
-        'fixed left-4 top-4 bottom-4 z-40 flex flex-col transition-all duration-300 rounded-[var(--radius-xl)] shadow-xl border border-[rgba(255,255,255,0.05)]',
-        'bg-[#0C120E] text-white', // Deep green-black for premium feel
+        'relative flex flex-col h-full transition-all duration-300 flex-shrink-0',
+        'bg-[#0C120E] text-white overflow-hidden',
         collapsed ? 'w-[72px]' : 'w-[260px]'
       )}
     >
@@ -112,6 +112,24 @@ export default function Sidebar({ collapsed, onToggle }) {
             }
           </svg>
         </button>
+      </div>
+
+      {/* Workspace Switcher */}
+      <div className="p-3 border-b border-[rgba(255,255,255,0.05)]">
+        <div className={cn("bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-[var(--radius-md)] p-2 flex items-center gap-2.5 cursor-pointer hover:bg-[rgba(255,255,255,0.06)] transition-all", collapsed && "justify-center px-0")}>
+          <div className="w-6 h-6 rounded-[6px] bg-gradient-to-br from-indigo-500 to-green-500 flex items-center justify-center text-[11px] font-bold shadow-sm flex-shrink-0">
+            H
+          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold truncate leading-none mb-1">hackX 2026</div>
+              <div className="text-[10px] text-[rgba(255,255,255,0.5)] truncate uppercase tracking-wider">Free Plan</div>
+            </div>
+          )}
+          {!collapsed && (
+            <svg className="w-3.5 h-3.5 text-[rgba(255,255,255,0.4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+          )}
+        </div>
       </div>
 
       {/* Nav */}
@@ -143,6 +161,21 @@ export default function Sidebar({ collapsed, onToggle }) {
             )}
           </NavLink>
         ))}
+
+        {/* Spaces Section */}
+        {!collapsed && (
+          <div className="mt-6 mb-2">
+            <div className="px-3.5 text-[10.5px] font-bold tracking-widest text-[rgba(255,255,255,0.4)] uppercase mb-2">Spaces</div>
+            <NavLink to="/projects" className="flex items-center gap-2.5 px-3.5 py-1.5 text-[13px] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-[var(--radius-md)] transition-all group">
+              <div className="w-5 h-5 rounded-[5px] bg-[#1aae39] text-[#0C120E] flex items-center justify-center text-[10px] font-bold flex-shrink-0">M</div>
+              <span className="flex-1 truncate">Main Board</span>
+            </NavLink>
+            <NavLink to="/projects/design" className="flex items-center gap-2.5 px-3.5 py-1.5 text-[13px] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-[var(--radius-md)] transition-all group">
+              <div className="w-5 h-5 rounded-[5px] bg-[#62aef0] text-[#0C120E] flex items-center justify-center text-[10px] font-bold flex-shrink-0">D</div>
+              <span className="flex-1 truncate">Design System</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       {/* User profile */}

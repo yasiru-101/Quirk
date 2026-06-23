@@ -61,7 +61,14 @@ const seedDatabase = async () => {
     await prisma.attachment.deleteMany({});
     await prisma.comment.deleteMany({});
     await prisma.taskAssignment.deleteMany({});
+    await prisma.taskDependency.deleteMany({});
     await prisma.task.deleteMany({});
+    await prisma.epic.deleteMany({});
+    await prisma.kanbanColumn.deleteMany({});
+    await prisma.projectMember.deleteMany({});
+    await prisma.project.deleteMany({});
+    await prisma.workspaceMember.deleteMany({});
+    await prisma.workspace.deleteMany({});
     await prisma.user.deleteMany({});
     console.log('Database tables cleared.');
 
@@ -89,14 +96,51 @@ const seedDatabase = async () => {
     const pmUser = createdUsers.find(u => u.role === 'Project Manager');
     const devUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'dev@quirk.app');
     const designerUser = createdUsers.find(u => u.role === 'Collaborator' && u.email === 'emma@quirk.app');
+    const adminUser = createdUsers.find(u => u.role === 'Admin');
 
-    // ─── 3. Create Tasks ─────────────────────────────────────────────────────
+    // ─── 3. Create Workspace & Project ───────────────────────────────────────
+    console.log('Seeding workspace and project...');
+    const workspace = await prisma.workspace.create({
+      data: {
+        name: 'Quirk Default Workspace',
+        ownerId: adminUser.id,
+        members: {
+          create: createdUsers.map(u => ({ userId: u.id }))
+        }
+      }
+    });
+
+    const project = await prisma.project.create({
+      data: {
+        name: 'Main Board',
+        description: 'Primary project for tracking software development tasks.',
+        workspaceId: workspace.id,
+        createdBy: pmUser.id,
+        templateType: 'Software Development',
+        members: {
+          create: createdUsers.map(u => ({ userId: u.id }))
+        }
+      }
+    });
+
+    const columnsData = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Completed'];
+    const columns = {};
+    for (let i = 0; i < columnsData.length; i++) {
+      const col = await prisma.kanbanColumn.create({
+        data: { name: columnsData[i], order: i, projectId: project.id }
+      });
+      columns[columnsData[i]] = col.id;
+    }
+
+    // ─── 4. Create Tasks ─────────────────────────────────────────────────────
     console.log('Seeding initial tasks...');
     const tasksData = [
       {
         title: 'Design Dashboard Mockups',
         description: 'Create high fidelity visual designs for the main task tracking dashboard.',
         createdBy: pmUser.id,
+        projectId: project.id,
+        columnId: columns['In Progress'],
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         priority: 'High',
         status: 'In Progress'
@@ -105,6 +149,8 @@ const seedDatabase = async () => {
         title: 'Setup Backend Server Scaffolding',
         description: 'Initialize express framework, setup folder structure, config routers, and middleware.',
         createdBy: pmUser.id,
+        projectId: project.id,
+        columnId: columns['To Do'],
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
         priority: 'High',
         status: 'To Do'
@@ -113,7 +159,9 @@ const seedDatabase = async () => {
         title: 'Write User Documentation',
         description: 'Write complete user guide for the Quirk application usage.',
         createdBy: pmUser.id,
-        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+        projectId: project.id,
+        columnId: columns['Completed'],
+        dueDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
         priority: 'Low',
         status: 'Completed'
       }

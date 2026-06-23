@@ -22,53 +22,49 @@ export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
 
   return (
     <div
-      className={cn(
-        'p-4 space-y-4 cursor-pointer group transition-all relative',
-        'rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)]',
-        'hover:border-[var(--colors-primary)] hover:shadow-md'
-      )}
+      className="kanban-card group relative cursor-grab active:cursor-grabbing"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('taskId', task._id);
+        // Optional: you can set drag image or effect here
+      }}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
-      <div className="flex items-center justify-between">
-        <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full border', getPriorityColor(task.priority))}>
-          <span aria-hidden className="mr-1">{renderPriorityIcon(task.priority)}</span>
+      <div className="kc-tags">
+        <span className={cn('kc-tag flex items-center gap-1 font-bold', getPriorityColor(task.priority))}>
+          <span aria-hidden>{renderPriorityIcon(task.priority)}</span>
           {task.priority}
         </span>
         {isPM && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(task._id); }}
-            className="opacity-0 group-hover:opacity-100 text-[var(--colors-mute)] hover:text-rose-500 transition-all p-1.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20 focus-ring z-10"
+            className="opacity-0 group-hover:opacity-100 ml-auto text-[var(--colors-mute)] hover:text-rose-500 transition-all focus-ring z-10"
             aria-label="Delete task"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-              <path d="M9 6V4h6v2"/>
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
             </svg>
           </button>
         )}
       </div>
 
-      <div>
-        <p className="text-[var(--typography-body-md-strong)] font-bold text-[var(--colors-ink)] leading-snug line-clamp-2">
-          {task.title}
-        </p>
-        {task.description && (
-          <p className="text-xs text-[var(--colors-body)] mt-1.5 line-clamp-2 leading-relaxed">
-            {task.description}
-          </p>
-        )}
-      </div>
+      <div className="kc-title">{task.title}</div>
+      {task.description && (
+        <div className="text-[12px] text-[var(--colors-ink-muted)] mb-2 line-clamp-2">
+          {task.description}
+        </div>
+      )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-[var(--colors-hairline)]">
-        <div className="flex -space-x-2">
+      <div className="kc-footer">
+        <div className="flex -space-x-1.5">
           {(task.assignees ?? []).slice(0, 3).map((u) => (
             <div
               key={u._id}
               title={u.name}
-              className="w-7 h-7 rounded-full bg-[var(--colors-canvas-softer)] text-[var(--colors-ink)] border-2 border-[var(--colors-canvas)] flex items-center justify-center text-[10px] font-bold shadow-sm"
+              className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white border-2 border-[var(--colors-canvas)] flex items-center justify-center text-[9px] font-bold shadow-sm"
             >
               {getInitials(u.name)}
             </div>
@@ -76,9 +72,8 @@ export default function TaskCard({ task, onStatusChange, onClick, onDelete }) {
         </div>
 
         {task.dueDate && (
-          <span className={cn('text-[11px] font-bold tracking-wide', overdue ? 'text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-mute)]')}>
-            {overdue ? '⚠ ' : ''}
-            {formatDate(task.dueDate)}
+          <span className={cn('kc-due', overdue ? 'overdue' : '')}>
+            {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
           </span>
         )}
       </div>

@@ -88,16 +88,9 @@ export default function App() {
                         <TaskBoardPage />
                       </ProtectedRoute>
                     }
-                  />
-
-                  <Route
-                    path="tasks/:id"
-                    element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
-                        <TaskDetailPage />
-                      </ProtectedRoute>
-                    }
-                  />
+                  >
+                    <Route path=":id" element={<TaskDetailPage />} />
+                  </Route>
 
                   {/* Admin only */}
                   <Route

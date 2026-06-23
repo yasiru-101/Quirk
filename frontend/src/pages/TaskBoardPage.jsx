@@ -6,6 +6,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import TaskTable from '../components/tasks/TaskTable';
+import TaskCalendarView from '../components/tasks/TaskCalendarView';
+import TaskTimelineView from '../components/tasks/TaskTimelineView';
 import TaskModal from '../components/tasks/TaskModal';
 import TaskFilters from '../components/tasks/TaskFilters';
 import Button from '../components/common/Button';
@@ -106,7 +108,9 @@ export default function TaskBoardPage() {
         subtitle="Manage and track your tasks."
         tabs={[
           { id: 'kanban', label: 'Board', icon: '⏸' },
-          { id: 'table', label: 'List', icon: '📋' }
+          { id: 'table', label: 'List', icon: '📋' },
+          { id: 'calendar', label: 'Calendar', icon: '📅' },
+          { id: 'timeline', label: 'Timeline', icon: '📈' }
         ]}
         activeTab={view}
         onTabChange={setView}
@@ -145,13 +149,23 @@ export default function TaskBoardPage() {
               onCardClick={(task) => navigate(`/tasks/${task._id}`)}
               onDelete={handleDelete}
             />
-          ) : (
+          ) : view === 'table' ? (
             <TaskTable
               tasks={filtered}
               onEdit={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
               onCreateNew={() => setModal({ open: true, task: null })}
+            />
+          ) : view === 'calendar' ? (
+            <TaskCalendarView
+              tasks={filtered}
+              onTaskClick={(task) => setModal({ open: true, task })}
+            />
+          ) : (
+            <TaskTimelineView
+              tasks={filtered}
+              onTaskClick={(task) => setModal({ open: true, task })}
             />
           )}
         </div>

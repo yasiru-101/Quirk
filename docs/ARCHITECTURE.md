@@ -102,6 +102,43 @@ messages are emitted to the conversation room so all connected participants rece
 them immediately. The latest message preview per conversation is replayed on
 reconnect. See [ADR 0003](./adr/0003-realtime-chat-and-dm-module.md).
 
+## Frontend layout
+
+The frontend is a React + Vite single-page application:
+
+```
+frontend/src/
+  pages/          Full-page route components (TaskBoardPage, DashboardPage, …)
+  components/
+    tasks/        Task-specific views: KanbanBoard, TaskTable,
+                  TaskCalendarView, TaskTimelineView, TaskModal, TaskCard, …
+    common/       Shared primitives (Button, Modal, Input, ViewHeader, …)
+    layout/       AppLayout, Sidebar, TopBar
+    chat/         Chat and DM components
+    notifications/ NotificationPanel
+  context/        React contexts (Auth, Socket, Toast, Theme, Project, Chat)
+  services/       Axios wrappers for backend API (taskService, userService, …)
+  utils/          helpers.js (formatting, colours), constants.js
+  index.css       Design-system tokens (Quirk Mint & Ink) + Tailwind v4
+```
+
+### Task Board views
+
+`TaskBoardPage` fetches the scoped task list once on mount and passes the
+`filtered` array down to whichever view is active. Four view modes are supported,
+selected via the `ViewHeader` tab strip:
+
+| Tab | Component | Data source |
+| --- | --- | --- |
+| Board | `KanbanBoard` | Grouped by `status` |
+| List | `TaskTable` | Flat sorted list |
+| Calendar | `TaskCalendarView` | Mapped to `dueDate` in a month grid |
+| Timeline | `TaskTimelineView` | Gantt bars from `createdAt` → `dueDate` |
+
+Calendar and Timeline views add no new API endpoints; they consume the same
+task array already in memory. See
+[ADR 0005](./adr/0005-calendar-and-timeline-views-consume-task-query-api.md).
+
 ## Roadmap
 
 The system is being expanded from a single-tenant tool into a multi-tenant SaaS
@@ -112,6 +149,7 @@ product. Status of the foundational work:
   authorization on workspace and project resources.
 - [x] Task-level object authorization (resolve a task's project membership).
 - [x] Self-service registration with email verification and optional login 2FA.
+- [x] Calendar and Timeline (Gantt) views for the task board.
 - [ ] Kanban column as the single source of task workflow state.
 
 Each item ships as an isolated, reviewable change with its own migration, tests,

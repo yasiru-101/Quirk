@@ -50,6 +50,7 @@
     /* ── Light-mode Design Tokens ────────────────────────────────────────────── */
     --colors-primary: #75EE8F;
     --colors-primary-active: #5DD978;
+    --colors-primary-glow: rgba(117, 238, 143, 0.15);
     --colors-on-primary: #052611;
     --colors-secondary: #0C120E;
 
@@ -120,6 +121,7 @@
     /* ── Dark-mode Design Tokens ────────────────────────────────────────────── */
     --colors-primary: #75EE8F;
     --colors-primary-active: #5DD978;
+    --colors-primary-glow: rgba(117, 238, 143, 0.25);
     --colors-on-primary: #052611;
     --colors-secondary: #0C120E;
 

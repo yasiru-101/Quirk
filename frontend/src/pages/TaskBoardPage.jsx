@@ -48,7 +48,7 @@ export default function TaskBoardPage() {
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', columnId: '', priority: '' });
+  const [filters, setFilters] = useState({ search: '', columnId: '', priority: '', sortBy: 'createdAt_desc' });
   const [modal, setModal] = useState({ open: false, task: null });
 
   const columns = useMemo(
@@ -108,16 +108,46 @@ export default function TaskBoardPage() {
     setFilters((f) => ({ ...f, [name]: value }));
   };
 
-  const filtered = tasks.filter((task) => {
-    if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-    if (filters.columnId === 'Overdue') {
-      if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
-    } else if (filters.columnId && task.columnId !== filters.columnId) {
-      return false;
+  const filtered = useMemo(() => {
+    let result = tasks.filter((task) => {
+      if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      if (filters.columnId === 'Overdue') {
+        if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
+      } else if (filters.columnId && task.columnId !== filters.columnId) {
+        return false;
+      }
+      if (filters.priority && task.priority !== filters.priority) return false;
+      return true;
+    });
+
+    // Apply sorting
+    if (filters.sortBy) {
+      result.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'createdAt_asc':
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          case 'createdAt_desc':
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          case 'dueDate_asc':
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return new Date(a.dueDate) - new Date(b.dueDate);
+          case 'dueDate_desc':
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return new Date(b.dueDate) - new Date(a.dueDate);
+          case 'title_asc':
+            return a.title.localeCompare(b.title);
+          case 'title_desc':
+            return b.title.localeCompare(a.title);
+          default:
+            return 0;
+        }
+      });
     }
-    if (filters.priority && task.priority !== filters.priority) return false;
-    return true;
-  });
+
+    return result;
+  }, [tasks, filters]);
 
   const handleColumnChange = async (taskId, columnId) => {
     const column = columnsById.get(columnId);

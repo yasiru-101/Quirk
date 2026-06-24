@@ -28,6 +28,18 @@ export default function SettingsPage() {
   
   const [templates, setTemplates] = useState([]);
   const [newTemplate, setNewTemplate] = useState({ name: '', description: '', columns: '' });
+  
+  // Notification preferences state
+  const [notifyPrefs, setNotifyPrefs] = useState({
+    assignments: true,
+    comments: true,
+    updates: false,
+  });
+
+  const toggleNotifyPref = (key) => {
+    setNotifyPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    toastSuccess('Notification preferences updated');
+  };
 
   React.useEffect(() => {
     if (activeTab === 'templates' && user?.role === 'Admin') {
@@ -174,16 +186,22 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <h2 className="text-[length:var(--typography-title)] font-semibold">Notifications</h2>
               {[
-                ['Task assignments', 'Get notified when a task is assigned to you.'],
-                ['Comments', 'Get notified when someone comments on your tasks.'],
-                ['Workspace updates', 'Receive summaries for project and membership changes.'],
-              ].map(([title, copy]) => (
+                { key: 'assignments', title: 'Task assignments', copy: 'Get notified when a task is assigned to you.' },
+                { key: 'comments', title: 'Comments', copy: 'Get notified when someone comments on your tasks.' },
+                { key: 'updates', title: 'Workspace updates', copy: 'Receive summaries for project and membership changes.' },
+              ].map(({ key, title, copy }) => (
                 <div key={title} className="flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
                   <div>
                     <p className="font-semibold text-[var(--colors-ink)]">{title}</p>
                     <p className="text-sm text-[var(--colors-body)]">{copy}</p>
                   </div>
-                  <span className="pill">Email</span>
+                  <button
+                    onClick={() => toggleNotifyPref(key)}
+                    className="relative h-8 w-14 rounded-full bg-[var(--colors-surface-pressed)] transition-colors focus-ring"
+                    aria-pressed={notifyPrefs[key]}
+                  >
+                    <span className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-[var(--colors-ink)] transition-transform ${notifyPrefs[key] ? 'translate-x-6 bg-[var(--colors-primary)]' : ''}`} />
+                  </button>
                 </div>
               ))}
             </div>

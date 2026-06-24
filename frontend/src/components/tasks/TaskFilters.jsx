@@ -49,9 +49,23 @@ export default function TaskFilters({ filters, columns = [], onChange }) {
         {TASK_PRIORITY_LIST.map((priority) => <option key={priority}>{priority}</option>)}
       </select>
 
-      {(filters.search || filters.columnId || filters.priority) && (
+      <select
+        value={filters.sortBy || 'createdAt_desc'}
+        onChange={(e) => onChange('sortBy', e.target.value)}
+        className="h-12 cursor-pointer rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-4 pr-8 text-sm font-semibold text-[var(--colors-body)] outline-none transition-colors focus-ring focus:border-[var(--colors-primary)]"
+        aria-label="Sort by"
+      >
+        <option value="createdAt_desc">Newest First</option>
+        <option value="createdAt_asc">Oldest First</option>
+        <option value="dueDate_asc">Due Date (Earliest)</option>
+        <option value="dueDate_desc">Due Date (Latest)</option>
+        <option value="title_asc">Title (A-Z)</option>
+        <option value="title_desc">Title (Z-A)</option>
+      </select>
+
+      {(filters.search || filters.columnId || filters.priority || (filters.sortBy && filters.sortBy !== 'createdAt_desc')) && (
         <button
-          onClick={() => { onChange('search', ''); onChange('columnId', ''); onChange('priority', ''); }}
+          onClick={() => { onChange('search', ''); onChange('columnId', ''); onChange('priority', ''); onChange('sortBy', 'createdAt_desc'); }}
           className="h-12 rounded-full px-4 text-xs font-semibold text-[var(--colors-mute)] transition hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-body)] focus-ring"
         >
           Clear filters

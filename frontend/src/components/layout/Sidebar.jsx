@@ -79,7 +79,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, createWorkspace } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, workspaceLoading, createWorkspace } = useProject();
   const navigate = useNavigate();
   const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
@@ -149,6 +149,17 @@ export default function Sidebar({ collapsed, onToggle }) {
           </button>
         </div>
 
+      {collapsed && (
+        <div className="mb-3 flex justify-center px-2">
+          <div
+            title={activeWorkspace?.name || 'Workspace'}
+            className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] text-xs font-bold text-white"
+          >
+            {getInitials(activeWorkspace?.name) || 'W'}
+          </div>
+        </div>
+      )}
+
       {!collapsed && (
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
           <div className="flex items-center justify-between gap-2">
@@ -161,7 +172,9 @@ export default function Sidebar({ collapsed, onToggle }) {
               Add
             </button>
           </div>
-          {workspaces.length > 1 ? (
+          {workspaceLoading ? (
+            <div className="mt-2 h-10 w-full animate-pulse rounded-[var(--radius-md)] bg-white/10" />
+          ) : workspaces.length > 1 ? (
             <div className="relative mt-2">
               <select
                 value={activeWorkspaceId}

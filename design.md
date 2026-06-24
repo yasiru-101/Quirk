@@ -89,6 +89,9 @@ scan, dense enough for daily operations, and never like a generic admin theme.
   tenant context without leaving the app shell.
 - The workspace block shows the active workspace name and the caller's workspace
   role.
+- The sidebar exposes a collapsible projects tree (Notion-style) listing the
+  active workspace's projects. Each project links to its task views
+  (`/tasks?projectId=<id>`); workspace managers get an inline create action.
 - The collapse and expand control stays beside the logo in both sidebar states.
 - Role-specific navigation may hide platform-only modules, but workspace/project
   permissions must still be enforced by the backend.
@@ -106,7 +109,9 @@ scan, dense enough for daily operations, and never like a generic admin theme.
   workflow chips, overflow count, and project status.
 - Workspace Owners/Admins and platform Admins can create, edit, archive, and
   delete projects.
-- Project creation offers either a template or a blank Basic Kanban start.
+- Project creation offers a starter template (Basic Kanban, Software
+  Development, Marketing Campaign) and lets the creator edit the workflow
+  columns — rename, reorder, add, remove — before the project is created.
 - Project detail pages show workflow columns, project metrics, and project member
   assignment. Project Managers and workspace managers can add, rename, reorder,
   and delete workflow columns after creation.

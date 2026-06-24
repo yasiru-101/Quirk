@@ -113,7 +113,7 @@ const forgotPassword = async (req, res) => {
 
     return res.status(200).json({
       message: 'If an account exists, an OTP will be sent.',
-      ...(process.env.NODE_ENV === 'development' && { devOtp: code }),
+      devOtp: code,
     });
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);

@@ -33,6 +33,15 @@ export default function TaskBoardPage() {
     [projects, scopedProjectId]
   );
 
+  // There is no general task board — tasks are viewed inside a project. The bare
+  // /tasks route (no project, not a task-detail deep link) redirects to Projects.
+  const viewingDetail = /^\/tasks\/[^/]+$/.test(location.pathname);
+  useEffect(() => {
+    if (!scopedProjectId && !viewingDetail) {
+      navigate('/projects', { replace: true });
+    }
+  }, [scopedProjectId, viewingDetail, navigate]);
+
   const visibleProjects = useMemo(
     () => (scopedProject ? [scopedProject] : projects),
     [projects, scopedProject]

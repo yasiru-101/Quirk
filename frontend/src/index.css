@@ -157,6 +157,25 @@
     --colors-body: #a8acb3;
     --colors-mute: #7c828a;
 
+    /* Status + priority tokens for dark mode. Without these the calendar and
+       timeline task cards inherit the light-theme pastel backgrounds while text
+       stays light, making them unreadable. */
+    --colors-status-backlog-bg: rgba(255, 255, 255, 0.06);
+    --colors-status-backlog-text: #b4bac3;
+    --colors-status-todo-bg: rgba(255, 255, 255, 0.08);
+    --colors-status-todo-text: #d4d8df;
+    --colors-status-progress-bg: rgba(118, 230, 149, 0.16);
+    --colors-status-progress-text: #8ce6a3;
+    --colors-status-review-bg: rgba(96, 165, 250, 0.18);
+    --colors-status-review-text: #93c5fd;
+    --colors-status-done-bg: rgba(118, 230, 149, 0.22);
+    --colors-status-done-text: #86efac;
+
+    --colors-priority-urgent: #f87171;
+    --colors-priority-high: #fbbf24;
+    --colors-priority-medium: #60a5fa;
+    --colors-priority-low: #9ca3af;
+
     --surface: var(--colors-canvas-softer);
     --border: var(--colors-hairline);
     --bg-base: var(--colors-canvas);

@@ -182,10 +182,17 @@ export default function ProjectDetailPage() {
                     className="h-10 text-sm"
                     aria-label={`Rename ${column.name}`}
                   />
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="utility" size="sm" disabled={index === 0 || savingColumn === column.id} onClick={() => moveColumn(column, -1)}>Up</Button>
-                    <Button type="button" variant="utility" size="sm" disabled={index === (project.columns?.length ?? 1) - 1 || savingColumn === column.id} onClick={() => moveColumn(column, 1)}>Down</Button>
-                    <Button type="button" variant="danger" size="sm" disabled={(project.columns?.length ?? 0) <= 1 || savingColumn === column.id} onClick={() => deleteColumn(column)}>Delete</Button>
+                  <div className="flex items-center gap-1 mt-1">
+                    <button type="button" disabled={index === 0 || savingColumn === column.id} onClick={() => moveColumn(column, -1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move left">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <button type="button" disabled={index === (project.columns?.length ?? 1) - 1 || savingColumn === column.id} onClick={() => moveColumn(column, 1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move right">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                    <div className="flex-1" />
+                    <button type="button" disabled={(project.columns?.length ?? 0) <= 1 || savingColumn === column.id} onClick={() => deleteColumn(column)} className="p-1.5 text-[var(--colors-priority-urgent)] opacity-70 hover:opacity-100 hover:bg-[var(--colors-priority-urgent)]/10 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Delete column">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
                   </div>
                 </div>
               ) : (

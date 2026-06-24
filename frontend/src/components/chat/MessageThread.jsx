@@ -34,7 +34,7 @@ function Avatar({ user }) {
     return <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />;
   }
   return (
-    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--colors-hairline)] text-xs font-bold text-[var(--colors-ink)]">
       {getInitials(user?.name ?? '?')}
     </div>
   );
@@ -43,9 +43,9 @@ function Avatar({ user }) {
 function DayDivider({ label }) {
   return (
     <div className="my-2 flex items-center gap-3">
-      <div className="h-px flex-1 bg-white/10" />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40">{label}</span>
-      <div className="h-px flex-1 bg-white/10" />
+      <div className="h-px flex-1 bg-[var(--colors-hairline)]" />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--colors-mute)]">{label}</span>
+      <div className="h-px flex-1 bg-[var(--colors-hairline)]" />
     </div>
   );
 }
@@ -57,13 +57,13 @@ function MessageBubble({ message, isOwn, showHeader, onDelete }) {
       {!isOwn && (showHeader ? <Avatar user={message.sender} /> : <div className="w-8 flex-shrink-0" />)}
       <div className={`flex max-w-[70%] flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
         {!isOwn && showHeader && (
-          <span className="mb-1 ml-1 text-[11px] font-medium text-white/55">{message.sender?.name}</span>
+          <span className="mb-1 ml-1 text-[11px] font-medium text-[var(--colors-mute)]">{message.sender?.name}</span>
         )}
         <div
           className={`relative break-words rounded-[1.25rem] px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${
             isOwn
-              ? 'rounded-tr-sm bg-[var(--colors-primary)] font-medium text-[var(--colors-surface-dark)]'
-              : 'rounded-tl-sm border border-white/5 bg-[var(--colors-surface-dark-elevated)] text-white'
+              ? 'rounded-tr-sm bg-[var(--colors-primary)] font-medium text-white'
+              : 'rounded-tl-sm border border-[var(--colors-hairline)] bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)]'
           } ${isDeleted ? 'italic opacity-50' : ''}`}
         >
           {message.content}
@@ -71,7 +71,7 @@ function MessageBubble({ message, isOwn, showHeader, onDelete }) {
             <button
               onClick={() => onDelete(message.id)}
               id={`delete-msg-${message.id}`}
-              className="absolute -left-8 -top-1.5 rounded-full bg-white/10 p-1.5 text-white/40 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+              className="absolute -left-8 -top-1.5 rounded-full bg-[var(--colors-hairline)] p-1.5 text-[var(--colors-mute)] opacity-0 transition-opacity hover:bg-[var(--colors-priority-urgent)]/10 hover:text-[var(--colors-priority-urgent)] group-hover:opacity-100"
               title="Delete message"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,7 +80,7 @@ function MessageBubble({ message, isOwn, showHeader, onDelete }) {
             </button>
           )}
         </div>
-        <span className="mx-1.5 mt-1 text-[10px] text-white/40">{formatTimestamp(message.createdAt)}</span>
+        <span className="mx-1.5 mt-1 text-[10px] text-[var(--colors-mute)]">{formatTimestamp(message.createdAt)}</span>
       </div>
     </div>
   );
@@ -117,12 +117,12 @@ export default function MessageThread() {
   if (!activeConversationId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-          <svg className="h-8 w-8 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--colors-surface)] border border-[var(--colors-hairline)]">
+          <svg className="h-8 w-8 text-[var(--colors-mute)] opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
         </div>
-        <p className="text-sm text-white/50">Select a conversation to start messaging</p>
+        <p className="text-sm text-[var(--colors-mute)]">Select a conversation to start messaging</p>
       </div>
     );
   }

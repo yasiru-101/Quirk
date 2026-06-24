@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import Input from '../common/Input';
-import SelectField from '../common/SelectField';
+import Dropdown from '../common/Dropdown';
 import { TASK_PRIORITY_LIST } from '../../utils/constants';
 
 export default function TaskFilters({ filters, columns = [], assignees = [], onChange }) {
@@ -25,58 +25,59 @@ export default function TaskFilters({ filters, columns = [], assignees = [], onC
         />
       </div>
 
-      <SelectField
+      <Dropdown
         value={filters.columnId}
-        onChange={(e) => onChange('columnId', e.target.value)}
+        onChange={(val) => onChange('columnId', val)}
         className="w-[190px]"
-        selectClassName={`h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 ${
+        buttonClassName={
           filters.columnId === 'Overdue'
-            ? 'border-[var(--colors-priority-urgent)] text-[var(--colors-priority-urgent)] focus:border-[var(--colors-priority-urgent)]'
-            : 'text-[var(--colors-body)]'
-        }`}
-        aria-label="Filter by column"
-      >
-        <option value="">All Columns</option>
-        {columns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
-        <option value="Overdue">Overdue</option>
-      </SelectField>
+            ? 'border border-[var(--colors-priority-urgent)] text-[var(--colors-priority-urgent)] bg-[var(--colors-priority-urgent)]/10'
+            : ''
+        }
+        placeholder="All Columns"
+        options={[
+          { label: 'All Columns', value: '' },
+          ...columns.map(c => ({ label: c.name, value: c.id })),
+          { label: 'Overdue', value: 'Overdue' }
+        ]}
+      />
 
-      <SelectField
+      <Dropdown
         value={filters.assigneeId}
-        onChange={(e) => onChange('assigneeId', e.target.value)}
+        onChange={(val) => onChange('assigneeId', val)}
         className="w-[190px]"
-        selectClassName="h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 text-[var(--colors-body)]"
-        aria-label="Filter by assignee"
-      >
-        <option value="">All Assignees</option>
-        {assignees.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-      </SelectField>
+        placeholder="All Assignees"
+        options={[
+          { label: 'All Assignees', value: '' },
+          ...assignees.map(u => ({ label: u.name, value: u.id }))
+        ]}
+      />
 
-      <SelectField
+      <Dropdown
         value={filters.priority}
-        onChange={(e) => onChange('priority', e.target.value)}
+        onChange={(val) => onChange('priority', val)}
         className="w-[190px]"
-        selectClassName="h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 text-[var(--colors-body)]"
-        aria-label="Filter by priority"
-      >
-        <option value="">All Priorities</option>
-        {TASK_PRIORITY_LIST.map((priority) => <option key={priority}>{priority}</option>)}
-      </SelectField>
+        placeholder="All Priorities"
+        options={[
+          { label: 'All Priorities', value: '' },
+          ...TASK_PRIORITY_LIST.map(p => ({ label: p, value: p }))
+        ]}
+      />
 
-      <SelectField
+      <Dropdown
         value={filters.sortBy || 'Newest First'}
-        onChange={(e) => onChange('sortBy', e.target.value)}
+        onChange={(val) => onChange('sortBy', val)}
         className="w-[190px]"
-        selectClassName="h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 text-[var(--colors-body)] font-medium text-[var(--colors-primary)]"
-        aria-label="Sort by"
-      >
-        <option value="Newest First">Sort: Newest First</option>
-        <option value="Oldest First">Sort: Oldest First</option>
-        <option value="Highest Priority">Sort: Highest Priority</option>
-        <option value="Lowest Priority">Sort: Lowest Priority</option>
-        <option value="Due Date (Earliest)">Sort: Due Date (Earliest)</option>
-        <option value="Due Date (Latest)">Sort: Due Date (Latest)</option>
-      </SelectField>
+        buttonClassName="text-[var(--colors-primary)] font-medium"
+        options={[
+          { label: 'Sort: Newest First', value: 'Newest First' },
+          { label: 'Sort: Oldest First', value: 'Oldest First' },
+          { label: 'Sort: Highest Priority', value: 'Highest Priority' },
+          { label: 'Sort: Lowest Priority', value: 'Lowest Priority' },
+          { label: 'Sort: Due Date (Earliest)', value: 'Due Date (Earliest)' },
+          { label: 'Sort: Due Date (Latest)', value: 'Due Date (Latest)' }
+        ]}
+      />
 
       {(filters.search || filters.columnId || filters.assigneeId || filters.priority || (filters.sortBy && filters.sortBy !== 'Newest First')) && (
         <button

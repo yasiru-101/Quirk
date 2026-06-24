@@ -65,6 +65,123 @@ const clearTokenCookies = (res) => {
   });
 };
 
+// @desc    Request OTP for password reset
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Don't leak whether user exists
+      return res.status(200).json({ message: 'If an account exists, an OTP will be sent.' });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'User account deactivated' });
+    }
+
+    // Invalidate existing active PASSWORD_RESET OTPs
+    await prisma.otpCode.updateMany({
+      where: { userId: user.id, purpose: 'PASSWORD_RESET', consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+
+    // Generate new OTP
+    const code = generateVerificationCode();
+    const codeHash = await bcrypt.hash(code, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await prisma.otpCode.create({
+      data: {
+        userId: user.id,
+        codeHash,
+        purpose: 'PASSWORD_RESET',
+        expiresAt,
+      },
+    });
+
+    // In production, you would actually send the email via nodemailer or AWS SES.
+    // For development, we log it to console or return it in the response (temporarily).
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV] Password Reset OTP for ${user.email}: ${code}`);
+    }
+
+    return res.status(200).json({
+      message: 'If an account exists, an OTP will be sent.',
+      ...(process.env.NODE_ENV === 'development' && { devOtp: code }),
+    });
+  } catch (error) {
+    console.error(`Forgot password error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error processing request' });
+  }
+};
+
+// @desc    Reset password using OTP
+// @route   POST /api/auth/reset-password-otp
+// @access  Public
+const resetPasswordWithOtp = async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    // Find valid OTP
+    const otpRecord = await prisma.otpCode.findFirst({
+      where: {
+        userId: user.id,
+        purpose: 'PASSWORD_RESET',
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+      await prisma.otpCode.update({ where: { id: otpRecord.id }, data: { consumedAt: new Date() } });
+      return res.status(400).json({ message: 'Too many failed attempts. Request a new code.' });
+    }
+
+    const isMatch = await bcrypt.compare(code, otpRecord.codeHash);
+    if (!isMatch) {
+      await prisma.otpCode.update({
+        where: { id: otpRecord.id },
+        data: { attempts: otpRecord.attempts + 1 },
+      });
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    // OTP verified, update password
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash, mustResetPassword: false },
+      }),
+      prisma.otpCode.update({
+        where: { id: otpRecord.id },
+        data: { consumedAt: new Date() },
+      }),
+    ]);
+
+    return res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error(`Reset password OTP error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error resetting password' });
+  }
+};
+
 // ─── Controller Actions ──────────────────────────────────────────────────────
 
 // @desc    Log in user
@@ -507,4 +624,6 @@ module.exports = {
   enableTwoFactor,
   confirmTwoFactor,
   disableTwoFactor,
+  forgotPassword,
+  resetPasswordWithOtp,
 };

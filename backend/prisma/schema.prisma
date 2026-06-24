@@ -35,7 +35,7 @@ model Workspace {
 model WorkspaceMember {
   workspaceId String
   userId      String
-  role        String   @default("Member") // Owner, Admin, Member
+  role        String   @default("Collaborator") // Owner, Admin, Project Manager, Collaborator
   joinedAt    DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -51,7 +51,7 @@ model Invitation {
   id          String    @id @default(uuid())
   workspaceId String
   email       String
-  role        String    @default("Member") // workspace role granted on acceptance
+  role        String    @default("Collaborator") // workspace role granted on acceptance
   tokenHash   String    @unique
   invitedBy   String
   status      String    @default("pending") // pending, accepted, revoked

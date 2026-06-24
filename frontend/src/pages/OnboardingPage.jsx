@@ -162,21 +162,9 @@ export default function OnboardingPage() {
                       placeholder="Website redesign"
                       hint="We will create this project inside your workspace."
                     />
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {['Basic Kanban', 'Software Development', 'Marketing Campaign'].map((template) => (
-                        <button
-                          key={template}
-                          type="button"
-                          onClick={() => setTemplateType(template)}
-                          className={`rounded-[var(--radius-lg)] border p-4 text-left text-sm font-semibold transition focus-ring ${
-                            templateType === template
-                              ? 'border-[var(--colors-primary)] bg-[var(--colors-primary-glow)] text-[var(--colors-primary-active)]'
-                              : 'border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)]'
-                          }`}
-                        >
-                          {template}
-                        </button>
-                      ))}
+                    <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--colors-primary)] bg-[var(--colors-primary-glow)] p-4 text-[var(--colors-primary-active)]">
+                      <p className="text-sm font-semibold">Basic Kanban</p>
+                      <p className="mt-1 text-xs opacity-80">A simple board with To Do, In Progress, and Done columns.</p>
                     </div>
                   </div>
                 )}

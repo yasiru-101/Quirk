@@ -14,6 +14,7 @@ export function ProjectProvider({ children }) {
     return localStorage.getItem('activeWorkspaceId') || '';
   });
   const [workspaceMembers, setWorkspaceMembers] = useState([]);
+  const [pendingInvites, setPendingInvites] = useState([]);
   const [projects, setProjects] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,14 +69,17 @@ export function ProjectProvider({ children }) {
   const fetchWorkspaceMembers = async () => {
     if (!activeWorkspaceId) {
       setWorkspaceMembers([]);
+      setPendingInvites([]);
       return;
     }
     try {
       const { data } = await api.get(`/workspaces/${activeWorkspaceId}/members`);
       setWorkspaceMembers(data.members || []);
+      setPendingInvites(data.pendingInvites || []);
     } catch (err) {
       console.error('Failed to load workspace members:', err);
       setWorkspaceMembers([]);
+      setPendingInvites([]);
     }
   };
 
@@ -153,6 +157,7 @@ export function ProjectProvider({ children }) {
         activeWorkspaceId,
         activeWorkspaceRole,
         workspaceMembers,
+        pendingInvites,
         workspaceLoading,
         canManageWorkspace,
         setActiveWorkspaceId,

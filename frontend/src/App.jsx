@@ -23,6 +23,7 @@ import LoginPage          from './pages/LoginPage';
 import RegisterPage       from './pages/RegisterPage';
 import VerifyEmailPage    from './pages/VerifyEmailPage';
 import ResetPasswordPage  from './pages/ResetPasswordPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import DashboardPage      from './pages/DashboardPage';
 import TaskBoardPage      from './pages/TaskBoardPage';
 import TaskDetailPage     from './pages/TaskDetailPage';
@@ -57,6 +58,7 @@ export default function App() {
                 <Route path="/register"       element={<RegisterPage />} />
                 <Route path="/verify-email"   element={<VerifyEmailPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/invite/accept"  element={<AcceptInvitePage />} />
                 <Route path="/onboarding"     element={
                   <ProtectedRoute>

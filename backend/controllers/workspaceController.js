@@ -102,7 +102,15 @@ const listMembers = async (req, res) => {
       include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
       orderBy: { joinedAt: 'asc' },
     });
-    return res.status(200).json({ members });
+    
+    // Fetch pending invitations to display in the same list
+    const pendingInvites = await prisma.invitation.findMany({
+      where: { workspaceId: req.params.id, status: 'pending' },
+      select: { id: true, email: true, role: true, expiresAt: true, createdAt: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.status(200).json({ members, pendingInvites });
   } catch (error) {
     console.error(`List members error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error fetching members' });
@@ -202,7 +210,7 @@ const inviteMember = async (req, res) => {
       data: {
         workspaceId,
         email,
-        role: role || 'Member',
+        role: role || 'Collaborator',
         tokenHash: hashToken(rawToken),
         invitedBy: req.user.id,
         expiresAt: new Date(Date.now() + INVITE_TTL_MS),

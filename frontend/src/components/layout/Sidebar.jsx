@@ -146,9 +146,20 @@ export default function Sidebar({ collapsed, onToggle }) {
         collapsed ? 'w-[76px]' : 'w-[268px]'
       )}
     >
-      <div className="flex h-[76px] flex-shrink-0 items-center gap-3 px-5">
+      <div className={cn('flex flex-shrink-0 items-center px-5', collapsed ? 'flex-col gap-4 py-5' : 'h-[76px] gap-3')}>
         {collapsed ? (
-          <img src="/logo icon.webp" alt="Quirk" className="mx-auto h-9 w-9 rounded-xl object-contain" draggable={false} />
+          <>
+            <img src="/logo icon.webp" alt="Quirk" className="h-9 w-9 rounded-xl object-contain" draggable={false} />
+            <button
+              onClick={onToggle}
+              className="rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
+              aria-label="Expand sidebar"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </>
         ) : (
           <img src="/full logo  - white.webp" alt="Quirk" className="h-9 w-auto object-contain" draggable={false} />
         )}
@@ -163,22 +174,16 @@ export default function Sidebar({ collapsed, onToggle }) {
             </svg>
           </button>
         )}
-        {collapsed && (
-          <button
-            onClick={onToggle}
-            className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
-            aria-label="Expand sidebar"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
       </div>
 
       {!collapsed && (
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
+            <button onClick={() => navigate('/onboarding')} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="New workspace">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+            </button>
+          </div>
           {workspaces.length > 1 ? (
             <div className="relative mt-2">
               <select

@@ -59,12 +59,12 @@ function NewDmModal({ onClose, workspaceId }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-[var(--colors-surface-dark-elevated)] border border-white/10 rounded-2xl w-full max-w-md mx-4 shadow-2xl">
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[rgba(255,255,255,0.06)]">
-          <h2 className="text-white font-semibold text-base">New Direct Message</h2>
+      <div className="bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] rounded-2xl w-full max-w-md mx-4 shadow-[var(--shadow-floating)]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[var(--colors-hairline)]">
+          <h2 className="text-[var(--colors-ink)] font-semibold text-base">New Direct Message</h2>
           <button
             onClick={onClose}
-            className="text-[rgba(255,255,255,0.4)] hover:text-white transition-colors"
+            className="text-[var(--colors-ink-muted)] hover:text-[var(--colors-ink)] transition-colors focus-ring rounded-md"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -78,7 +78,7 @@ function NewDmModal({ onClose, workspaceId }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search members"
-            className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-3 py-2 text-sm text-white placeholder-[rgba(255,255,255,0.3)] outline-none focus:border-[var(--colors-primary)] transition-colors"
+            className="w-full bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] rounded-xl px-3 py-2 text-sm text-[var(--colors-ink)] placeholder-[var(--colors-mute)] outline-none focus:border-[var(--colors-primary)] transition-colors focus-ring"
             autoFocus
           />
           <div className="mt-3 max-h-60 overflow-y-auto space-y-1">
@@ -88,7 +88,7 @@ function NewDmModal({ onClose, workspaceId }) {
               </div>
             )}
             {!loading && !filtered.length && (
-              <p className="text-center text-sm text-[rgba(255,255,255,0.3)] py-4">
+              <p className="text-center text-sm text-[var(--colors-mute)] py-4">
                 {query ? 'No members match your search' : 'No workspace members found'}
               </p>
             )}
@@ -98,19 +98,19 @@ function NewDmModal({ onClose, workspaceId }) {
                 id={`dm-user-${m.user?.id}`}
                 onClick={() => handleOpen(m.user?.id)}
                 disabled={!!opening}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all text-left group"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--colors-canvas-soft)] transition-all text-left group focus-ring"
               >
-                <div className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.1)] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[var(--colors-surface-pressed)] flex items-center justify-center text-xs font-bold text-[var(--colors-ink)] flex-shrink-0">
                   {(m.user?.name ?? '?')[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{m.user?.name}</p>
-                  <p className="text-xs text-[rgba(255,255,255,0.4)] truncate">{m.user?.email}</p>
+                  <p className="text-sm font-medium text-[var(--colors-ink)] truncate">{m.user?.name}</p>
+                  <p className="text-xs text-[var(--colors-mute)] truncate">{m.user?.email}</p>
                 </div>
                 {opening === m.user?.id ? (
                   <div className="w-4 h-4 border-2 border-[var(--colors-primary)] border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <svg className="w-4 h-4 text-[rgba(255,255,255,0.2)] group-hover:text-[var(--colors-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-[var(--colors-mute)] group-hover:text-[var(--colors-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 )}
@@ -146,10 +146,10 @@ function ConversationHeader() {
   }
 
   return (
-    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
+    <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--colors-hairline)] flex-shrink-0 bg-[var(--colors-surface)]">
       <div className="flex items-center gap-2.5">
         <div className="w-2 h-2 rounded-full bg-[var(--colors-primary)] shadow-[0_0_6px_var(--colors-primary)]" />
-        <h2 className="text-white font-semibold text-[15px]">{title}</h2>
+        <h2 className="text-[var(--colors-ink)] font-semibold text-[15px]">{title}</h2>
         {active.type === 'PROJECT' && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--colors-primary-glow)] text-[var(--colors-primary)] font-medium">
             Project
@@ -158,7 +158,7 @@ function ConversationHeader() {
       </div>
       <button
         onClick={closeConversation}
-        className="text-[rgba(255,255,255,0.4)] hover:text-white transition-colors lg:hidden"
+        className="text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors lg:hidden focus-ring rounded-md"
         title="Close"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -176,15 +176,15 @@ function ProjectRoomLauncher() {
 
   if (!activeWorkspace) {
     return (
-      <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3 text-xs text-white/35">
+      <div className="border-b border-[var(--colors-hairline)] px-4 py-3 text-xs text-[var(--colors-mute)]">
         Create or select a workspace to see project rooms.
       </div>
     );
   }
 
   return (
-    <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">Project rooms</p>
+    <div className="border-b border-[var(--colors-hairline)] px-4 py-3">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--colors-mute)]">Project rooms</p>
       <div className="space-y-1">
         {projects.slice(0, 5).map((project) => (
           <button
@@ -198,20 +198,20 @@ function ProjectRoomLauncher() {
                 setOpening(null);
               }
             }}
-            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition ${
+            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition focus-ring ${
               activeConversationId && opening !== project.id
-                ? 'text-white/58 hover:bg-white/5 hover:text-white'
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
+                ? 'text-[var(--colors-ink-muted)] hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-ink)]'
+                : 'text-[var(--colors-body)] hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-ink)]'
             }`}
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/8 text-[11px] font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--colors-surface-pressed)] text-[11px] font-bold text-[var(--colors-ink)]">
               {(project.name || 'P').slice(0, 1).toUpperCase()}
             </span>
             <span className="min-w-0 flex-1 truncate">{project.name}</span>
             {opening === project.id && <span className="h-3 w-3 animate-spin rounded-full border border-[var(--colors-primary)] border-t-transparent" />}
           </button>
         ))}
-        {!projects.length && <p className="py-2 text-xs text-white/35">No projects in this workspace yet.</p>}
+        {!projects.length && <p className="py-2 text-xs text-[var(--colors-mute)]">No projects in this workspace yet.</p>}
       </div>
     </div>
   );
@@ -224,20 +224,20 @@ export default function ChatPage() {
   const [showDmModal, setShowDmModal] = useState(false);
 
   return (
-    <div className="flex h-full overflow-hidden bg-[var(--colors-surface-dark)]">
+    <div className="flex h-full overflow-hidden bg-[var(--colors-canvas)]">
       {/* ── Left panel: conversation list ─────────────────────────────── */}
       <aside
-        className={`flex flex-col border-r border-[rgba(255,255,255,0.06)] flex-shrink-0 transition-all duration-200 ${
+        className={`flex flex-col border-r border-[var(--colors-hairline)] flex-shrink-0 transition-all duration-200 bg-[var(--colors-surface)] ${
           activeConversationId ? 'hidden lg:flex lg:w-[300px]' : 'w-full lg:w-[300px]'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-[rgba(255,255,255,0.06)]">
-          <h1 className="text-white font-bold text-base">Messages</h1>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--colors-hairline)]">
+          <h1 className="text-[var(--colors-ink)] font-bold text-base">Messages</h1>
           <button
             id="new-dm-button"
             onClick={() => setShowDmModal(true)}
-            className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.06)] hover:bg-[var(--colors-primary-glow)] text-[rgba(255,255,255,0.6)] hover:text-[var(--colors-primary)] transition-all flex items-center justify-center"
+            className="w-8 h-8 rounded-lg bg-[var(--colors-surface-pressed)] hover:bg-[var(--colors-primary-glow)] text-[var(--colors-ink-muted)] hover:text-[var(--colors-primary)] transition-all flex items-center justify-center focus-ring"
             title="New direct message"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

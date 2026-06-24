@@ -97,11 +97,8 @@ export default function NotificationPanel({ open, onClose }) {
 
     if (taskId) {
       onClose();
-      if (taskObj?.column?.projectId) {
-        navigate(`/projects/${taskObj.column.projectId}/tasks/${taskId}`);
-      } else {
-        navigate(`/tasks?projectId=${taskObj?.projectId || ''}`);
-      }
+      const projectId = taskObj?.column?.projectId || taskObj?.projectId || '';
+      navigate(`/tasks/${taskId}?projectId=${projectId}`);
     }
   };
 

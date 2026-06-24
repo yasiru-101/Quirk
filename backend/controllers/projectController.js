@@ -32,15 +32,23 @@ const findProject = async (id, res) => {
 const createProject = async (req, res) => {
   const { name, description, templateType, templateId, workspaceId, columns: customColumns } = req.body;
   try {
-    // Projects belong to a workspace. Workspace Owners/Admins can create projects;
-    // platform Admins bypass this for support and migration work.
+    // Projects belong to a workspace. Platform Admins can create projects anywhere.
+    // Otherwise, you must be a member of the workspace AND either be a workspace manager 
+    // (Owner/Admin) or hold the 'Project Manager' platform role.
     if (req.user.role !== 'Admin') {
       const membership = await prisma.workspaceMember.findUnique({
         where: { workspaceId_userId: { workspaceId, userId: req.user.id } },
       });
-      if (!isWorkspaceManager(membership)) {
+      
+      if (!membership) {
         return res.status(403).json({
-          message: 'Access denied. Only workspace Owners and Admins can create projects.',
+          message: 'Access denied. You are not a member of this workspace.',
+        });
+      }
+
+      if (!isWorkspaceManager(membership) && req.user.role !== 'Project Manager') {
+        return res.status(403).json({
+          message: 'Access denied. Only Project Managers or workspace managers can create projects.',
         });
       }
     }

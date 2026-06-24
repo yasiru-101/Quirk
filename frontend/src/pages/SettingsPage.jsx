@@ -7,12 +7,13 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { authService } from '../services/authService';
-import { normalizeError } from '../services/api';
+import api, { normalizeError } from '../services/api';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import { getInitials } from '../utils/helpers';
 
 const TABS = ['profile', 'notifications', 'appearance', 'security'];
+const ADMIN_TABS = [...TABS, 'templates'];
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -24,6 +25,63 @@ export default function SettingsPage() {
   const [step, setStep] = useState('idle');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
+  
+  const [templates, setTemplates] = useState([]);
+  const [newTemplate, setNewTemplate] = useState({ name: '', description: '', columns: '' });
+  
+  // Notification preferences state
+  const [notifyPrefs, setNotifyPrefs] = useState({
+    assignments: true,
+    comments: true,
+    updates: false,
+  });
+
+  const toggleNotifyPref = (key) => {
+    setNotifyPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    toastSuccess('Notification preferences updated');
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'templates' && user?.role === 'Admin') {
+      fetchTemplates();
+    }
+  }, [activeTab, user?.role]);
+
+  const fetchTemplates = async () => {
+    try {
+      const { data } = await api.get('/templates');
+      setTemplates(data.templates || []);
+    } catch (err) {
+      toastError('Failed to load templates');
+    }
+  };
+
+  const handleCreateTemplate = async () => {
+    if (!newTemplate.name || !newTemplate.columns) return toastError('Name and columns are required');
+    try {
+      setLoading(true);
+      const colsArray = newTemplate.columns.split(',').map(c => c.trim()).filter(Boolean);
+      await api.post('/templates', { ...newTemplate, columns: colsArray });
+      toastSuccess('Template created');
+      setNewTemplate({ name: '', description: '', columns: '' });
+      fetchTemplates();
+    } catch (err) {
+      toastError('Failed to create template');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!window.confirm('Delete this template?')) return;
+    try {
+      await api.delete(`/templates/${id}`);
+      toastSuccess('Template deleted');
+      fetchTemplates();
+    } catch (err) {
+      toastError('Failed to delete template');
+    }
+  };
 
   const handleEnable2FA = async () => {
     setLoading(true);
@@ -84,7 +142,7 @@ export default function SettingsPage() {
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="page-band p-2">
           <nav className="flex gap-2 overflow-x-auto lg:flex-col">
-            {TABS.map((tab) => (
+            {(user?.role === 'Admin' ? ADMIN_TABS : TABS).map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setStep('idle'); }}
@@ -128,16 +186,22 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <h2 className="text-[length:var(--typography-title)] font-semibold">Notifications</h2>
               {[
-                ['Task assignments', 'Get notified when a task is assigned to you.'],
-                ['Comments', 'Get notified when someone comments on your tasks.'],
-                ['Workspace updates', 'Receive summaries for project and membership changes.'],
-              ].map(([title, copy]) => (
+                { key: 'assignments', title: 'Task assignments', copy: 'Get notified when a task is assigned to you.' },
+                { key: 'comments', title: 'Comments', copy: 'Get notified when someone comments on your tasks.' },
+                { key: 'updates', title: 'Workspace updates', copy: 'Receive summaries for project and membership changes.' },
+              ].map(({ key, title, copy }) => (
                 <div key={title} className="flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
                   <div>
                     <p className="font-semibold text-[var(--colors-ink)]">{title}</p>
                     <p className="text-sm text-[var(--colors-body)]">{copy}</p>
                   </div>
-                  <span className="pill">Email</span>
+                  <button
+                    onClick={() => toggleNotifyPref(key)}
+                    className="relative h-8 w-14 rounded-full bg-[var(--colors-surface-pressed)] transition-colors focus-ring"
+                    aria-pressed={notifyPrefs[key]}
+                  >
+                    <span className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-[var(--colors-ink)] transition-transform ${notifyPrefs[key] ? 'translate-x-6 bg-[var(--colors-primary)]' : ''}`} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -241,6 +305,39 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab === 'templates' && user?.role === 'Admin' && (
+            <div className="space-y-6">
+              <h2 className="text-[length:var(--typography-title)] font-semibold">Project Templates</h2>
+              <div className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-5 space-y-4">
+                <h3 className="font-semibold">Create New Template</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input label="Template Name" value={newTemplate.name} onChange={e => setNewTemplate({...newTemplate, name: e.target.value})} placeholder="e.g. Agile Sprint" />
+                  <Input label="Description" value={newTemplate.description} onChange={e => setNewTemplate({...newTemplate, description: e.target.value})} placeholder="Optional description" />
+                  <div className="md:col-span-2">
+                    <Input label="Columns (comma separated)" value={newTemplate.columns} onChange={e => setNewTemplate({...newTemplate, columns: e.target.value})} placeholder="Backlog, To Do, In Progress, Done" />
+                  </div>
+                </div>
+                <Button variant="primary" loading={loading} onClick={handleCreateTemplate}>Create Template</Button>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold">Existing Templates</h3>
+                {templates.length === 0 ? (
+                  <p className="text-sm text-[var(--colors-body)]">No templates found.</p>
+                ) : (
+                  templates.map(t => (
+                    <div key={t.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
+                      <div>
+                        <p className="font-semibold text-[var(--colors-ink)]">{t.name}</p>
+                        <p className="text-sm text-[var(--colors-body)] mt-1">{t.columns?.map(c => c.name).join(', ')}</p>
+                      </div>
+                      <Button variant="danger" size="sm" onClick={() => handleDeleteTemplate(t.id)}>Delete</Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </div>

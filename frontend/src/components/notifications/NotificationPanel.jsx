@@ -86,16 +86,6 @@ export default function NotificationPanel({ open, onClose }) {
     try { await notificationService.markAllRead(); } catch {}
   };
 
-  // Clicking a notification marks it read and, when it references a task, takes
-  // the user straight to that task so they can act on it.
-  const handleItemClick = (notification) => {
-    if (!notification.isRead) markRead(notification._id);
-    if (notification.relatedTaskId) {
-      onClose();
-      navigate(`/tasks/${notification.relatedTaskId}`);
-    }
-  };
-
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   if (!open) return null;
@@ -166,7 +156,15 @@ export default function NotificationPanel({ open, onClose }) {
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {notifications.map((n) => (
-              <NotificationItem key={n._id} notification={n} onClick={handleItemClick} />
+              <NotificationItem
+                key={n._id}
+                notification={n}
+                onMarkRead={markRead}
+                onNavigate={(taskId) => {
+                  onClose();
+                  navigate(`/tasks/${taskId}`);
+                }}
+              />
             ))}
           </ul>
         )}
@@ -176,10 +174,17 @@ export default function NotificationPanel({ open, onClose }) {
   );
 }
 
-// ── Single Notification Item ──────────────────────────────────────────────────
-function NotificationItem({ notification, onClick }) {
-  const { type, message, isRead, createdAt, relatedTaskId } = notification;
+// ── Single Notification Item ──────────────────────────────────────────────
+function NotificationItem({ notification, onMarkRead, onNavigate }) {
+  const { _id, type, message, isRead, createdAt, relatedTaskId } = notification;
   const meta = getNotificationMeta(type);
+
+  const handleClick = () => {
+    if (!isRead) onMarkRead(_id);
+    // Navigate to the task detail when there is a related task.
+    const taskId = typeof relatedTaskId === 'object' ? relatedTaskId?.id : relatedTaskId;
+    if (taskId && onNavigate) onNavigate(taskId);
+  };
 
   const renderIcon = () => {
     switch (meta.iconType) {
@@ -196,7 +201,7 @@ function NotificationItem({ notification, onClick }) {
     <li
       className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer
         ${isRead ? 'opacity-60 hover:opacity-80' : 'hover:bg-hairline/40'}`}
-      onClick={() => onClick(notification)}
+      onClick={handleClick}
     >
       {/* Icon */}
       <div
@@ -208,12 +213,7 @@ function NotificationItem({ notification, onClick }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-xs text-ink leading-relaxed">{message}</p>
-        <div className="mt-1 flex items-center gap-2">
-          <p className="text-[10px] text-mute">{formatRelativeTime(createdAt)}</p>
-          {relatedTaskId && (
-            <span className="text-[10px] font-semibold text-[var(--colors-primary)]">View task →</span>
-          )}
-        </div>
+        <p className="text-[10px] text-mute mt-1">{formatRelativeTime(createdAt)}</p>
       </div>
 
       {/* Unread dot */}

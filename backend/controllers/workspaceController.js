@@ -121,6 +121,13 @@ const updateMemberRole = async (req, res) => {
     });
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
+    // Only a workspace Owner may grant the Owner role.
+    if (role === 'Owner' && req.workspaceMembership?.role !== 'Owner') {
+      return res.status(403).json({
+        message: 'Only an Owner may transfer ownership to another member.',
+      });
+    }
+
     // Never leave a workspace without an Owner.
     if (member.role === 'Owner' && role !== 'Owner') {
       const ownerCount = await prisma.workspaceMember.count({

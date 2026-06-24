@@ -6,9 +6,11 @@
 const { z } = require('zod');
 
 const WORKSPACE_ROLES = ['Owner', 'Admin', 'Member'];
-// Roles that may be granted via invitation or assigned to an existing member.
-// Ownership is transferred deliberately, never handed out by invite.
-const ASSIGNABLE_ROLES = ['Admin', 'Member'];
+// Roles that may be granted via invitation. Ownership is transferred deliberately.
+const ASSIGNABLE_VIA_INVITE = ['Admin', 'Member'];
+// Roles that may be set when updating an existing member. Ownership can only be
+// transferred by the current Owner; Admins may set Member or Admin only.
+const ASSIGNABLE_ROLES = ['Owner', 'Admin', 'Member'];
 
 const createWorkspaceSchema = z.object({
   name: z
@@ -30,7 +32,7 @@ const inviteMemberSchema = z.object({
     .toLowerCase()
     .trim(),
   role: z
-    .enum(ASSIGNABLE_ROLES, { invalid_type_error: `Role must be one of: ${ASSIGNABLE_ROLES.join(', ')}` })
+    .enum(ASSIGNABLE_VIA_INVITE, { invalid_type_error: `Invited role must be one of: ${ASSIGNABLE_VIA_INVITE.join(', ')}` })
     .optional()
     .default('Member'),
 });
@@ -40,9 +42,9 @@ const acceptInvitationSchema = z.object({
 });
 
 const updateMemberRoleSchema = z.object({
-  role: z.enum(WORKSPACE_ROLES, {
+  role: z.enum(ASSIGNABLE_ROLES, {
     required_error: 'Role is required',
-    invalid_type_error: `Role must be one of: ${WORKSPACE_ROLES.join(', ')}`,
+    invalid_type_error: `Role must be one of: ${ASSIGNABLE_ROLES.join(', ')}`,
   }),
 });
 

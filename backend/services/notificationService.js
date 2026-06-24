@@ -1,5 +1,30 @@
 const prisma = require('../config/db');
 const socketService = require('./socketService');
+const emailService = require('./emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+// Fire-and-forget email for an important task update. Looks up the recipient's
+// address; failures are logged but never block the in-app notification.
+const emailTaskUpdate = async (recipientId, subject, heading, body, taskId) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { email: true, name: true, isActive: true },
+    });
+    if (!user?.email || !user.isActive) return;
+    await emailService.sendTaskNotificationEmail({
+      to: user.email,
+      name: user.name,
+      subject,
+      heading,
+      body,
+      actionUrl: taskId ? `${FRONTEND_URL}/tasks/${taskId}` : FRONTEND_URL,
+    });
+  } catch (err) {
+    console.error(`[notif email] failed for ${recipientId}: ${err.message}`);
+  }
+};
 
 /**
  * Notify users when they are assigned to a task.
@@ -37,6 +62,13 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
       // Emit with relatedTaskId left as the task's UUID string (matching the REST
       // shape) plus the included relatedTask object for any richer rendering.
       socketService.emitToUser(userId, 'notification', notification);
+      emailTaskUpdate(
+        userId,
+        `You were assigned to "${task.title}"`,
+        'New task assignment',
+        `${assignerName} assigned you to the task "${task.title}".`,
+        targetTaskId
+      );
     }
 
     // Fetch and format full task details for real-time board updates on the frontend
@@ -199,6 +231,13 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview,
 
     for (const userId of mentionedIds) {
       await emit(userId, `${commenterName} mentioned you on "${task.title}": "${commentPreview}"`);
+      emailTaskUpdate(
+        userId,
+        `${commenterName} mentioned you on "${task.title}"`,
+        'You were mentioned',
+        `${commenterName} mentioned you in a comment on "${task.title}": "${commentPreview}"`,
+        targetTaskId
+      );
     }
     for (const userId of recipients) {
       await emit(userId, `${commenterName} commented on "${task.title}": "${commentPreview}"`);
@@ -294,6 +333,13 @@ const checkApproachingDeadlines = async () => {
         });
 
         socketService.emitToUser(userId, 'notification', notification);
+        emailTaskUpdate(
+          userId,
+          `"${task.title}" is due soon`,
+          'Upcoming deadline',
+          `Your task "${task.title}" is due by ${new Date(task.dueDate).toLocaleDateString()}.`,
+          task.id
+        );
       }
     }
   } catch (error) {

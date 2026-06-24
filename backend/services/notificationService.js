@@ -34,12 +34,9 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
         },
       });
 
-      // Format response to map relatedTask -> relatedTaskId for frontend compatibility
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+      // Emit with relatedTaskId left as the task's UUID string (matching the REST
+      // shape) plus the included relatedTask object for any richer rendering.
+      socketService.emitToUser(userId, 'notification', notification);
     }
 
     // Fetch and format full task details for real-time board updates on the frontend
@@ -124,11 +121,7 @@ const notifyColumnChange = async (taskId, newColumnName, changerName, changerId)
         },
       });
 
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+      socketService.emitToUser(userId, 'notification', notification);
     }
 
     // Emit live task:columnChanged to all involved users (sync active sessions)
@@ -193,11 +186,7 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview)
         },
       });
 
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+      socketService.emitToUser(userId, 'notification', notification);
     }
   } catch (error) {
     console.error(`Error in notifyComment: ${error.message}`);
@@ -289,11 +278,7 @@ const checkApproachingDeadlines = async () => {
           },
         });
 
-        const formatted = { ...notification };
-        formatted.relatedTaskId = notification.relatedTask;
-        delete formatted.relatedTask;
-
-        socketService.emitToUser(userId, 'notification', formatted);
+        socketService.emitToUser(userId, 'notification', notification);
       }
     }
   } catch (error) {

@@ -32,6 +32,8 @@ import ProjectDetailPage  from './pages/ProjectDetailPage';
 import AnalyticsPage      from './pages/AnalyticsPage';
 import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
+import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
+import AcceptInvitePage    from './pages/AcceptInvitePage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import ChatPage           from './pages/ChatPage';
@@ -57,6 +59,7 @@ export default function App() {
                 <Route path="/register"       element={<RegisterPage />} />
                 <Route path="/verify-email"   element={<VerifyEmailPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/invite/accept"  element={<AcceptInvitePage />} />
                 <Route path="/onboarding"     element={
                   <ProtectedRoute>
                     <OnboardingPage />
@@ -123,6 +126,16 @@ export default function App() {
                     element={
                       <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
                         <ProjectDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Workspace members */}
+                  <Route
+                    path="members"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <WorkspaceMembersPage />
                       </ProtectedRoute>
                     }
                   />

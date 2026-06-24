@@ -103,3 +103,18 @@ export const getRoleBadgeStyle = (role) => {
 
 // ─── Class Name Merge (lightweight clsx) ─────────────────────────────────────
 export const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+// ─── Identifier Aliasing ──────────────────────────────────────────────────────
+// The backend (Prisma/PostgreSQL) returns UUID string `id` fields, while many
+// components and realtime payloads reference `_id`. Recursively alias `id` to
+// `_id` on every object so both shapes are available. Used by both the REST
+// response interceptor and the realtime socket layer.
+export const aliasIds = (value) => {
+  if (Array.isArray(value)) {
+    value.forEach(aliasIds);
+  } else if (value && typeof value === 'object') {
+    if ('id' in value && !('_id' in value)) value._id = value.id;
+    Object.values(value).forEach(aliasIds);
+  }
+  return value;
+};

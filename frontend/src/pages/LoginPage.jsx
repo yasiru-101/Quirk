@@ -24,7 +24,12 @@ export default function LoginPage() {
   const { error: toastError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
+  // Honor an explicit ?redirect= target (e.g. an invitation link that needs the
+  // full path + token preserved), then router state, then the dashboard.
+  const from =
+    new URLSearchParams(location.search).get('redirect') ||
+    location.state?.from?.pathname ||
+    '/dashboard';
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});

@@ -11,11 +11,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { taskService } from '../services/taskService';
-import { userService } from '../services/userService';
 import TaskModal from '../components/tasks/TaskModal';
 import { ROLES } from '../utils/constants';
 import { formatDate, getTaskColumnName, isOverdue, isTerminalColumn, cn } from '../utils/helpers';
-import { computeTaskMetrics, computeRiskTasks } from '../utils/analytics';
+import { computeTaskMetrics, computeRiskTasks, computeProjectHealth } from '../utils/analytics';
 
 function StatCard({ label, value, loading, accent }) {
   return (
@@ -47,7 +46,6 @@ export default function DashboardPage() {
   const { projects } = useProject();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
-  const [userStats, setUserStats] = useState(null);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [taskModal, setTaskModal] = useState({ open: false, task: null });
 
@@ -70,23 +68,9 @@ export default function DashboardPage() {
       .finally(() => setLoadingTasks(false));
   }, []);
 
-  // Admins also manage users platform-wide.
-  useEffect(() => {
-    if (role !== ROLES.ADMIN) return;
-    userService.getUsers()
-      .then(({ data }) => {
-        const users = data.users ?? [];
-        setUserStats({
-          total: users.length,
-          active: users.filter((u) => u.isActive).length,
-          pending: users.filter((u) => u.mustResetPassword && u.isActive).length,
-        });
-      })
-      .catch(() => setUserStats(null));
-  }, [role]);
-
   const metrics = useMemo(() => computeTaskMetrics(tasks), [tasks]);
   const riskTasks = useMemo(() => computeRiskTasks(tasks, 5), [tasks]);
+  const projectHealth = useMemo(() => computeProjectHealth(projects, tasks).slice(0, 5), [projects, tasks]);
   const recentTasks = useMemo(
     () => [...tasks]
       .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
@@ -120,33 +104,39 @@ export default function DashboardPage() {
         {statCards.map((s) => <StatCard key={s.label} {...s} loading={loadingTasks} />)}
       </div>
 
-      {/* Admin platform strip */}
-      {role === ROLES.ADMIN && (
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-5 py-4">
-          <span className="text-sm font-semibold text-[var(--colors-ink)]">Platform</span>
-          <span className="text-sm text-[var(--colors-body)]">Users: <b className="text-[var(--colors-ink)]">{userStats?.total ?? '—'}</b></span>
-          <span className="text-sm text-[var(--colors-body)]">Active: <b className="text-[var(--colors-ink)]">{userStats?.active ?? '—'}</b></span>
-          <span className="text-sm text-[var(--colors-body)]">Pending resets: <b className="text-[var(--colors-ink)]">{userStats?.pending ?? '—'}</b></span>
-          <button className="ml-auto text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/users')}>
-            Manage users →
-          </button>
-        </div>
-      )}
-
       {/* Quick actions */}
       <div className="flex flex-wrap items-center gap-4 border-b border-[var(--colors-hairline)] py-2">
         <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Quick actions:</p>
+        <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>Open projects</button>
         {role !== ROLES.COLLABORATOR && (
-          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/tasks', { state: { createTask: Date.now() } })}>+ New Task</button>
+          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects', { state: { createProject: Date.now() } })}>+ New project</button>
         )}
-        {role !== ROLES.COLLABORATOR && (
-          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>+ New Project</button>
-        )}
-        <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/tasks')}>View board</button>
-        {role !== ROLES.COLLABORATOR && (
-          <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/analytics')}>Analytics</button>
-        )}
+        <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/members')}>Members</button>
       </div>
+
+      {/* Project health (light analytics summary) */}
+      {projectHealth.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">Project health</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {projectHealth.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => navigate(`/tasks?projectId=${p.id}`)}
+                className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4 text-left transition hover:border-[var(--colors-surface-pressed)]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-[var(--colors-ink)]">{p.name}</p>
+                  <p className="text-sm text-[var(--colors-body)]">{p.done}/{p.total} done</p>
+                </div>
+                <span className={cn('pill', p.overdue && 'text-[var(--colors-priority-urgent)]')}>
+                  {p.overdue ? `${p.overdue} overdue` : `${p.completionRate}%`}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Recent tasks table */}
@@ -160,8 +150,8 @@ export default function DashboardPage() {
             <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--colors-hairline)] py-12 text-center">
               <p className="text-[length:var(--typography-body-md)] text-[var(--colors-body)]">No tasks yet.</p>
               {role !== ROLES.COLLABORATOR && (
-                <button className="mt-2 text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/tasks', { state: { createTask: Date.now() } })}>
-                  Create your first task
+                <button className="mt-2 text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>
+                  Open a project to add tasks
                 </button>
               )}
             </div>

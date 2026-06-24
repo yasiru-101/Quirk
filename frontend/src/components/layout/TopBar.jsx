@@ -14,9 +14,8 @@ import { getInitials } from '../../utils/helpers';
 const BREADCRUMBS = {
   '/dashboard': ['Workspace', 'Overview'],
   '/tasks': ['Workspace', 'Tasks'],
-  '/users': ['Administration', 'Directory'],
   '/projects': ['Workspace', 'Projects'],
-  '/analytics': ['Workspace', 'Analytics'],
+  '/members': ['Workspace', 'Members'],
   '/settings': ['Account', 'Settings'],
   '/chat': ['Workspace', 'Chat'],
 };
@@ -31,13 +30,14 @@ export default function TopBar() {
   const { user, logout } = useAuth();
   const { activeWorkspace } = useProject();
 
+  // Tasks live inside a project. If a project board is open, ask it to open the
+  // create modal; otherwise send the user to projects to pick one.
   const handleNewTask = () => {
-    const createTask = Date.now();
-    if (pathname === '/tasks') {
+    if (pathname.startsWith('/tasks')) {
       window.dispatchEvent(new CustomEvent('task:create'));
       return;
     }
-    navigate('/tasks', { state: { createTask } });
+    navigate('/projects');
   };
 
   return (

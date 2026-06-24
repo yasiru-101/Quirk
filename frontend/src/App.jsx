@@ -26,10 +26,8 @@ import ResetPasswordPage  from './pages/ResetPasswordPage';
 import DashboardPage      from './pages/DashboardPage';
 import TaskBoardPage      from './pages/TaskBoardPage';
 import TaskDetailPage     from './pages/TaskDetailPage';
-import UserManagementPage from './pages/UserManagementPage';
 import ProjectsPage       from './pages/ProjectsPage';
 import ProjectDetailPage  from './pages/ProjectDetailPage';
-import AnalyticsPage      from './pages/AnalyticsPage';
 import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
 import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
@@ -102,16 +100,6 @@ export default function App() {
                     <Route path=":id" element={<TaskDetailPage />} />
                   </Route>
 
-                  {/* Admin only */}
-                  <Route
-                    path="users"
-                    element={
-                      <ProtectedRoute roles={[ROLES.ADMIN]}>
-                        <UserManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
                   {/* Projects */}
                   <Route
                     path="projects"
@@ -136,16 +124,6 @@ export default function App() {
                     element={
                       <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
                         <WorkspaceMembersPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Analytics */}
-                  <Route
-                    path="analytics"
-                    element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER]}>
-                        <AnalyticsPage />
                       </ProtectedRoute>
                     }
                   />

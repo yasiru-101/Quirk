@@ -21,6 +21,7 @@ const activityRoutes      = require('./routes/activityRoutes');
 const timeLogRoutes       = require('./routes/timeLogRoutes');
 const chatRoutes          = require('./routes/chatRoutes');
 const templateRoutes      = require('./routes/templateRoutes');
+const searchRoutes        = require('./routes/searchRoutes');
 const errorHandler        = require('./middleware/errorHandler');
 
 const app = express();
@@ -134,6 +135,7 @@ app.use('/api/projects',      projectRoutes);         // Projects, columns, epic
 app.use('/api/workspaces',    workspaceRoutes);       // Workspaces, members, invitations
 app.use('/api/chat',          chatRoutes);            // Chat conversations and messages
 app.use('/api/templates',     templateRoutes);        // Project templates
+app.use('/api/search',        searchRoutes);          // Global search
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

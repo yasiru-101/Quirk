@@ -193,6 +193,15 @@ export default function LoginPage() {
               <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
                 Sign in
               </Button>
+              <p className="text-center text-sm text-[var(--colors-body)]">
+                Don&apos;t have an account?{' '}
+                <a
+                  href="/register"
+                  className="font-semibold text-[var(--colors-primary-active)] hover:underline"
+                >
+                  Sign up
+                </a>
+              </p>
             </form>
           )}
 

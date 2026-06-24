@@ -235,8 +235,62 @@ const sendOtpEmail = async ({ to, purpose, code }) => {
   return await sendEtherealEmail({ to, subject, html });
 };
 
+/**
+ * Returns the HTML template for a task assignment notification email.
+ */
+const getAssignmentTemplate = (assigneeName, taskTitle, assignerName, loginUrl) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    .header { font-size: 22px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+    .content { font-size: 16px; color: #475569; }
+    .task-box { background-color: #eff6ff; padding: 16px 20px; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 0 8px 8px 0; }
+    .btn-container { text-align: center; margin: 28px 0; }
+    .btn { background-color: #2563eb; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; }
+    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">You have a new task assignment</div>
+    <div class="content">
+      <p>Hi <strong>${assigneeName}</strong>,</p>
+      <p><strong>${assignerName}</strong> has assigned you a task on <strong>Quirk Task Management</strong>:</p>
+      <div class="task-box">
+        <strong>${taskTitle}</strong>
+      </div>
+      <div class="btn-container">
+        <a href="${loginUrl}" class="btn" target="_blank">View Task in Quirk</a>
+      </div>
+    </div>
+    <div class="footer">
+      This is an automated system email. Please do not reply directly to this address.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+/**
+ * Sends a task assignment email using Azure ACS if available, otherwise Ethereal.
+ */
+const sendAssignmentEmail = async ({ to, assigneeName, taskTitle, assignerName, taskUrl }) => {
+  const subject = `${assignerName} assigned you to "${taskTitle}" on Quirk`;
+  const html = getAssignmentTemplate(assigneeName, taskTitle, assignerName, taskUrl || process.env.FRONTEND_URL || 'http://localhost:5173/tasks');
+
+  if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
+    return await sendAzureEmail({ to, name: assigneeName, subject, html });
+  }
+  console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
+  return await sendEtherealEmail({ to, subject, html });
+};
+
 module.exports = {
   sendOnboardingEmail,
   sendInvitationEmail,
   sendOtpEmail,
+  sendAssignmentEmail,
 };

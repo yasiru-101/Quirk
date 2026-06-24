@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const socketService = require('./socketService');
+const { sendAssignmentEmail } = require('./emailService');
 
 /**
  * Notify users when they are assigned to a task.
@@ -40,6 +41,22 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
       delete formatted.relatedTask;
 
       socketService.emitToUser(userId, 'notification', formatted);
+
+      // Fire assignment email (non-blocking).
+      prisma.user
+        .findUnique({ where: { id: userId }, select: { email: true, name: true } })
+        .then((recipient) => {
+          if (!recipient) return;
+          sendAssignmentEmail({
+            to: recipient.email,
+            assigneeName: recipient.name,
+            taskTitle: task.title,
+            assignerName,
+          }).catch((err) =>
+            console.warn(`[NotificationService] Assignment email failed for ${recipient.email}: ${err.message}`)
+          );
+        })
+        .catch((err) => console.warn(`[NotificationService] User lookup for email failed: ${err.message}`));
     }
 
     // Fetch and format full task details for real-time board updates on the frontend

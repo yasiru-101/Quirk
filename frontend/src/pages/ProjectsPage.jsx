@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
 import { normalizeError } from '../services/api';
+import api from '../services/api';
 import { ROLES } from '../utils/constants';
 
 const EMPTY_PROJECT = {

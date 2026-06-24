@@ -74,7 +74,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, refreshWorkspaces } = useProject();
   const navigate = useNavigate();
   const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
@@ -138,7 +138,13 @@ export default function Sidebar({ collapsed, onToggle }) {
           ) : (
             <p className="mt-2 truncate text-sm font-semibold text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
           )}
-          <p className="mt-2 text-xs text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
+          <div className="mt-2 flex items-center justify-between text-xs text-white/50">
+            <span>{activeWorkspaceRole ? `Workspace ${activeWorkspaceRole}` : 'Set up a workspace to begin.'}</span>
+            <span className="flex items-center gap-1.5 opacity-60">
+              <span className="h-1 w-1 rounded-full bg-[var(--colors-primary)]"></span>
+              Platform {role}
+            </span>
+          </div>
         </div>
       )}
 

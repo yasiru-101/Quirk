@@ -10,6 +10,7 @@ import EmptyState from '../components/common/EmptyState';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { normalizeError } from '../services/api';
+import api from '../services/api';
 import { ROLES } from '../utils/constants';
 
 export default function ProjectDetailPage() {
@@ -22,10 +23,15 @@ export default function ProjectDetailPage() {
     canManageWorkspace,
     addProjectMember,
     removeProjectMember,
+    refreshProjects,
   } = useProject();
   const { role, user } = useAuth();
   const { success, error: toastError } = useToast();
   const [memberForm, setMemberForm] = useState({ userId: '', role: 'Collaborator' });
+  const [columnEditMode, setColumnEditMode] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
+  const [columnNames, setColumnNames] = useState({});
+  const [savingColumn, setSavingColumn] = useState(false);
   const project = useMemo(() => projects.find((item) => item.id === id), [id, projects]);
   const projectMembership = project?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id);
   const isPM = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
@@ -88,16 +94,115 @@ export default function ProjectDetailPage() {
       <section className="feature-card">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-[length:var(--typography-title)] font-semibold">Workflow</h2>
-          <span className="pill">Project board</span>
+          <div className="flex items-center gap-2">
+            <span className="pill">Project board</span>
+            {isPM && (
+              <Button
+                variant="utility"
+                size="sm"
+                onClick={() => {
+                  const names = {};
+                  (project.columns ?? []).forEach((c) => { names[c.id] = c.name; });
+                  setColumnNames(names);
+                  setColumnEditMode((v) => !v);
+                  setNewColumnName('');
+                }}
+              >
+                {columnEditMode ? 'Done' : 'Manage columns'}
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
-          {(project.columns ?? []).map((column) => (
-            <div key={column.id} className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
-              <p className="font-semibold text-[var(--colors-ink)]">{column.name}</p>
-              <p className="mt-2 text-sm text-[var(--colors-body)]">Tasks in this column inherit this workflow state.</p>
+        {columnEditMode ? (
+          <div className="space-y-3">
+            {(project.columns ?? []).map((column) => (
+              <div key={column.id} className="flex items-center gap-3">
+                <input
+                  className="flex-1 h-10 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] px-3 text-sm text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)] transition"
+                  value={columnNames[column.id] ?? column.name}
+                  onChange={(e) => setColumnNames((prev) => ({ ...prev, [column.id]: e.target.value }))}
+                />
+                <Button
+                  variant="utility"
+                  size="sm"
+                  loading={savingColumn}
+                  onClick={async () => {
+                    const name = (columnNames[column.id] ?? column.name).trim();
+                    if (!name) return;
+                    setSavingColumn(true);
+                    try {
+                      await api.put(`/projects/${project.id}/columns/${column.id}`, { name });
+                      await refreshProjects();
+                      success('Column renamed');
+                    } catch (err) {
+                      toastError(normalizeError(err).message, 'Rename failed');
+                    } finally {
+                      setSavingColumn(false);
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={async () => {
+                    if (!window.confirm(`Delete column "${column.name}"? Tasks in this column will become uncolumned.`)) return;
+                    try {
+                      await api.delete(`/projects/${project.id}/columns/${column.id}`);
+                      await refreshProjects();
+                      success('Column deleted');
+                    } catch (err) {
+                      toastError(normalizeError(err).message, 'Delete failed');
+                    }
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            ))}
+            <div className="flex items-center gap-3 pt-2 border-t border-[var(--colors-hairline)]">
+              <input
+                className="flex-1 h-10 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] px-3 text-sm text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)] transition"
+                placeholder="New column name"
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                loading={savingColumn}
+                disabled={!newColumnName.trim()}
+                onClick={async () => {
+                  if (!newColumnName.trim()) return;
+                  setSavingColumn(true);
+                  try {
+                    await api.post(`/projects/${project.id}/columns`, { name: newColumnName.trim() });
+                    await refreshProjects();
+                    setNewColumnName('');
+                    success('Column added');
+                  } catch (err) {
+                    toastError(normalizeError(err).message, 'Add failed');
+                  } finally {
+                    setSavingColumn(false);
+                  }
+                }}
+              >
+                Add column
+              </Button>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-4">
+            {(project.columns ?? []).map((column) => (
+              <div key={column.id} className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
+                <p className="font-semibold text-[var(--colors-ink)]">{column.name}</p>
+                <p className="mt-2 text-sm text-[var(--colors-body)]">Tasks in this column inherit this workflow state.</p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="feature-card">

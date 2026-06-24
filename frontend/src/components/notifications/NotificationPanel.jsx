@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/notificationService';
 import { useSocket } from '../../context/SocketContext';
 import { getNotificationMeta, formatRelativeTime } from '../../utils/helpers';
@@ -23,6 +24,7 @@ export default function NotificationPanel({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
   const { on } = useSocket();
+  const navigate = useNavigate();
 
   // Load notifications
   useEffect(() => {
@@ -154,7 +156,15 @@ export default function NotificationPanel({ open, onClose }) {
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {notifications.map((n) => (
-              <NotificationItem key={n._id} notification={n} onMarkRead={markRead} />
+              <NotificationItem
+                key={n._id}
+                notification={n}
+                onMarkRead={markRead}
+                onNavigate={(taskId) => {
+                  onClose();
+                  navigate(`/tasks/${taskId}`);
+                }}
+              />
             ))}
           </ul>
         )}
@@ -164,10 +174,17 @@ export default function NotificationPanel({ open, onClose }) {
   );
 }
 
-// ── Single Notification Item ──────────────────────────────────────────────────
-function NotificationItem({ notification, onMarkRead }) {
-  const { _id, type, message, isRead, createdAt } = notification;
+// ── Single Notification Item ──────────────────────────────────────────────
+function NotificationItem({ notification, onMarkRead, onNavigate }) {
+  const { _id, type, message, isRead, createdAt, relatedTaskId } = notification;
   const meta = getNotificationMeta(type);
+
+  const handleClick = () => {
+    if (!isRead) onMarkRead(_id);
+    // Navigate to the task detail when there is a related task.
+    const taskId = typeof relatedTaskId === 'object' ? relatedTaskId?.id : relatedTaskId;
+    if (taskId && onNavigate) onNavigate(taskId);
+  };
 
   const renderIcon = () => {
     switch (meta.iconType) {
@@ -184,7 +201,7 @@ function NotificationItem({ notification, onMarkRead }) {
     <li
       className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer
         ${isRead ? 'opacity-60 hover:opacity-80' : 'hover:bg-hairline/40'}`}
-      onClick={() => !isRead && onMarkRead(_id)}
+      onClick={handleClick}
     >
       {/* Icon */}
       <div

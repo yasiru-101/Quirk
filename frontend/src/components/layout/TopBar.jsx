@@ -2,13 +2,14 @@
  * @file TopBar.jsx
  * @description Top navigation bar with breadcrumbs, search, notifications, and quick task creation.
  */
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from '../notifications/NotificationBell';
 import NotificationPanel from '../notifications/NotificationPanel';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
+import api from '../../services/api';
 import { getInitials } from '../../utils/helpers';
 
 const BREADCRUMBS = {
@@ -31,14 +32,67 @@ export default function TopBar() {
   const { user, logout } = useAuth();
   const { activeWorkspace } = useProject();
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+
   const handleNewTask = () => {
-    const createTask = Date.now();
     if (pathname === '/tasks') {
       window.dispatchEvent(new CustomEvent('task:create'));
       return;
     }
-    navigate('/tasks', { state: { createTask } });
+    navigate('/tasks', { state: { createTask: Date.now() } });
   };
+
+  // Ctrl+K keyboard shortcut to focus search
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const [searchResults, setSearchResults] = useState({ tasks: [], projects: [], users: [] });
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Close search results on outside click
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [searchOpen]);
+
+  // Search API call
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults({ tasks: [], projects: [], users: [] });
+      return;
+    }
+    
+    const timeoutId = setTimeout(() => {
+      setIsSearching(true);
+      api.get(`/search?q=${encodeURIComponent(searchQuery)}`)
+        .then(({ data }) => setSearchResults(data))
+        .catch(err => console.error('Search failed:', err))
+        .finally(() => setIsSearching(false));
+    }, 300); // debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const hasResults = searchResults.tasks.length > 0 || searchResults.projects.length > 0 || searchResults.users.length > 0;
 
   return (
     <>
@@ -49,24 +103,131 @@ export default function TopBar() {
           <span className="text-[color:var(--colors-ink)]">{crumbs[1]}</span>
         </div>
 
-        <div className="mx-4 hidden max-w-[360px] flex-1 md:block">
-          <label className="relative block">
+        {/* Global Search */}
+        <div className="mx-4 hidden max-w-[360px] flex-1 md:block" ref={searchRef}>
+          <div className="relative">
             <span className="absolute inset-y-0 left-3 flex items-center text-[color:var(--colors-ink-faint)]">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
             <input
+              ref={searchInputRef}
               type="text"
-              placeholder="Search tasks, projects, people"
-              className="h-10 w-full rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] pl-9 pr-14 text-[13px] text-[var(--colors-ink)] transition placeholder:text-[var(--colors-ink-faint)] focus-ring"
+              placeholder="Search projects, tasks, people"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              className="h-10 w-full rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] pl-9 pr-14 text-[13px] text-[var(--colors-ink)] transition placeholder:text-[var(--colors-ink-faint)] focus:outline-none focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
             />
             <span className="absolute inset-y-0 right-2 flex items-center">
               <kbd className="hidden rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] px-2 py-0.5 font-mono text-[10px] font-semibold text-[color:var(--colors-ink-muted)] shadow-sm sm:inline-block">
                 Ctrl K
               </kbd>
             </span>
-          </label>
+
+            {searchOpen && searchQuery.length >= 2 && (
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] shadow-[var(--shadow-lg)]">
+                {isSearching ? (
+                  <div className="px-4 py-6 text-center text-sm text-[var(--colors-ink-muted)]">
+                    Searching...
+                  </div>
+                ) : !hasResults ? (
+                  <div className="px-4 py-6 text-center text-sm text-[var(--colors-ink-muted)]">
+                    No results match &ldquo;{searchQuery}&rdquo;
+                  </div>
+                ) : (
+                  <div className="max-h-[60vh] overflow-y-auto py-2">
+                    
+                    {searchResults.tasks.length > 0 && (
+                      <div className="mb-2">
+                        <p className="px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-[var(--colors-ink-faint)]">Tasks</p>
+                        {searchResults.tasks.map((t) => (
+                          <button
+                            key={t.id}
+                            className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition hover:bg-[var(--colors-canvas-soft)]"
+                            onMouseDown={(e) => { e.preventDefault(); }}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                              navigate(`/tasks/${t.id}`);
+                            }}
+                          >
+                            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-blue-500/10 text-[10px] font-bold text-blue-500">
+                              T
+                            </span>
+                            <div className="flex flex-col truncate">
+                              <span className="truncate font-medium text-[var(--colors-ink)]">{t.title}</span>
+                              {t.project && <span className="truncate text-xs text-[var(--colors-ink-muted)]">{t.project.name}</span>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.projects.length > 0 && (
+                      <div className="mb-2">
+                        <p className="px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-[var(--colors-ink-faint)]">Projects</p>
+                        {searchResults.projects.map((p) => (
+                          <button
+                            key={p.id}
+                            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-[var(--colors-canvas-soft)]"
+                            onMouseDown={(e) => { e.preventDefault(); }}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                              navigate(`/projects/${p.id}`);
+                            }}
+                          >
+                            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--colors-surface-dark)] text-xs font-bold text-white">
+                              {p.name.slice(0, 1).toUpperCase()}
+                            </span>
+                            <span className="truncate font-medium text-[var(--colors-ink)]">{p.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.users.length > 0 && (
+                      <div className="mb-2">
+                        <p className="px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-[var(--colors-ink-faint)]">People</p>
+                        {searchResults.users.map((u) => (
+                          <button
+                            key={u.id}
+                            className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition hover:bg-[var(--colors-canvas-soft)]"
+                            onMouseDown={(e) => { e.preventDefault(); }}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                              navigate(`/users`);
+                            }}
+                          >
+                            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-bold text-emerald-600">
+                              {u.name.slice(0, 1).toUpperCase()}
+                            </span>
+                            <span className="truncate font-medium text-[var(--colors-ink)]">{u.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                  </div>
+                )}
+                <div className="border-t border-[var(--colors-hairline)] px-4 py-2">
+                  <button
+                    className="w-full text-left text-xs text-[var(--colors-ink-muted)] transition hover:text-[var(--colors-primary)]"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSearchOpen(false);
+                      navigate(`/tasks?search=${encodeURIComponent(searchQuery)}`);
+                    }}
+                  >
+                    Search all tasks for &ldquo;{searchQuery}&rdquo; &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -96,33 +257,45 @@ export default function TopBar() {
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-xs font-bold text-[var(--colors-ink)] focus-ring transition hover:bg-[var(--colors-surface-pressed)]"
+              aria-expanded={profileMenuOpen}
+              aria-haspopup="menu"
             >
               {getInitials(user?.name)}
             </button>
             {profileMenuOpen && (
-              <div className="absolute right-0 top-12 w-48 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-2 shadow-lg z-50">
-                <div className="px-4 py-2 border-b border-[var(--colors-hairline)] mb-1">
-                  <p className="truncate text-sm font-semibold text-[var(--colors-ink)]">{user?.name}</p>
-                  <p className="truncate text-xs text-[var(--colors-ink-muted)]">{user?.role}</p>
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
+                <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] shadow-[var(--shadow-lg)]">
+                  <div className="border-b border-[var(--colors-hairline)] px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-[var(--colors-ink)]">{user?.name}</p>
+                    <p className="truncate text-xs text-[var(--colors-ink-muted)]">{user?.email}</p>
+                    <span className="mt-1.5 inline-block rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--colors-ink-muted)]">
+                      {user?.role}
+                    </span>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => { setProfileMenuOpen(false); navigate('/settings'); }}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--colors-ink)] transition hover:bg-[var(--colors-canvas-soft)]"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      Settings
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setProfileMenuOpen(false);
+                        if (!window.confirm('Sign out of Quirk?')) return;
+                        await logout();
+                        navigate('/login');
+                      }}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign out
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => { setProfileMenuOpen(false); navigate('/settings'); }}
-                  className="w-full text-left px-4 py-2 text-sm text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={async () => {
-                    setProfileMenuOpen(false);
-                    if (!window.confirm('Sign out of Quirk?')) return;
-                    await logout();
-                    navigate('/login');
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition"
-                >
-                  Sign out
-                </button>
-              </div>
+              </>
             )}
           </div>
         </div>

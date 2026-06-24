@@ -4,6 +4,7 @@
  */
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
+import { aliasIds } from '../utils/helpers';
 
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
@@ -22,21 +23,9 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── id → _id Normalizer ──────────────────────────────────────────────────────
-// The backend (Prisma/PostgreSQL) returns UUID string `id` fields, while some
-// components and the realtime socket payloads reference `_id`. Recursively alias
-// `id` to `_id` on every REST response so both shapes are available to components.
-const aliasIds = (value) => {
-  if (Array.isArray(value)) {
-    value.forEach(aliasIds);
-  } else if (value && typeof value === 'object') {
-    if ('id' in value && !('_id' in value)) value._id = value.id;
-    Object.values(value).forEach(aliasIds);
-  }
-  return value;
-};
-
 // ─── Response Interceptor ─────────────────────────────────────────────────────
+// REST payloads are normalized through the shared `aliasIds` helper so the
+// `id`/`_id` duality is consistent with the realtime socket layer.
 api.interceptors.response.use(
   (response) => {
     if (response?.data) aliasIds(response.data);

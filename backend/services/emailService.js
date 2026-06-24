@@ -236,53 +236,42 @@ const sendOtpEmail = async ({ to, purpose, code }) => {
 };
 
 /**
- * Returns the HTML template for a task assignment notification email.
+ * Generic transactional template with a single call-to-action button.
  */
-const getAssignmentTemplate = (assigneeName, taskTitle, assignerName, loginUrl) => `
+const getActionTemplate = (heading, body, actionUrl, actionLabel) => `
 <!DOCTYPE html>
 <html>
 <head>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-    .header { font-size: 22px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-    .content { font-size: 16px; color: #475569; }
-    .task-box { background-color: #eff6ff; padding: 16px 20px; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .btn-container { text-align: center; margin: 28px 0; }
-    .btn { background-color: #2563eb; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; }
-    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; }
+    .header { font-size: 20px; font-weight: bold; color: #0f172a; margin-bottom: 16px; }
+    .content { font-size: 15px; color: #475569; }
+    .btn { display: inline-block; margin: 24px 0; padding: 12px 22px; background-color: #16a34a; color: #ffffff !important; text-decoration: none; border-radius: 999px; font-weight: 600; }
+    .footer { margin-top: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">You have a new task assignment</div>
+    <div class="header">${heading}</div>
     <div class="content">
-      <p>Hi <strong>${assigneeName}</strong>,</p>
-      <p><strong>${assignerName}</strong> has assigned you a task on <strong>Quirk Task Management</strong>:</p>
-      <div class="task-box">
-        <strong>${taskTitle}</strong>
-      </div>
-      <div class="btn-container">
-        <a href="${loginUrl}" class="btn" target="_blank">View Task in Quirk</a>
-      </div>
+      <p>${body}</p>
+      ${actionUrl ? `<a class="btn" href="${actionUrl}">${actionLabel || 'Open in Quirk'}</a>` : ''}
     </div>
-    <div class="footer">
-      This is an automated system email. Please do not reply directly to this address.
-    </div>
+    <div class="footer">You are receiving this because of activity on a Quirk task. Manage notifications in your account settings.</div>
   </div>
 </body>
 </html>
 `;
 
 /**
- * Sends a task assignment email using Azure ACS if available, otherwise Ethereal.
+ * Sends a task-activity notification email (assignment, mention, deadline) using
+ * Azure ACS if configured, otherwise Ethereal.
  */
-const sendAssignmentEmail = async ({ to, assigneeName, taskTitle, assignerName, taskUrl }) => {
-  const subject = `${assignerName} assigned you to "${taskTitle}" on Quirk`;
-  const html = getAssignmentTemplate(assigneeName, taskTitle, assignerName, taskUrl || process.env.FRONTEND_URL || 'http://localhost:5173/tasks');
-
+const sendTaskNotificationEmail = async ({ to, name, subject, heading, body, actionUrl }) => {
+  const html = getActionTemplate(heading, body, actionUrl, 'View task');
   if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
-    return await sendAzureEmail({ to, name: assigneeName, subject, html });
+    return await sendAzureEmail({ to, name: name || to, subject, html });
   }
   console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
   return await sendEtherealEmail({ to, subject, html });
@@ -290,7 +279,7 @@ const sendAssignmentEmail = async ({ to, assigneeName, taskTitle, assignerName, 
 
 module.exports = {
   sendOnboardingEmail,
+  sendTaskNotificationEmail,
   sendInvitationEmail,
   sendOtpEmail,
-  sendAssignmentEmail,
 };

@@ -3,11 +3,12 @@
  * @description Project overview using workspace project data.
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import Input from '../components/common/Input';
+import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
@@ -21,6 +22,15 @@ const EMPTY_PROJECT = {
   templateId: '',
   workspaceId: '',
 };
+
+// Built-in starter workflows. Selecting one prefills the editable column list so
+// the board starts with the workflow the user wants — no DB template required.
+const STARTER_TEMPLATES = [
+  { key: 'Basic Kanban', label: 'Basic Kanban', columns: ['To Do', 'In Progress', 'Done'] },
+  { key: 'Software Development', label: 'Software Development', columns: ['Backlog', 'To Do', 'In Progress', 'In Review', 'QA Testing', 'Done'] },
+  { key: 'Marketing Campaign', label: 'Marketing Campaign', columns: ['Ideas', 'Planning', 'In Progress', 'Review', 'Published'] },
+];
+const DEFAULT_TEMPLATE = STARTER_TEMPLATES[0];
 
 export default function ProjectsPage() {
   const { role } = useAuth();
@@ -38,27 +48,38 @@ export default function ProjectsPage() {
   } = useProject();
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const canCreate = role === ROLES.ADMIN || canManageWorkspace;
   const [modal, setModal] = useState({ open: false, project: null });
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [templates, setTemplates] = useState([]);
+  const [menuId, setMenuId] = useState(null);
+  const [preset, setPreset] = useState(DEFAULT_TEMPLATE.key);
+  const [columns, setColumns] = useState(DEFAULT_TEMPLATE.columns.map((name) => ({ name })));
 
-  React.useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const { data } = await api.get('/templates');
-        setTemplates(data.templates || []);
-      } catch (err) {
-        console.error('Failed to load templates:', err);
-      }
-    };
-    fetchTemplates();
-  }, []);
+  const applyPreset = (key) => {
+    const template = STARTER_TEMPLATES.find((t) => t.key === key) || DEFAULT_TEMPLATE;
+    setPreset(key);
+    setColumns(template.columns.map((name) => ({ name })));
+  };
+
+  const updateColumn = (index, value) =>
+    setColumns((cols) => cols.map((c, i) => (i === index ? { name: value } : c)));
+  const addColumn = () => setColumns((cols) => [...cols, { name: '' }]);
+  const removeColumn = (index) => setColumns((cols) => cols.filter((_, i) => i !== index));
+  const moveColumn = (index, delta) =>
+    setColumns((cols) => {
+      const next = [...cols];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return cols;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
 
   const openCreate = () => {
     setForm(EMPTY_PROJECT);
+    applyPreset(DEFAULT_TEMPLATE.key);
     setErrors({});
     setModal({ open: true, project: null });
   };
@@ -78,6 +99,16 @@ export default function ProjectsPage() {
     setModal({ open: false, project: null });
     setErrors({});
   };
+
+  // Open the create modal when navigated here with a create intent (e.g. from
+  // the sidebar projects tree's "+ New project" action).
+  React.useEffect(() => {
+    if (location.state?.createProject && canCreate) {
+      openCreate();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.createProject]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -106,10 +137,19 @@ export default function ProjectsPage() {
         });
         success('Project updated');
       } else {
+        const cleanedColumns = columns
+          .map((c) => ({ name: c.name.trim() }))
+          .filter((c) => c.name);
+        if (cleanedColumns.length === 0) {
+          setErrors({ columns: 'Add at least one column' });
+          setSaving(false);
+          return;
+        }
         await createProject({
           name: form.name.trim(),
           description: form.description.trim(),
-          templateId: form.templateId || undefined,
+          templateType: preset,
+          columns: cleanedColumns.map((c, idx) => ({ name: c.name, order: idx })),
           workspaceId: form.workspaceId || activeWorkspaceId,
         });
         success('Project created');
@@ -183,25 +223,56 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => (
-            <article
-              key={project.id}
-              className="feature-card group min-h-56 text-left"
-            >
+            <article key={project.id} className="feature-card group relative min-h-56 text-left">
               <div className="mb-8 flex items-start justify-between">
                 <button
                   type="button"
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                   className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--colors-surface-dark)] text-sm font-bold text-white focus-ring"
-                  aria-label={`Open ${project.name}`}
+                  aria-label={`Open ${project.name} board`}
                 >
                   {(project.name || 'P').slice(0, 1).toUpperCase()}
                 </button>
                 <div className="flex items-center gap-2">
                   <span className="pill">{project.columns?.length || 0} columns</span>
                   {project.status === 'archived' && <span className="pill">Archived</span>}
+                  {canCreate && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setMenuId(menuId === project.id ? null : project.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
+                        aria-label={`${project.name} settings`}
+                        aria-haspopup="menu"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+                      </button>
+                      {menuId === project.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)} />
+                          <div role="menu" className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-1 shadow-lg">
+                            {[
+                              ['Project settings', () => navigate(`/projects/${project.id}`)],
+                              ['Edit details', () => openEdit(project)],
+                              ...(project.status !== 'archived' ? [['Archive', () => archiveProject(project)]] : []),
+                            ].map(([label, fn]) => (
+                              <button key={label} role="menuitem" onClick={() => { setMenuId(null); fn(); }}
+                                className="block w-full px-4 py-2 text-left text-sm text-[var(--colors-ink)] transition hover:bg-[var(--colors-canvas-soft)]">
+                                {label}
+                              </button>
+                            ))}
+                            <button role="menuitem" onClick={() => { setMenuId(null); removeProject(project); }}
+                              className="block w-full border-t border-[var(--colors-hairline)] px-4 py-2 text-left text-sm text-[var(--colors-priority-urgent)] transition hover:bg-[var(--colors-canvas-soft)]">
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="text-left focus-ring">
+              <button type="button" onClick={() => navigate(`/tasks?projectId=${project.id}`)} className="text-left focus-ring">
                 <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">{project.name}</h2>
               </button>
               <p className="mt-2 line-clamp-2 text-sm text-[var(--colors-body)]">
@@ -211,17 +282,16 @@ export default function ProjectsPage() {
                 {(project.columns ?? []).slice(0, 4).map((column) => (
                   <span key={column.id} className="pill bg-[var(--colors-canvas)]">{column.name}</span>
                 ))}
+                {(project.columns ?? []).length > 4 && (
+                  <span className="pill bg-[var(--colors-canvas)]">+{project.columns.length - 4} more</span>
+                )}
               </div>
-              {canCreate && (
-                <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--colors-hairline)] pt-4">
-                  <Button variant="utility" size="sm" onClick={() => navigate(`/projects/${project.id}`)}>Open</Button>
-                  <Button variant="utility" size="sm" onClick={() => openEdit(project)}>Edit</Button>
-                  {project.status !== 'archived' && (
-                    <Button variant="utility" size="sm" onClick={() => archiveProject(project)}>Archive</Button>
-                  )}
-                  <Button variant="danger" size="sm" onClick={() => removeProject(project)}>Delete</Button>
-                </div>
-              )}
+              <div className="mt-6 border-t border-[var(--colors-hairline)] pt-4">
+                <button type="button" onClick={() => navigate(`/tasks?projectId=${project.id}`)}
+                  className="text-sm font-semibold text-[var(--colors-primary)] hover:underline focus-ring">
+                  Open board →
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -261,35 +331,71 @@ export default function ProjectsPage() {
           {!modal.project && (
             <>
               {role === ROLES.ADMIN && !activeWorkspaceId && workspaces.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Workspace</label>
-                  <select
+                <SelectField
+                  label="Workspace"
                     name="workspaceId"
                     value={form.workspaceId}
                     onChange={handleChange}
-                    className={`h-12 rounded-[var(--radius-md)] border bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:bg-[var(--colors-canvas)] ${errors.workspaceId ? 'border-red-500 focus:border-red-500' : 'border-[var(--colors-hairline)] focus:border-[var(--colors-primary)]'}`}
+                  error={errors.workspaceId}
+                  selectClassName="h-12 bg-[var(--colors-canvas-softer)] px-4 pr-11"
                   >
                     <option value="">Select workspace...</option>
                     {workspaces.map(w => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
-                  </select>
-                  {errors.workspaceId && <span className="ml-1 text-xs text-red-500">{errors.workspaceId}</span>}
-                </div>
+                </SelectField>
               )}
-              <div className="flex flex-col gap-2">
-                <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Template</label>
-                <select
-                  name="templateId"
-                  value={form.templateId}
-                  onChange={handleChange}
-                  className="h-12 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
-                >
-                  <option value="">Select a template...</option>
-                  {templates.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+              <div className="space-y-3">
+                <p className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Workflow template</p>
+                <div className="flex flex-wrap gap-2">
+                  {STARTER_TEMPLATES.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => applyPreset(t.key)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition focus-ring ${
+                        preset === t.key
+                          ? 'border-[var(--colors-primary)] bg-[var(--colors-primary-glow)] text-[var(--colors-primary-active)]'
+                          : 'border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)] hover:border-[var(--colors-surface-pressed)]'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
                   ))}
-                </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Columns</p>
+                  <span className="text-xs text-[var(--colors-ink-muted)]">Customize before creating</span>
+                </div>
+                {errors.columns && <p className="text-sm text-[var(--colors-priority-urgent)]">{errors.columns}</p>}
+                <div className="space-y-2">
+                  {columns.map((col, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        value={col.name}
+                        onChange={(e) => updateColumn(index, e.target.value)}
+                        placeholder={`Column ${index + 1}`}
+                        className="h-11 flex-1 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)]"
+                      />
+                      <div className="flex items-center">
+                        <button type="button" onClick={() => moveColumn(index, -1)} disabled={index === 0} aria-label="Move up"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] disabled:opacity-30 focus-ring">↑</button>
+                        <button type="button" onClick={() => moveColumn(index, 1)} disabled={index === columns.length - 1} aria-label="Move down"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] disabled:opacity-30 focus-ring">↓</button>
+                        <button type="button" onClick={() => removeColumn(index)} disabled={columns.length === 1} aria-label="Remove column"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-priority-urgent)] disabled:opacity-30 focus-ring">✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {columns.length < 12 && (
+                  <button type="button" onClick={addColumn} className="text-sm font-semibold text-[var(--colors-primary)] hover:underline focus-ring">
+                    + Add column
+                  </button>
+                )}
               </div>
             </>
           )}

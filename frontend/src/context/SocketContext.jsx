@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from '../utils/constants';
+import { aliasIds } from '../utils/helpers';
 import { useAuth } from './AuthContext';
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -54,10 +55,15 @@ export function SocketProvider({ children }) {
     };
   }, [isAuthenticated]);
 
-  /** Subscribe to a socket event. Returns an unsubscribe function. */
+  /**
+   * Subscribe to a socket event. Returns an unsubscribe function.
+   * Incoming payloads are passed through `aliasIds` so realtime data carries the
+   * same `id`/`_id` duality as REST responses (see services/api.js).
+   */
   const on = useCallback((event, handler) => {
-    socketRef.current?.on(event, handler);
-    return () => socketRef.current?.off(event, handler);
+    const wrapped = (payload) => handler(aliasIds(payload));
+    socketRef.current?.on(event, wrapped);
+    return () => socketRef.current?.off(event, wrapped);
   }, []);
 
   /** Emit a socket event */

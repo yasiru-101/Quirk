@@ -131,6 +131,7 @@ export default function CommentsPanel({ taskId }) {
               </label>
 
               <Button
+                type="button"
                 onClick={handlePost}
                 disabled={!text.trim() || posting}
                 variant="primary"

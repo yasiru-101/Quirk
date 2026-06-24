@@ -61,7 +61,7 @@ const addComment = async (req, res) => {
     // Trigger real-time notifications
     const notificationService = require('../services/notificationService');
     const commentPreview = content.length > 80 ? `${content.substring(0, 80)}...` : content;
-    await notificationService.notifyComment(targetTaskId, req.user.name, req.user.id, commentPreview);
+    await notificationService.notifyComment(targetTaskId, req.user.name, req.user.id, commentPreview, content);
 
     return res.status(201).json({
       comment,

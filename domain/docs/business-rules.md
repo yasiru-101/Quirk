@@ -11,6 +11,8 @@ project membership controls day-to-day project work.
 - The workspace creator receives the workspace `Owner` role.
 - Workspace Owners/Admins can create projects inside the workspace.
 - Workspace Owners/Admins can invite or manage workspace members.
+- Any authenticated user can create an additional workspace and becomes its
+  Owner.
 
 ## Project Lifecycle
 
@@ -21,6 +23,9 @@ project membership controls day-to-day project work.
   project role.
 - Collaborators can access projects they belong to but cannot edit project
   settings, delete projects, or change workflow structure.
+- Project Managers and workspace Owners/Admins can manage project workflow
+  columns after creation, including adding, renaming, reordering, and deleting
+  columns.
 - Archiving a project sets `status = archived`; deleting uses the existing
   project soft-delete behavior.
 
@@ -33,6 +38,8 @@ project membership controls day-to-day project work.
 - Assignees must be members of the selected project.
 - Assigned users receive assignment notifications.
 - Column changes notify involved users except the actor.
+- Collaborators may open accessible tasks and comment on them. Full task editing,
+  deletion, and assignment remain manager actions.
 - Deadline notifications are persisted and emitted by the existing deadline
   checker for incomplete tasks due within 24 hours.
 

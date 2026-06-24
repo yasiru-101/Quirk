@@ -34,7 +34,7 @@ function ConversationAvatar({ conversation, currentUserId }) {
     );
   }
   // DIRECT: show the other participant's avatar/initials
-  const other = (conversation.participants ?? []).find((p) => p.id !== currentUserId);
+  const other = (conversation.participants ?? []).find((p) => (p._id || p.id) !== currentUserId);
   if (other?.avatarUrl) {
     return <img src={other.avatarUrl} alt={other.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />;
   }
@@ -49,7 +49,7 @@ function conversationLabel(conversation, currentUserId) {
   if (conversation.type === 'PROJECT') {
     return conversation.project?.name ?? 'Project';
   }
-  const other = (conversation.participants ?? []).find((p) => p.id !== currentUserId);
+  const other = (conversation.participants ?? []).find((p) => (p._id || p.id) !== currentUserId);
   return other?.name ?? 'Direct Message';
 }
 
@@ -81,7 +81,8 @@ export default function ConversationList() {
     <ul className="flex-1 overflow-y-auto">
       {conversations.map((conv) => {
         const isActive = conv.id === activeConversationId;
-        const label = conversationLabel(conv, user?.id);
+        const currentUserId = user?._id || user?.id;
+        const label = conversationLabel(conv, currentUserId);
         const preview = conv.latestMessage;
         return (
           <li key={conv.id}>
@@ -94,7 +95,7 @@ export default function ConversationList() {
                   : 'hover:bg-[rgba(255,255,255,0.04)] border-l-2 border-transparent'
               }`}
             >
-              <ConversationAvatar conversation={conv} currentUserId={user?.id} />
+              <ConversationAvatar conversation={conv} currentUserId={currentUserId} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-semibold text-white truncate">{label}</span>

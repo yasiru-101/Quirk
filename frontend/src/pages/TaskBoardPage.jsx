@@ -33,6 +33,15 @@ export default function TaskBoardPage() {
     [projects, scopedProjectId]
   );
 
+  // There is no general task board — tasks are viewed inside a project. The bare
+  // /tasks route (no project, not a task-detail deep link) redirects to Projects.
+  const viewingDetail = /^\/tasks\/[^/]+$/.test(location.pathname);
+  useEffect(() => {
+    if (!scopedProjectId && !viewingDetail) {
+      navigate('/projects', { replace: true });
+    }
+  }, [scopedProjectId, viewingDetail, navigate]);
+
   const visibleProjects = useMemo(
     () => (scopedProject ? [scopedProject] : projects),
     [projects, scopedProject]
@@ -48,22 +57,57 @@ export default function TaskBoardPage() {
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', columnId: '', priority: '', sortBy: 'createdAt_desc' });
+  const [filters, setFilters] = useState({ search: '', columnId: '', assigneeId: '', priority: '', sortBy: 'Newest First' });
   const [modal, setModal] = useState({ open: false, task: null });
 
-  const columns = useMemo(
-    () => visibleProjects.flatMap((project) => (project.columns ?? []).map((column) => ({
-      ...column,
-      projectId: column.projectId || project.id,
-      projectName: project.name,
-    }))),
-    [visibleProjects]
-  );
+  const columns = useMemo(() => {
+    const map = new Map();
+    visibleProjects.forEach((project) => {
+      (project.columns ?? []).forEach((column) => {
+        map.set(column.id, {
+          ...column,
+          projectId: column.projectId || project.id,
+          projectName: project.name,
+        });
+      });
+    });
+    // Fall back to columns embedded in the tasks themselves so the board and
+    // table still render lanes/options when the projects context hasn't supplied
+    // columns (e.g. no active workspace yet). Tasks carry full column metadata.
+    tasks.forEach((task) => {
+      if (task.column && !map.has(task.column.id)) {
+        map.set(task.column.id, {
+          ...task.column,
+          projectId: task.column.projectId || task.projectId,
+          projectName: task.projectName || task.project?.name,
+        });
+      }
+    });
+    return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [visibleProjects, tasks]);
 
   const columnsById = useMemo(
     () => new Map(columns.map((column) => [column.id, column])),
     [columns]
   );
+
+  const assignees = useMemo(() => {
+    const users = new Map();
+    visibleProjects.forEach((project) => {
+      (project.members ?? []).forEach((member) => {
+        const memberUser = member.user;
+        const id = member.userId || memberUser?._id || memberUser?.id;
+        if (id && memberUser) users.set(id, { ...memberUser, id });
+      });
+    });
+    tasks.forEach((task) => {
+      (task.assignees ?? []).forEach((memberUser) => {
+        const id = memberUser._id || memberUser.id;
+        if (id) users.set(id, { ...memberUser, id });
+      });
+    });
+    return [...users.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [tasks, visibleProjects]);
 
   useEffect(() => {
     setLoading(true);
@@ -108,46 +152,45 @@ export default function TaskBoardPage() {
     setFilters((f) => ({ ...f, [name]: value }));
   };
 
-  const filtered = useMemo(() => {
-    let result = tasks.filter((task) => {
-      if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      if (filters.columnId === 'Overdue') {
-        if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
-      } else if (filters.columnId && task.columnId !== filters.columnId) {
-        return false;
-      }
-      if (filters.priority && task.priority !== filters.priority) return false;
-      return true;
-    });
-
-    // Apply sorting
-    if (filters.sortBy) {
-      result.sort((a, b) => {
-        switch (filters.sortBy) {
-          case 'createdAt_asc':
-            return new Date(a.createdAt) - new Date(b.createdAt);
-          case 'createdAt_desc':
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          case 'dueDate_asc':
-            if (!a.dueDate) return 1;
-            if (!b.dueDate) return -1;
-            return new Date(a.dueDate) - new Date(b.dueDate);
-          case 'dueDate_desc':
-            if (!a.dueDate) return 1;
-            if (!b.dueDate) return -1;
-            return new Date(b.dueDate) - new Date(a.dueDate);
-          case 'title_asc':
-            return a.title.localeCompare(b.title);
-          case 'title_desc':
-            return b.title.localeCompare(a.title);
-          default:
-            return 0;
-        }
-      });
+  const filtered = useMemo(() => tasks.filter((task) => {
+    if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.columnId === 'Overdue') {
+      if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
+    } else if (filters.columnId && task.columnId !== filters.columnId) {
+      return false;
     }
+    if (filters.assigneeId && !(task.assignees ?? []).some((assignee) => (assignee._id || assignee.id) === filters.assigneeId)) return false;
+    if (filters.priority && task.priority !== filters.priority) return false;
+    return true;
+  }), [tasks, filters]);
 
-    return result;
-  }, [tasks, filters]);
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'Oldest First':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'Highest Priority': {
+          const w = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+          return (w[b.priority] || 0) - (w[a.priority] || 0);
+        }
+        case 'Lowest Priority': {
+          const w = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+          return (w[a.priority] || 0) - (w[b.priority] || 0);
+        }
+        case 'Due Date (Earliest)':
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        case 'Due Date (Latest)':
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(b.dueDate) - new Date(a.dueDate);
+        case 'Newest First':
+        default:
+          return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+  }, [filtered, filters.sortBy]);
 
   const handleColumnChange = async (taskId, columnId) => {
     const column = columnsById.get(columnId);
@@ -221,8 +264,9 @@ export default function TaskBoardPage() {
       />
 
       <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-          <TaskFilters filters={filters} columns={columns} onChange={handleFilterChange} />
+        <div className="flex flex-1 flex-col overflow-hidden p-6">
+          <TaskFilters filters={filters} columns={columns} assignees={assignees} onChange={handleFilterChange} />
+          <div className="min-h-0 flex-1 overflow-hidden">
           {loading || projectsLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -231,18 +275,19 @@ export default function TaskBoardPage() {
             </div>
           ) : view === 'kanban' ? (
             <KanbanBoard
-              tasks={filtered}
+              tasks={sorted}
               columns={displayColumns}
               canManageTasks={canCreateTask}
               onColumnChange={handleColumnChange}
-              onCardClick={(task) => navigate(`/tasks/${task._id}`)}
+              onCardClick={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
             />
           ) : view === 'table' ? (
             <TaskTable
-              tasks={filtered}
+              tasks={sorted}
               columns={columns}
               canManageTasks={canCreateTask}
+              onOpen={(task) => setModal({ open: true, task })}
               onEdit={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
               onColumnChange={handleColumnChange}
@@ -250,16 +295,17 @@ export default function TaskBoardPage() {
             />
           ) : view === 'calendar' ? (
             <TaskCalendarView
-              tasks={filtered}
+              tasks={sorted}
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           ) : (
             <TaskTimelineView
-              tasks={filtered}
+              tasks={sorted}
               columns={columns}
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           )}
+          </div>
         </div>
         <Outlet />
       </div>

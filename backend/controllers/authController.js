@@ -85,25 +85,7 @@ const forgotPassword = async (req, res) => {
       return res.status(401).json({ message: 'User account deactivated' });
     }
 
-    // Invalidate existing active PASSWORD_RESET OTPs
-    await prisma.otpCode.updateMany({
-      where: { userId: user.id, purpose: 'PASSWORD_RESET', consumedAt: null },
-      data: { consumedAt: new Date() },
-    });
-
-    // Generate new OTP
-    const code = generateVerificationCode();
-    const codeHash = await bcrypt.hash(code, 10);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    await prisma.otpCode.create({
-      data: {
-        userId: user.id,
-        codeHash,
-        purpose: 'PASSWORD_RESET',
-        expiresAt,
-      },
-    });
+    const code = await otpService.issueCode(user.id, 'PASSWORD_RESET');
 
     // Send email using email service
     try {

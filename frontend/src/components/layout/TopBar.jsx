@@ -15,8 +15,9 @@ import { getInitials } from '../../utils/helpers';
 const BREADCRUMBS = {
   '/dashboard': ['Workspace', 'Overview'],
   '/tasks': ['Workspace', 'Tasks'],
+  '/users': ['Administration', 'Directory'],
   '/projects': ['Workspace', 'Projects'],
-  '/members': ['Workspace', 'Members'],
+  '/analytics': ['Workspace', 'Analytics'],
   '/settings': ['Account', 'Settings'],
   '/chat': ['Workspace', 'Chat'],
 };
@@ -37,6 +38,13 @@ export default function TopBar() {
   const searchRef = useRef(null);
   const searchInputRef = useRef(null);
 
+  const handleNewTask = () => {
+    if (pathname === '/tasks') {
+      window.dispatchEvent(new CustomEvent('task:create'));
+      return;
+    }
+    navigate('/tasks', { state: { createTask: Date.now() } });
+  };
   // Ctrl+K keyboard shortcut to focus search
   useEffect(() => {
     const handler = (e) => {

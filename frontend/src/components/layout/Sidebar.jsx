@@ -2,8 +2,8 @@
  * @file Sidebar.jsx
  * @description Left navigation sidebar for primary app navigation and session controls.
  */
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
 import { getInitials, cn } from '../../utils/helpers';

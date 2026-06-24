@@ -12,7 +12,7 @@ import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
-import api, { normalizeError } from '../services/api';
+import { normalizeError } from '../services/api';
 import { ROLES } from '../utils/constants';
 
 const EMPTY_PROJECT = {
@@ -21,6 +21,15 @@ const EMPTY_PROJECT = {
   templateId: '',
   workspaceId: '',
 };
+
+// Built-in starter workflows. Selecting one prefills the editable column list so
+// the board starts with the workflow the user wants — no DB template required.
+const STARTER_TEMPLATES = [
+  { key: 'Basic Kanban', label: 'Basic Kanban', columns: ['To Do', 'In Progress', 'Done'] },
+  { key: 'Software Development', label: 'Software Development', columns: ['Backlog', 'To Do', 'In Progress', 'In Review', 'QA Testing', 'Done'] },
+  { key: 'Marketing Campaign', label: 'Marketing Campaign', columns: ['Ideas', 'Planning', 'In Progress', 'Review', 'Published'] },
+];
+const DEFAULT_TEMPLATE = STARTER_TEMPLATES[0];
 
 export default function ProjectsPage() {
   const { role } = useAuth();
@@ -43,22 +52,31 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [templates, setTemplates] = useState([]);
+  const [preset, setPreset] = useState(DEFAULT_TEMPLATE.key);
+  const [columns, setColumns] = useState(DEFAULT_TEMPLATE.columns.map((name) => ({ name })));
 
-  React.useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const { data } = await api.get('/templates');
-        setTemplates(data.templates || []);
-      } catch (err) {
-        console.error('Failed to load templates:', err);
-      }
-    };
-    fetchTemplates();
-  }, []);
+  const applyPreset = (key) => {
+    const template = STARTER_TEMPLATES.find((t) => t.key === key) || DEFAULT_TEMPLATE;
+    setPreset(key);
+    setColumns(template.columns.map((name) => ({ name })));
+  };
+
+  const updateColumn = (index, value) =>
+    setColumns((cols) => cols.map((c, i) => (i === index ? { name: value } : c)));
+  const addColumn = () => setColumns((cols) => [...cols, { name: '' }]);
+  const removeColumn = (index) => setColumns((cols) => cols.filter((_, i) => i !== index));
+  const moveColumn = (index, delta) =>
+    setColumns((cols) => {
+      const next = [...cols];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return cols;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
 
   const openCreate = () => {
     setForm(EMPTY_PROJECT);
+    applyPreset(DEFAULT_TEMPLATE.key);
     setErrors({});
     setModal({ open: true, project: null });
   };
@@ -106,10 +124,19 @@ export default function ProjectsPage() {
         });
         success('Project updated');
       } else {
+        const cleanedColumns = columns
+          .map((c) => ({ name: c.name.trim() }))
+          .filter((c) => c.name);
+        if (cleanedColumns.length === 0) {
+          setErrors({ columns: 'Add at least one column' });
+          setSaving(false);
+          return;
+        }
         await createProject({
           name: form.name.trim(),
           description: form.description.trim(),
-          templateId: form.templateId || undefined,
+          templateType: preset,
+          columns: cleanedColumns.map((c, idx) => ({ name: c.name, order: idx })),
           workspaceId: form.workspaceId || activeWorkspaceId,
         });
         success('Project created');
@@ -278,18 +305,58 @@ export default function ProjectsPage() {
                     ))}
                 </SelectField>
               )}
-              <SelectField
-                label="Workflow template"
-                name="templateId"
-                value={form.templateId}
-                onChange={handleChange}
-                selectClassName="h-12 bg-[var(--colors-canvas-softer)] px-4 pr-11"
-              >
-                  <option value="">Start from blank - Basic Kanban</option>
-                  {templates.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+              <div className="space-y-3">
+                <p className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Workflow template</p>
+                <div className="flex flex-wrap gap-2">
+                  {STARTER_TEMPLATES.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => applyPreset(t.key)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition focus-ring ${
+                        preset === t.key
+                          ? 'border-[var(--colors-primary)] bg-[var(--colors-primary-glow)] text-[var(--colors-primary-active)]'
+                          : 'border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)] hover:border-[var(--colors-surface-pressed)]'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
                   ))}
-              </SelectField>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Columns</p>
+                  <span className="text-xs text-[var(--colors-ink-muted)]">Customize before creating</span>
+                </div>
+                {errors.columns && <p className="text-sm text-[var(--colors-priority-urgent)]">{errors.columns}</p>}
+                <div className="space-y-2">
+                  {columns.map((col, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        value={col.name}
+                        onChange={(e) => updateColumn(index, e.target.value)}
+                        placeholder={`Column ${index + 1}`}
+                        className="h-11 flex-1 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)]"
+                      />
+                      <div className="flex items-center">
+                        <button type="button" onClick={() => moveColumn(index, -1)} disabled={index === 0} aria-label="Move up"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] disabled:opacity-30 focus-ring">↑</button>
+                        <button type="button" onClick={() => moveColumn(index, 1)} disabled={index === columns.length - 1} aria-label="Move down"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] disabled:opacity-30 focus-ring">↓</button>
+                        <button type="button" onClick={() => removeColumn(index)} disabled={columns.length === 1} aria-label="Remove column"
+                          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-priority-urgent)] disabled:opacity-30 focus-ring">✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {columns.length < 12 && (
+                  <button type="button" onClick={addColumn} className="text-sm font-semibold text-[var(--colors-primary)] hover:underline focus-ring">
+                    + Add column
+                  </button>
+                )}
+              </div>
             </>
           )}
         </form>

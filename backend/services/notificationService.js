@@ -34,12 +34,9 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
         },
       });
 
-      // Format response to map relatedTask -> relatedTaskId for frontend compatibility
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+      // Emit with relatedTaskId left as the task's UUID string (matching the REST
+      // shape) plus the included relatedTask object for any richer rendering.
+      socketService.emitToUser(userId, 'notification', notification);
     }
 
     // Fetch and format full task details for real-time board updates on the frontend
@@ -124,11 +121,7 @@ const notifyColumnChange = async (taskId, newColumnName, changerName, changerId)
         },
       });
 
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+      socketService.emitToUser(userId, 'notification', notification);
     }
 
     // Emit live task:columnChanged to all involved users (sync active sessions)
@@ -144,9 +137,10 @@ const notifyColumnChange = async (taskId, newColumnName, changerName, changerId)
 };
 
 /**
- * Notify all assigned users and the task creator (except the commenter) when a comment is added.
+ * Notify all assigned users and the task creator (except the commenter) when a
+ * comment is added, plus any project members @mentioned in the comment body.
  */
-const notifyComment = async (taskId, commenterName, commenterId, commentPreview) => {
+const notifyComment = async (taskId, commenterName, commenterId, commentPreview, fullContent) => {
   const targetTaskId = taskId;
   const parsedCommenterId = commenterId || null;
 
@@ -162,26 +156,34 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview)
     });
     const assignedUserIds = assignments.map((a) => a.userId);
 
-    // Notify assigned users + creator
-    const creatorId = task.createdBy;
-    const recipients = new Set(assignedUserIds);
-    recipients.add(creatorId);
-
-    // Remove the user who left the comment
-    if (parsedCommenterId) {
-      recipients.delete(parsedCommenterId);
+    // Resolve @mentions against project members. A mention is "@" immediately
+    // followed by a member's full name (case-insensitive), e.g. "@Emma Wilson".
+    const mentionedIds = new Set();
+    if (fullContent && task.projectId) {
+      const members = await prisma.projectMember.findMany({
+        where: { projectId: task.projectId },
+        include: { user: { select: { id: true, name: true } } },
+      });
+      const haystack = fullContent.toLowerCase();
+      for (const member of members) {
+        const name = member.user?.name;
+        if (name && haystack.includes(`@${name.toLowerCase()}`)) {
+          mentionedIds.add(member.userId);
+        }
+      }
     }
+    mentionedIds.delete(parsedCommenterId);
 
-    const recipientIds = Array.from(recipients);
+    // Notify assigned users + creator (minus the commenter and anyone mentioned,
+    // who get the more specific mention notification instead).
+    const recipients = new Set(assignedUserIds);
+    recipients.add(task.createdBy);
+    if (parsedCommenterId) recipients.delete(parsedCommenterId);
+    mentionedIds.forEach((id) => recipients.delete(id));
 
-    for (const userId of recipientIds) {
+    const emit = async (recipientId, message) => {
       const notification = await prisma.notification.create({
-        data: {
-          recipientId: userId,
-          type: 'Comment',
-          message: `${commenterName} commented on "${task.title}": "${commentPreview}"`,
-          relatedTaskId: targetTaskId,
-        },
+        data: { recipientId, type: 'Comment', message, relatedTaskId: targetTaskId },
         include: {
           relatedTask: {
             select: {
@@ -192,12 +194,14 @@ const notifyComment = async (taskId, commenterName, commenterId, commentPreview)
           },
         },
       });
+      socketService.emitToUser(recipientId, 'notification', notification);
+    };
 
-      const formatted = { ...notification };
-      formatted.relatedTaskId = notification.relatedTask;
-      delete formatted.relatedTask;
-
-      socketService.emitToUser(userId, 'notification', formatted);
+    for (const userId of mentionedIds) {
+      await emit(userId, `${commenterName} mentioned you on "${task.title}": "${commentPreview}"`);
+    }
+    for (const userId of recipients) {
+      await emit(userId, `${commenterName} commented on "${task.title}": "${commentPreview}"`);
     }
   } catch (error) {
     console.error(`Error in notifyComment: ${error.message}`);
@@ -289,11 +293,7 @@ const checkApproachingDeadlines = async () => {
           },
         });
 
-        const formatted = { ...notification };
-        formatted.relatedTaskId = notification.relatedTask;
-        delete formatted.relatedTask;
-
-        socketService.emitToUser(userId, 'notification', formatted);
+        socketService.emitToUser(userId, 'notification', notification);
       }
     }
   } catch (error) {

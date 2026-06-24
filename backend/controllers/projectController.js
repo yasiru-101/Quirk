@@ -30,7 +30,7 @@ const findProject = async (id, res) => {
 // @route  POST /api/projects
 // @access PM | Admin
 const createProject = async (req, res) => {
-  const { name, description, templateType, templateId, workspaceId } = req.body;
+  const { name, description, templateType, templateId, workspaceId, columns: customColumns } = req.body;
   try {
     // Projects belong to a workspace. Platform Admins can create projects anywhere.
     // Otherwise, you must be a member of the workspace AND either be a workspace manager 
@@ -72,7 +72,16 @@ const createProject = async (req, res) => {
 
       let columnsData = [];
 
-      if (templateId) {
+      // Custom columns chosen at creation take precedence over any template.
+      if (customColumns && customColumns.length > 0) {
+        columnsData = customColumns.map((col, idx) => ({
+          projectId: created.id,
+          name: col.name,
+          order: typeof col.order === 'number' ? col.order : idx,
+        }));
+      }
+
+      if (columnsData.length === 0 && templateId) {
         const template = await tx.projectTemplate.findUnique({
           where: { id: templateId },
           include: { columns: { orderBy: { order: 'asc' } } },

@@ -26,12 +26,12 @@ import ResetPasswordPage  from './pages/ResetPasswordPage';
 import DashboardPage      from './pages/DashboardPage';
 import TaskBoardPage      from './pages/TaskBoardPage';
 import TaskDetailPage     from './pages/TaskDetailPage';
-import UserManagementPage from './pages/UserManagementPage';
 import ProjectsPage       from './pages/ProjectsPage';
 import ProjectDetailPage  from './pages/ProjectDetailPage';
-import AnalyticsPage      from './pages/AnalyticsPage';
 import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
+import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
+import AcceptInvitePage    from './pages/AcceptInvitePage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import ChatPage           from './pages/ChatPage';
@@ -57,6 +57,7 @@ export default function App() {
                 <Route path="/register"       element={<RegisterPage />} />
                 <Route path="/verify-email"   element={<VerifyEmailPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/invite/accept"  element={<AcceptInvitePage />} />
                 <Route path="/onboarding"     element={
                   <ProtectedRoute>
                     <OnboardingPage />
@@ -99,16 +100,6 @@ export default function App() {
                     <Route path=":id" element={<TaskDetailPage />} />
                   </Route>
 
-                  {/* Admin only */}
-                  <Route
-                    path="users"
-                    element={
-                      <ProtectedRoute roles={[ROLES.ADMIN]}>
-                        <UserManagementPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
                   {/* Projects */}
                   <Route
                     path="projects"
@@ -127,12 +118,12 @@ export default function App() {
                     }
                   />
 
-                  {/* Analytics */}
+                  {/* Workspace members */}
                   <Route
-                    path="analytics"
+                    path="members"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER]}>
-                        <AnalyticsPage />
+                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                        <WorkspaceMembersPage />
                       </ProtectedRoute>
                     }
                   />

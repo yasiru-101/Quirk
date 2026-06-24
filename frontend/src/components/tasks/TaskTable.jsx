@@ -8,7 +8,7 @@ import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
 import { ClipboardIcon, FlameIcon, ArrowUpIcon, ArrowDownIcon } from '../common/Icons';
 
-export default function TaskTable({ tasks, columns, canManageTasks = false, onEdit, onDelete, onColumnChange, onCreateNew }) {
+export default function TaskTable({ tasks, columns, canManageTasks = false, onOpen, onEdit, onDelete, onColumnChange, onCreateNew }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
@@ -56,7 +56,11 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onEd
             const columnName = getTaskColumnName(task);
 
             return (
-              <tr key={task._id} className="group transition-colors hover:bg-[var(--colors-canvas-soft)]">
+              <tr
+                key={task._id}
+                className="group cursor-pointer transition-colors hover:bg-[var(--colors-canvas-soft)]"
+                onClick={() => onOpen?.(task)}
+              >
                 <td className="min-w-[220px] px-4 py-3 font-medium text-[var(--colors-ink)]">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[var(--colors-primary)]" />
@@ -72,9 +76,10 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onEd
                   <div className="relative w-fit">
                     <select
                       value={task.columnId || ''}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={(e) => onColumnChange?.(task._id, e.target.value)}
                       className={cn(
-                        'cursor-pointer appearance-none rounded-full px-3 py-1 pr-7 text-center text-[12px] font-semibold outline-none transition-colors focus-ring',
+                        'cursor-pointer appearance-none rounded-full px-3 py-1 pr-9 text-center text-[12px] font-semibold outline-none transition-colors focus-ring',
                         getStatusColor(columnName)
                       )}
                     >
@@ -82,7 +87,7 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onEd
                         <option key={column.id} value={column.id}>{column.name}</option>
                       ))}
                     </select>
-                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-50">
+                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-50">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                   </div>
@@ -119,7 +124,7 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onEd
                   <td className="w-[92px] px-4 py-3">
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
-                        onClick={() => onEdit?.(task)}
+                        onClick={(e) => { e.stopPropagation(); onEdit?.(task); }}
                         className="rounded-full p-1.5 text-[var(--colors-ink-faint)] transition-colors hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-ink)] focus-ring"
                         aria-label="Edit task"
                       >
@@ -128,7 +133,7 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onEd
                         </svg>
                       </button>
                       <button
-                        onClick={() => onDelete?.(task._id)}
+                        onClick={(e) => { e.stopPropagation(); onDelete?.(task._id); }}
                         className="rounded-full p-1.5 text-[var(--colors-ink-faint)] transition-colors hover:bg-red-50 hover:text-[var(--colors-priority-urgent)] focus-ring dark:hover:bg-red-950/30"
                         aria-label="Delete task"
                       >

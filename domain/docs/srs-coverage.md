@@ -10,7 +10,7 @@ the current implementation.
 - Workspace onboarding with user-owned workspace creation.
 - Workspace/project hierarchy with object-level authorization.
 - Project creation, edit, archive, delete, membership assignment, and Kanban
-  workflow columns.
+  workflow column creation, renaming, reordering, and deletion.
 - Task creation, assignment, priority, due date, comments, attachments, time logs,
   activity logs, and Kanban/list/calendar/timeline consumption of the task query.
 - Real-time notifications through Socket.IO for assignments, column changes,
@@ -25,7 +25,9 @@ the current implementation.
 - Subtasks and dependencies exist in the data model but need fuller UI workflows.
 - Custom workflow column management exists in the API but needs a polished UI.
 - Product tour/tooltips are not fully implemented.
-- Project analytics exist as basic dashboard surfaces and can be expanded.
+- Analytics now cover completion, overdue risk, due-soon work, assignment
+  coverage, average active task age, project delivery health, and attention
+  lists; deeper trend charts remain future work.
 - Automated functional test coverage should be broadened for onboarding,
   workspace switching, project membership, and task/calendar flows.
 
@@ -37,3 +39,5 @@ the current implementation.
 - Project-specific task navigation filters the shared task query by project.
 - Chat now exposes project rooms for active workspace projects and keeps project
   room participants in sync with project membership.
+- Task rows/cards across dashboard, board, list, calendar, and timeline open the
+  task modal; accessible users can comment while managers retain edit controls.

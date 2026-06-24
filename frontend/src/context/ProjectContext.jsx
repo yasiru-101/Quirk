@@ -118,6 +118,23 @@ export function ProjectProvider({ children }) {
     await refreshProjects();
   };
 
+  const inviteWorkspaceMember = async (payload) => {
+    const { data } = await api.post(`/workspaces/${activeWorkspaceId}/invitations`, payload);
+    return data;
+  };
+
+  const updateWorkspaceMemberRole = async (userId, role) => {
+    await api.patch(`/workspaces/${activeWorkspaceId}/members/${userId}`, { role });
+    await fetchWorkspaceMembers();
+    await refreshWorkspaces();
+  };
+
+  const removeWorkspaceMember = async (userId) => {
+    await api.delete(`/workspaces/${activeWorkspaceId}/members/${userId}`);
+    await fetchWorkspaceMembers();
+    await refreshWorkspaces();
+  };
+
   const addProjectMember = async (projectId, payload) => {
     await api.post(`/projects/${projectId}/members`, payload);
     await refreshProjects();
@@ -147,6 +164,9 @@ export function ProjectProvider({ children }) {
         refreshWorkspaces,
         fetchWorkspaceMembers,
         createWorkspace,
+        inviteWorkspaceMember,
+        updateWorkspaceMemberRole,
+        removeWorkspaceMember,
         createProject,
         updateProject,
         deleteProject,

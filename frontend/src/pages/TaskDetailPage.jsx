@@ -60,7 +60,7 @@ export default function TaskDetailPage() {
     try {
       await taskService.deleteTask(id);
       success('Task deleted');
-      navigate('/tasks');
+      navigate(task?.projectId ? `/tasks?projectId=${task.projectId}` : '/projects');
     } catch {
       toastError('Failed to delete task.');
     }
@@ -72,7 +72,7 @@ export default function TaskDetailPage() {
         <div className="flex h-full flex-col items-center justify-center p-8 text-center">
           <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">Task not found</h2>
           <p className="mt-2 max-w-xs text-sm text-[var(--colors-body)]">The task could not be loaded. It may have been deleted or you may not have access.</p>
-          <Button variant="secondary" size="sm" className="mt-6" onClick={() => navigate('/tasks')}>
+          <Button variant="secondary" size="sm" className="mt-6" onClick={() => navigate(task?.projectId ? `/tasks?projectId=${task.projectId}` : '/projects')}>
             Back to tasks
           </Button>
         </div>
@@ -129,7 +129,7 @@ export default function TaskDetailPage() {
               </button>
             )}
             <button
-              onClick={() => navigate('/tasks')}
+              onClick={() => navigate(task?.projectId ? `/tasks?projectId=${task.projectId}` : '/projects')}
               className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
               title="Close"
               aria-label="Close task details"

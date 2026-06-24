@@ -6,6 +6,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
+import SelectField from '../common/SelectField';
+import CommentsPanel from './CommentsPanel';
 import { TASK_PRIORITY_LIST, ROLES } from '../../utils/constants';
 import { normalizeError } from '../../services/api';
 import { taskService } from '../../services/taskService';
@@ -112,7 +114,9 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
       errs.dueDate = 'Due date cannot be in the past';
     }
     if (!form.projectId) errs.projectId = 'Project is required';
-    else if (!canManageTask) errs.projectId = 'You need Project Manager access to create tasks in this project';
+    else if (!canManageTask) errs.projectId = isEdit
+      ? 'You need Project Manager access to edit this task'
+      : 'You need Project Manager access to create tasks in this project';
     if (!form.columnId) errs.columnId = 'Column is required';
     return errs;
   };
@@ -189,72 +193,42 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
         />
 
         <div className="grid grid-cols-2 gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-[var(--colors-ink)]">Priority</label>
-            <div className="relative">
-              <select
-                name="priority"
-                value={form.priority}
-                onChange={handleChange}
-                disabled={readOnly}
-                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {TASK_PRIORITY_LIST.map((p) => <option key={p}>{p}</option>)}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </div>
-          </div>
+          <SelectField
+            label="Priority"
+            name="priority"
+            value={form.priority}
+            onChange={handleChange}
+            disabled={readOnly}
+          >
+            {TASK_PRIORITY_LIST.map((p) => <option key={p}>{p}</option>)}
+          </SelectField>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-[var(--colors-ink)]">Project</label>
-            <div className="relative">
-              <select
-                name="projectId"
-                value={form.projectId}
-                onChange={handleChange}
-                disabled={readOnly || isEdit}
-                className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">Select project</option>
-                {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </div>
-            {errors.projectId && <p className="text-sm text-red-500">{errors.projectId}</p>}
-          </div>
+          <SelectField
+            label="Project"
+            name="projectId"
+            value={form.projectId}
+            onChange={handleChange}
+            disabled={readOnly || isEdit}
+            error={errors.projectId}
+          >
+            <option value="">Select project</option>
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          </SelectField>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-[var(--colors-ink)]">Column</label>
-          <div className="relative">
-            <select
-              name="columnId"
-              value={form.columnId}
-              onChange={handleChange}
-              disabled={readOnly || !form.projectId}
-              className="w-full h-11 px-3 rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-sm text-[var(--colors-ink)] outline-none focus-ring appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">Select column</option>
-              {columns
-                .filter((column) => column.projectId === form.projectId)
-                .map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--colors-mute)]">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m6 9 6 6 6-6"/>
-              </svg>
-            </div>
-          </div>
-          {errors.columnId && <p className="text-sm text-red-500">{errors.columnId}</p>}
-        </div>
+        <SelectField
+          label="Column"
+          name="columnId"
+          value={form.columnId}
+          onChange={handleChange}
+          disabled={readOnly || !form.projectId}
+          error={errors.columnId}
+        >
+          <option value="">Select column</option>
+          {columns
+            .filter((column) => column.projectId === form.projectId)
+            .map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
+        </SelectField>
 
         <Input
           id="task-duedate"
@@ -305,6 +279,12 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
             })}
           </div>
         </div>
+
+        {isEdit && (
+          <div className="border-t border-[var(--colors-hairline)] pt-6">
+            <CommentsPanel taskId={task._id} />
+          </div>
+        )}
       </form>
     </Modal>
   );

@@ -65,11 +65,11 @@ export default function MessageInput() {
           id="chat-send-button"
           onClick={handleSend}
           disabled={disabled || !content.trim() || sending}
-          className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-[var(--colors-primary)] text-[#0C120E] hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:brightness-100"
+          className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-[var(--colors-primary)] text-[var(--colors-surface-dark)] hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:brightness-100"
           title="Send message"
         >
           {sending ? (
-            <div className="w-3.5 h-3.5 border-2 border-[#0C120E] border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-[var(--colors-surface-dark)] border-t-transparent rounded-full animate-spin" />
           ) : (
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

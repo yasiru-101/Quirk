@@ -17,7 +17,7 @@ const { createEpic, getEpics, deleteEpic } = require('../controllers/epicControl
 const { protect } = require('../middleware/auth');
 const { requireProjectRole } = require('../middleware/membership');
 const validate = require('../middleware/validate');
-const { createProjectSchema, updateProjectSchema, createColumnSchema } = require('../validations/projectSchemas');
+const { createProjectSchema, updateProjectSchema, createColumnSchema, updateColumnSchema } = require('../validations/projectSchemas');
 
 router.use(protect);
 
@@ -110,7 +110,7 @@ router.delete('/:id', requireProjectRole('Project Manager'), deleteProject);
 
 // ─── Kanban Columns ───────────────────────────────────────────────────────────
 router.post('/:id/columns', requireProjectRole('Project Manager'), validate(createColumnSchema), createColumn);
-router.put('/:id/columns/:colId', requireProjectRole('Project Manager'), updateColumn);
+router.put('/:id/columns/:colId', requireProjectRole('Project Manager'), validate(updateColumnSchema), updateColumn);
 router.delete('/:id/columns/:colId', requireProjectRole('Project Manager'), deleteColumn);
 
 // ─── Epics ────────────────────────────────────────────────────────────────────

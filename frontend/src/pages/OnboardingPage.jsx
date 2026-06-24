@@ -15,11 +15,11 @@ import { normalizeError } from '../services/api';
 const STEPS = [
   {
     title: 'Welcome to Quirk',
-    copy: 'Set up a calm workspace for projects, tasks, comments, and workflow columns.',
+    copy: 'Set up your personal workspace for projects, tasks, comments, and workflow columns. You can invite teammates or create more workspaces anytime.',
   },
   {
     title: 'Name your workspace',
-    copy: 'Use the organization or team name people already recognize.',
+    copy: 'This is your own private workspace. Use your name or your team name — you can rename it later.',
   },
   {
     title: 'Choose a workflow',
@@ -32,15 +32,16 @@ const STEPS = [
 ];
 
 export default function OnboardingPage() {
+  const { user, updateUser } = useAuth();
+  const firstName = user?.name?.split(' ')[0] || '';
   const [currentStep, setCurrentStep] = useState(1);
-  const [workspaceName, setWorkspaceName] = useState('');
+  const [workspaceName, setWorkspaceName] = useState(firstName ? `${firstName}'s Workspace` : '');
   const [projectName, setProjectName] = useState('');
   const [templateType, setTemplateType] = useState('Basic Kanban');
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { createWorkspace, createProject, refreshProjects } = useProject();
-  const { updateUser } = useAuth();
   const { error: toastError, success } = useToast();
   const totalSteps = STEPS.length;
   const step = STEPS[currentStep - 1];
@@ -70,7 +71,7 @@ export default function OnboardingPage() {
     try {
       const workspace = await createWorkspace({
         name: workspaceName.trim(),
-        description: 'Primary workspace created during onboarding.',
+        description: 'Personal workspace created during onboarding.',
       });
       await createProject({
         name: projectName.trim() || 'First project',

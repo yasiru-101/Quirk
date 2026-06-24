@@ -64,23 +64,23 @@ export default function TaskFilters({ filters, columns = [], assignees = [], onC
       </SelectField>
 
       <SelectField
-        value={filters.sortBy || 'createdAt_desc'}
+        value={filters.sortBy || 'Newest First'}
         onChange={(e) => onChange('sortBy', e.target.value)}
         className="w-[190px]"
-        selectClassName="h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 text-[var(--colors-body)]"
+        selectClassName="h-12 cursor-pointer rounded-full bg-[var(--colors-canvas-soft)] px-4 pr-11 text-[var(--colors-body)] font-medium text-[var(--colors-primary)]"
         aria-label="Sort by"
       >
-        <option value="createdAt_desc">Newest First</option>
-        <option value="createdAt_asc">Oldest First</option>
-        <option value="dueDate_asc">Due Date (Earliest)</option>
-        <option value="dueDate_desc">Due Date (Latest)</option>
-        <option value="title_asc">Title (A-Z)</option>
-        <option value="title_desc">Title (Z-A)</option>
+        <option value="Newest First">Sort: Newest First</option>
+        <option value="Oldest First">Sort: Oldest First</option>
+        <option value="Highest Priority">Sort: Highest Priority</option>
+        <option value="Lowest Priority">Sort: Lowest Priority</option>
+        <option value="Due Date (Earliest)">Sort: Due Date (Earliest)</option>
+        <option value="Due Date (Latest)">Sort: Due Date (Latest)</option>
       </SelectField>
 
-      {(filters.search || filters.columnId || filters.assigneeId || filters.priority || (filters.sortBy && filters.sortBy !== 'createdAt_desc')) && (
+      {(filters.search || filters.columnId || filters.assigneeId || filters.priority || (filters.sortBy && filters.sortBy !== 'Newest First')) && (
         <button
-          onClick={() => { onChange('search', ''); onChange('columnId', ''); onChange('assigneeId', ''); onChange('priority', ''); onChange('sortBy', 'createdAt_desc'); }}
+          onClick={() => { onChange('search', ''); onChange('columnId', ''); onChange('assigneeId', ''); onChange('priority', ''); onChange('sortBy', 'Newest First'); }}
           className="h-12 rounded-full px-4 text-xs font-semibold text-[var(--colors-mute)] transition hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-body)] focus-ring"
         >
           Clear filters

@@ -199,13 +199,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           ) : (
             <p className="mt-2 truncate text-sm font-semibold text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
           )}
-          <div className="mt-2 flex items-center justify-between text-xs text-white/50">
-            <span>{activeWorkspaceRole ? `Workspace ${activeWorkspaceRole}` : 'Set up a workspace to begin.'}</span>
-            <span className="flex items-center gap-1.5 opacity-60">
-              <span className="h-1 w-1 rounded-full bg-[var(--colors-primary)]"></span>
-              Platform {role}
-            </span>
-          </div>
+          <p className="mt-2 text-xs text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
         </div>
       )}
 

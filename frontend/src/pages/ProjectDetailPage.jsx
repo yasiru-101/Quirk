@@ -256,6 +256,7 @@ export default function ProjectDetailPage() {
               try {
                 await addProjectMember(project.id, memberForm);
                 setMemberForm({ userId: '', role: 'Collaborator' });
+                await refreshProjects();
                 success('Member assigned');
               } catch (err) {
                 const { message } = normalizeError(err);

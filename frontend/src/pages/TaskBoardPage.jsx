@@ -57,7 +57,7 @@ export default function TaskBoardPage() {
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', columnId: '', assigneeId: '', priority: '' });
+  const [filters, setFilters] = useState({ search: '', columnId: '', assigneeId: '', priority: '', sortBy: 'Newest First' });
   const [modal, setModal] = useState({ open: false, task: null });
 
   const columns = useMemo(() => {
@@ -152,47 +152,45 @@ export default function TaskBoardPage() {
     setFilters((f) => ({ ...f, [name]: value }));
   };
 
-  const filtered = useMemo(() => {
-    let result = tasks.filter((task) => {
-      if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      if (filters.columnId === 'Overdue') {
-        if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
-      } else if (filters.columnId && task.columnId !== filters.columnId) {
-        return false;
-      }
-      if (filters.assigneeId && !(task.assignees ?? []).some((assignee) => (assignee._id || assignee.id) === filters.assigneeId)) return false;
-      if (filters.priority && task.priority !== filters.priority) return false;
-      return true;
-    });
-
-    // Apply sorting
-    if (filters.sortBy) {
-      result.sort((a, b) => {
-        switch (filters.sortBy) {
-          case 'createdAt_asc':
-            return new Date(a.createdAt) - new Date(b.createdAt);
-          case 'createdAt_desc':
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          case 'dueDate_asc':
-            if (!a.dueDate) return 1;
-            if (!b.dueDate) return -1;
-            return new Date(a.dueDate) - new Date(b.dueDate);
-          case 'dueDate_desc':
-            if (!a.dueDate) return 1;
-            if (!b.dueDate) return -1;
-            return new Date(b.dueDate) - new Date(a.dueDate);
-          case 'title_asc':
-            return a.title.localeCompare(b.title);
-          case 'title_desc':
-            return b.title.localeCompare(a.title);
-          default:
-            return 0;
-        }
-      });
+  const filtered = useMemo(() => tasks.filter((task) => {
+    if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.columnId === 'Overdue') {
+      if (!isOverdue(task.dueDate) || isTerminalColumn(getTaskColumnName(task))) return false;
+    } else if (filters.columnId && task.columnId !== filters.columnId) {
+      return false;
     }
+    if (filters.assigneeId && !(task.assignees ?? []).some((assignee) => (assignee._id || assignee.id) === filters.assigneeId)) return false;
+    if (filters.priority && task.priority !== filters.priority) return false;
+    return true;
+  }), [tasks, filters]);
 
-    return result;
-  }, [tasks, filters]);
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'Oldest First':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'Highest Priority': {
+          const w = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+          return (w[b.priority] || 0) - (w[a.priority] || 0);
+        }
+        case 'Lowest Priority': {
+          const w = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+          return (w[a.priority] || 0) - (w[b.priority] || 0);
+        }
+        case 'Due Date (Earliest)':
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        case 'Due Date (Latest)':
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(b.dueDate) - new Date(a.dueDate);
+        case 'Newest First':
+        default:
+          return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+  }, [filtered, filters.sortBy]);
 
   const handleColumnChange = async (taskId, columnId) => {
     const column = columnsById.get(columnId);
@@ -277,7 +275,7 @@ export default function TaskBoardPage() {
             </div>
           ) : view === 'kanban' ? (
             <KanbanBoard
-              tasks={filtered}
+              tasks={sorted}
               columns={displayColumns}
               canManageTasks={canCreateTask}
               onColumnChange={handleColumnChange}
@@ -286,7 +284,7 @@ export default function TaskBoardPage() {
             />
           ) : view === 'table' ? (
             <TaskTable
-              tasks={filtered}
+              tasks={sorted}
               columns={columns}
               canManageTasks={canCreateTask}
               onOpen={(task) => setModal({ open: true, task })}
@@ -297,12 +295,12 @@ export default function TaskBoardPage() {
             />
           ) : view === 'calendar' ? (
             <TaskCalendarView
-              tasks={filtered}
+              tasks={sorted}
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           ) : (
             <TaskTimelineView
-              tasks={filtered}
+              tasks={sorted}
               columns={columns}
               onTaskClick={(task) => setModal({ open: true, task })}
             />

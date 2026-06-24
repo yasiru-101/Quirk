@@ -25,11 +25,11 @@ export default function SettingsPage() {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
 
-  // Notification preferences state
+  // Notification preferences state (UI only for now)
   const [notifyPrefs, setNotifyPrefs] = useState({
     assignments: true,
     comments: true,
-    updates: false,
+    updates: true,
   });
 
   const toggleNotifyPref = (key) => {
@@ -140,11 +140,11 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <h2 className="text-[length:var(--typography-title)] font-semibold">Notifications</h2>
               {[
-                { key: 'assignments', title: 'Task assignments', copy: 'Get notified when a task is assigned to you.' },
-                { key: 'comments', title: 'Comments', copy: 'Get notified when someone comments on your tasks.' },
-                { key: 'updates', title: 'Workspace updates', copy: 'Receive summaries for project and membership changes.' },
-              ].map(({ key, title, copy }) => (
-                <div key={title} className="flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
+                { title: 'Task assignments', key: 'assignments', copy: 'Get notified when a task is assigned to you.' },
+                { title: 'Comments', key: 'comments', copy: 'Get notified when someone comments on your tasks.' },
+                { title: 'Workspace updates', key: 'updates', copy: 'Receive summaries for project and membership changes.' },
+              ].map(({ title, key, copy }) => (
+                <div key={key} className="flex items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
                   <div>
                     <p className="font-semibold text-[var(--colors-ink)]">{title}</p>
                     <p className="text-sm text-[var(--colors-body)]">{copy}</p>

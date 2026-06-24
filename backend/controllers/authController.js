@@ -125,47 +125,18 @@ const resetPasswordWithOtp = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired code' });
     }
 
-    // Find valid OTP
-    const otpRecord = await prisma.otpCode.findFirst({
-      where: {
-        userId: user.id,
-        purpose: 'PASSWORD_RESET',
-        consumedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid or expired code' });
-    }
-
-    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
-      await prisma.otpCode.update({ where: { id: otpRecord.id }, data: { consumedAt: new Date() } });
-      return res.status(400).json({ message: 'Too many failed attempts. Request a new code.' });
-    }
-
-    const isMatch = await bcrypt.compare(code, otpRecord.codeHash);
-    if (!isMatch) {
-      await prisma.otpCode.update({
-        where: { id: otpRecord.id },
-        data: { attempts: otpRecord.attempts + 1 },
-      });
-      return res.status(400).json({ message: 'Invalid or expired code' });
+    // Verify OTP using otpService
+    const verification = await otpService.verifyCode(user.id, 'PASSWORD_RESET', code);
+    if (!verification.ok) {
+      return res.status(400).json({ message: verification.reason });
     }
 
     // OTP verified, update password
     const newHash = await bcrypt.hash(newPassword, 10);
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { passwordHash: newHash, mustResetPassword: false },
-      }),
-      prisma.otpCode.update({
-        where: { id: otpRecord.id },
-        data: { consumedAt: new Date() },
-      }),
-    ]);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash, mustResetPassword: false },
+    });
 
     return res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {

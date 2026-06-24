@@ -87,6 +87,12 @@ export default function Sidebar({ collapsed, onToggle }) {
   const [workspaceErrors, setWorkspaceErrors] = useState({});
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
+  const handleSignOut = async () => {
+    if (!window.confirm('Sign out of Quirk?')) return;
+    await logout();
+    navigate('/login');
+  };
+
   const closeWorkspaceModal = () => {
     setWorkspaceModalOpen(false);
     setWorkspaceForm({ name: '', description: '' });
@@ -206,6 +212,45 @@ export default function Sidebar({ collapsed, onToggle }) {
           ))}
         </div>
       </nav>
+
+      {/* Account footer with sign-out */}
+      <div className="mt-auto flex-shrink-0 border-t border-white/10 p-3">
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={handleSignOut}
+            title="Sign out"
+            aria-label="Sign out"
+            className="mx-auto flex h-10 w-10 items-center justify-center rounded-full text-white/60 transition hover:bg-[rgba(255,255,255,0.08)] hover:text-white focus-ring"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        ) : (
+          <div className="rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-2">
+            <div className="flex items-center gap-3 px-2 py-1.5">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[var(--colors-primary)] text-xs font-bold text-black">
+                {getInitials(user?.name)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
+                <p className="truncate text-xs text-white/50">{user?.role}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="mt-1 flex w-full items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold text-white/60 transition hover:bg-[rgba(255,255,255,0.08)] hover:text-white focus-ring"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign out
+            </button>
+          </div>
+        )}
+      </div>
 
       </aside>
 

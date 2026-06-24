@@ -53,6 +53,7 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [menuId, setMenuId] = useState(null);
   const [preset, setPreset] = useState(DEFAULT_TEMPLATE.key);
   const [columns, setColumns] = useState(DEFAULT_TEMPLATE.columns.map((name) => ({ name })));
 
@@ -221,25 +222,56 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => (
-            <article
-              key={project.id}
-              className="feature-card group min-h-56 text-left"
-            >
+            <article key={project.id} className="feature-card group relative min-h-56 text-left">
               <div className="mb-8 flex items-start justify-between">
                 <button
                   type="button"
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                   className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--colors-surface-dark)] text-sm font-bold text-white focus-ring"
-                  aria-label={`Open ${project.name}`}
+                  aria-label={`Open ${project.name} board`}
                 >
                   {(project.name || 'P').slice(0, 1).toUpperCase()}
                 </button>
                 <div className="flex items-center gap-2">
                   <span className="pill">{project.columns?.length || 0} columns</span>
                   {project.status === 'archived' && <span className="pill">Archived</span>}
+                  {canCreate && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setMenuId(menuId === project.id ? null : project.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-canvas-soft)] hover:text-[var(--colors-ink)] focus-ring"
+                        aria-label={`${project.name} settings`}
+                        aria-haspopup="menu"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+                      </button>
+                      {menuId === project.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)} />
+                          <div role="menu" className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-1 shadow-lg">
+                            {[
+                              ['Project settings', () => navigate(`/projects/${project.id}`)],
+                              ['Edit details', () => openEdit(project)],
+                              ...(project.status !== 'archived' ? [['Archive', () => archiveProject(project)]] : []),
+                            ].map(([label, fn]) => (
+                              <button key={label} role="menuitem" onClick={() => { setMenuId(null); fn(); }}
+                                className="block w-full px-4 py-2 text-left text-sm text-[var(--colors-ink)] transition hover:bg-[var(--colors-canvas-soft)]">
+                                {label}
+                              </button>
+                            ))}
+                            <button role="menuitem" onClick={() => { setMenuId(null); removeProject(project); }}
+                              className="block w-full border-t border-[var(--colors-hairline)] px-4 py-2 text-left text-sm text-[var(--colors-priority-urgent)] transition hover:bg-[var(--colors-canvas-soft)]">
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="text-left focus-ring">
+              <button type="button" onClick={() => navigate(`/tasks?projectId=${project.id}`)} className="text-left focus-ring">
                 <h2 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">{project.name}</h2>
               </button>
               <p className="mt-2 line-clamp-2 text-sm text-[var(--colors-body)]">
@@ -253,16 +285,12 @@ export default function ProjectsPage() {
                   <span className="pill bg-[var(--colors-canvas)]">+{project.columns.length - 4} more</span>
                 )}
               </div>
-              {canCreate && (
-                <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--colors-hairline)] pt-4">
-                  <Button variant="utility" size="sm" onClick={() => navigate(`/projects/${project.id}`)}>Open</Button>
-                  <Button variant="utility" size="sm" onClick={() => openEdit(project)}>Edit</Button>
-                  {project.status !== 'archived' && (
-                    <Button variant="utility" size="sm" onClick={() => archiveProject(project)}>Archive</Button>
-                  )}
-                  <Button variant="danger" size="sm" onClick={() => removeProject(project)}>Delete</Button>
-                </div>
-              )}
+              <div className="mt-6 border-t border-[var(--colors-hairline)] pt-4">
+                <button type="button" onClick={() => navigate(`/tasks?projectId=${project.id}`)}
+                  className="text-sm font-semibold text-[var(--colors-primary)] hover:underline focus-ring">
+                  Open board →
+                </button>
+              </div>
             </article>
           ))}
         </div>

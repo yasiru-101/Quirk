@@ -105,15 +105,25 @@ const forgotPassword = async (req, res) => {
       },
     });
 
-    // In production, you would actually send the email via nodemailer or AWS SES.
-    // For development, we log it to console or return it in the response (temporarily).
+    // Send email using email service
+    try {
+      await emailService.sendOtpEmail({
+        to: user.email,
+        purpose: 'PASSWORD_RESET',
+        code: code,
+      });
+    } catch (err) {
+      console.error(`Failed to send password reset email to ${user.email}:`, err.message);
+    }
+
+    // In development, log to console
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEV] Password Reset OTP for ${user.email}: ${code}`);
     }
 
     return res.status(200).json({
       message: 'If an account exists, an OTP will be sent.',
-      devOtp: code,
+      ...(process.env.NODE_ENV === 'development' && { devOtp: code }),
     });
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);

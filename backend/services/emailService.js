@@ -219,13 +219,22 @@ const getOtpTemplate = (heading, intro, code) => `
  */
 const sendOtpEmail = async ({ to, purpose, code }) => {
   const isVerify = purpose === 'EMAIL_VERIFY';
-  const subject = isVerify
-    ? 'Verify your Quirk email address'
-    : 'Your Quirk login verification code';
-  const heading = isVerify ? 'Confirm your email' : 'Your login code';
-  const intro = isVerify
-    ? 'Use the code below to verify your email address and activate your account:'
-    : 'Use the code below to complete your sign-in:';
+  const isReset = purpose === 'PASSWORD_RESET';
+  
+  let subject = 'Your Quirk login verification code';
+  let heading = 'Your login code';
+  let intro = 'Use the code below to complete your sign-in:';
+
+  if (isVerify) {
+    subject = 'Verify your Quirk email address';
+    heading = 'Confirm your email';
+    intro = 'Use the code below to verify your email address and activate your account:';
+  } else if (isReset) {
+    subject = 'Reset your Quirk password';
+    heading = 'Password Reset';
+    intro = 'Use the code below to reset your password:';
+  }
+
   const html = getOtpTemplate(heading, intro, code);
 
   if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {

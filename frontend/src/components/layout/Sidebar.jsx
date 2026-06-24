@@ -140,13 +140,16 @@ function ProjectsNav() {
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, workspaceLoading, createWorkspace } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, workspaceLoading, createWorkspace, inviteWorkspaceMember } = useProject();
   const navigate = useNavigate();
   const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
+  const [workspaceStep, setWorkspaceStep] = useState('details'); // details | invite
   const [workspaceForm, setWorkspaceForm] = useState({ name: '', description: '' });
   const [workspaceErrors, setWorkspaceErrors] = useState({});
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [invitingWs, setInvitingWs] = useState(false);
 
   const handleSignOut = async () => {
     if (!window.confirm('Sign out of Quirk?')) return;
@@ -156,8 +159,15 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   const closeWorkspaceModal = () => {
     setWorkspaceModalOpen(false);
+    setWorkspaceStep('details');
     setWorkspaceForm({ name: '', description: '' });
     setWorkspaceErrors({});
+    setInviteEmails('');
+  };
+
+  const finishWorkspace = () => {
+    closeWorkspaceModal();
+    navigate('/projects');
   };
 
   const handleCreateWorkspace = async (event) => {
@@ -168,18 +178,35 @@ export default function Sidebar({ collapsed, onToggle }) {
     }
     setCreatingWorkspace(true);
     try {
+      // createWorkspace switches the active workspace to the new one, so the
+      // invite step targets it.
       await createWorkspace({
         name: workspaceForm.name.trim(),
         description: workspaceForm.description.trim() || undefined,
       });
-      closeWorkspaceModal();
-      navigate('/projects');
+      setWorkspaceStep('invite');
     } catch (err) {
       const { fieldErrors, message } = normalizeError(err);
       setWorkspaceErrors(fieldErrors || { name: message });
     } finally {
       setCreatingWorkspace(false);
     }
+  };
+
+  const handleSendInvites = async () => {
+    const emails = inviteEmails.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+    if (emails.length === 0) {
+      finishWorkspace();
+      return;
+    }
+    setInvitingWs(true);
+    const results = await Promise.allSettled(
+      emails.map((email) => inviteWorkspaceMember({ email, role: 'Member' }))
+    );
+    setInvitingWs(false);
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed) setWorkspaceErrors({ invite: `${failed} invite(s) could not be sent.` });
+    else finishWorkspace();
   };
 
   return (
@@ -338,36 +365,62 @@ export default function Sidebar({ collapsed, onToggle }) {
       <Modal
         open={workspaceModalOpen}
         onClose={closeWorkspaceModal}
-        title="New workspace"
+        title={workspaceStep === 'details' ? 'New workspace' : 'Invite people'}
         footer={
-          <div className="flex w-full justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={closeWorkspaceModal}>Cancel</Button>
-            <Button type="button" variant="primary" loading={creatingWorkspace} onClick={handleCreateWorkspace}>Create workspace</Button>
-          </div>
+          workspaceStep === 'details' ? (
+            <div className="flex w-full justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={closeWorkspaceModal}>Cancel</Button>
+              <Button type="button" variant="primary" loading={creatingWorkspace} onClick={handleCreateWorkspace}>Create workspace</Button>
+            </div>
+          ) : (
+            <div className="flex w-full justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={finishWorkspace}>Skip for now</Button>
+              <Button type="button" variant="primary" loading={invitingWs} onClick={handleSendInvites}>Send invites</Button>
+            </div>
+          )
         }
       >
-        <form onSubmit={handleCreateWorkspace} className="space-y-5" noValidate>
-          <Input
-            label="Workspace name"
-            name="name"
-            value={workspaceForm.name}
-            onChange={(event) => {
-              setWorkspaceForm((current) => ({ ...current, name: event.target.value }));
-              setWorkspaceErrors((current) => ({ ...current, name: '' }));
-            }}
-            error={workspaceErrors.name}
-            placeholder="Acme Product Team"
-          />
-          <Input
-            label="Description"
-            type="textarea"
-            name="description"
-            value={workspaceForm.description}
-            onChange={(event) => setWorkspaceForm((current) => ({ ...current, description: event.target.value }))}
-            error={workspaceErrors.description}
-            placeholder="What this workspace is responsible for"
-          />
-        </form>
+        {workspaceStep === 'details' ? (
+          <form onSubmit={handleCreateWorkspace} className="space-y-5" noValidate>
+            <Input
+              label="Workspace name"
+              name="name"
+              value={workspaceForm.name}
+              onChange={(event) => {
+                setWorkspaceForm((current) => ({ ...current, name: event.target.value }));
+                setWorkspaceErrors((current) => ({ ...current, name: '' }));
+              }}
+              error={workspaceErrors.name}
+              placeholder="Acme Product Team"
+            />
+            <Input
+              label="Description"
+              type="textarea"
+              name="description"
+              value={workspaceForm.description}
+              onChange={(event) => setWorkspaceForm((current) => ({ ...current, description: event.target.value }))}
+              error={workspaceErrors.description}
+              placeholder="What this workspace is responsible for"
+            />
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-[var(--colors-body)]">
+              Workspace created. Invite teammates by email — registered or not, they'll receive an
+              invitation to join <span className="font-semibold text-[var(--colors-ink)]">{workspaceForm.name.trim()}</span>. You can always do this later from Members.
+            </p>
+            <Input
+              label="Email addresses"
+              type="textarea"
+              name="inviteEmails"
+              value={inviteEmails}
+              onChange={(event) => { setInviteEmails(event.target.value); setWorkspaceErrors({}); }}
+              error={workspaceErrors.invite}
+              placeholder="alex@acme.com, sam@acme.com"
+              hint="Separate multiple emails with commas, spaces, or new lines."
+            />
+          </div>
+        )}
       </Modal>
     </>
   );

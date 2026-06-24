@@ -15,7 +15,7 @@ import { useToast } from '../context/ToastContext';
 import { normalizeError } from '../services/api';
 import { getInitials, getRoleBadgeStyle } from '../utils/helpers';
 
-const INVITE_ROLES = ['Member', 'Admin'];
+const INVITE_ROLES = ['Admin', 'Project Manager', 'Collaborator'];
 
 export default function WorkspaceMembersPage() {
   const { user } = useAuth();
@@ -23,6 +23,7 @@ export default function WorkspaceMembersPage() {
     activeWorkspace,
     activeWorkspaceId,
     workspaceMembers,
+    pendingInvites,
     canManageWorkspace,
     fetchWorkspaceMembers,
     inviteWorkspaceMember,
@@ -32,7 +33,7 @@ export default function WorkspaceMembersPage() {
   const { success, error: toastError } = useToast();
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', role: 'Member' });
+  const [inviteForm, setInviteForm] = useState({ email: '', role: 'Collaborator' });
   const [inviteErrors, setInviteErrors] = useState({});
   const [inviting, setInviting] = useState(false);
 
@@ -43,7 +44,7 @@ export default function WorkspaceMembersPage() {
 
   const closeInvite = () => {
     setInviteOpen(false);
-    setInviteForm({ email: '', role: 'Member' });
+    setInviteForm({ email: '', role: 'Collaborator' });
     setInviteErrors({});
   };
 
@@ -147,7 +148,7 @@ export default function WorkspaceMembersPage() {
                           onChange={(e) => changeRole(member, e.target.value)}
                           className="h-9 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm font-semibold text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
                         >
-                          {['Admin', 'Member'].map((r) => <option key={r} value={r}>{r}</option>)}
+                          {['Admin', 'Project Manager', 'Collaborator'].map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                       ) : (
                         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${getRoleBadgeStyle(member.role)}`}>{member.role}</span>
@@ -161,6 +162,27 @@ export default function WorkspaceMembersPage() {
                   </tr>
                 );
               })}
+              {pendingInvites?.map((invite) => (
+                <tr key={invite.id} className="bg-[rgba(255,255,255,0.02)]">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3 opacity-60">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--colors-surface-pressed)] text-xs font-bold text-[var(--colors-ink-muted)]">
+                        {getInitials(invite.email)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[var(--colors-ink)] italic">Pending Invitation</p>
+                        <p className="text-sm text-[var(--colors-body)]">{invite.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 opacity-60">
+                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${getRoleBadgeStyle(invite.role)}`}>{invite.role}</span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <span className="text-xs font-semibold text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-full">Pending</span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -62,6 +62,22 @@ const resendVerificationSchema = z.object({
   email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+});
+
+const resetPasswordWithOtpSchema = z.object({
+  email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+  code: otpCodeSchema,
+  newPassword: z
+    .string({ required_error: 'New password is required' })
+    .min(8, 'New password must be at least 8 characters long')
+    .regex(
+      passwordRegex,
+      'New password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character'
+    ),
+});
+
 const verifyTwoFactorSchema = z.object({
   pendingToken: z.string({ required_error: 'Login session token is required' }).min(1, 'Login session token is required'),
   code: otpCodeSchema,
@@ -84,4 +100,6 @@ module.exports = {
   verifyTwoFactorSchema,
   confirmTwoFactorSchema,
   disableTwoFactorSchema,
+  forgotPasswordSchema,
+  resetPasswordWithOtpSchema,
 };

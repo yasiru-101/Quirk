@@ -202,6 +202,12 @@ export default function LoginPage() {
                 placeholder="Enter your password"
               />
 
+              <div className="flex items-center justify-between mt-1">
+                <a href="/forgot-password" className="text-sm font-semibold text-[var(--colors-primary-active)] hover:underline ml-auto">
+                  Forgot Password?
+                </a>
+              </div>
+
               <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
                 Sign in
               </Button>

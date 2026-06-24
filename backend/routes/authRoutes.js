@@ -14,6 +14,8 @@ const {
   enableTwoFactor,
   confirmTwoFactor,
   disableTwoFactor,
+  forgotPassword,
+  resetPasswordWithOtp,
 } = require('../controllers/authController');
 
 const { protect } = require('../middleware/auth');
@@ -27,6 +29,8 @@ const {
   verifyTwoFactorSchema,
   confirmTwoFactorSchema,
   disableTwoFactorSchema,
+  forgotPasswordSchema,
+  resetPasswordWithOtpSchema,
 } = require('../validations/authSchemas');
 
 /**
@@ -263,6 +267,24 @@ router.post('/refresh', refresh);
  *         description: Not authorized.
  */
 router.post('/reset-password', protect, validate(resetPasswordSchema), resetPassword);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request OTP for password reset
+ *     tags: [Authentication]
+ */
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+
+/**
+ * @openapi
+ * /auth/reset-password-otp:
+ *   post:
+ *     summary: Reset password using OTP
+ *     tags: [Authentication]
+ */
+router.post('/reset-password-otp', validate(resetPasswordWithOtpSchema), resetPasswordWithOtp);
 
 /**
  * @openapi

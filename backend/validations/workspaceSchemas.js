@@ -5,12 +5,12 @@
 
 const { z } = require('zod');
 
-const WORKSPACE_ROLES = ['Owner', 'Admin', 'Member'];
+const WORKSPACE_ROLES = ['Owner', 'Admin', 'Project Manager', 'Collaborator'];
 // Roles that may be granted via invitation. Ownership is transferred deliberately.
-const ASSIGNABLE_VIA_INVITE = ['Admin', 'Member'];
+const ASSIGNABLE_VIA_INVITE = ['Admin', 'Project Manager', 'Collaborator'];
 // Roles that may be set when updating an existing member. Ownership can only be
-// transferred by the current Owner; Admins may set Member or Admin only.
-const ASSIGNABLE_ROLES = ['Owner', 'Admin', 'Member'];
+// transferred by the current Owner; Admins may set others.
+const ASSIGNABLE_ROLES = ['Owner', 'Admin', 'Project Manager', 'Collaborator'];
 
 const createWorkspaceSchema = z.object({
   name: z
@@ -34,7 +34,7 @@ const inviteMemberSchema = z.object({
   role: z
     .enum(ASSIGNABLE_VIA_INVITE, { invalid_type_error: `Invited role must be one of: ${ASSIGNABLE_VIA_INVITE.join(', ')}` })
     .optional()
-    .default('Member'),
+    .default('Collaborator'),
 });
 
 const acceptInvitationSchema = z.object({

@@ -10,11 +10,12 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 - Show the active workspace everywhere meaningful. Workspace context is the
   tenant boundary, so navigation, project lists, chat, and task creation should
   all make it obvious which workspace is active.
-- Use project context deliberately. Project pages show project-specific tasks;
-  the general task board shows every accessible task and includes the project
-  name where a task belongs to one.
-- Keep controls close to the object they affect. Project edit/archive/delete
-  actions live on project cards; project member assignment lives on the project
+- Use project context deliberately. Tasks are always viewed inside a project —
+  there is no general cross-project task board. Opening a project goes to its
+  task views; the dashboard summarizes work across the active workspace.
+- Keep controls close to the object they affect. Project settings/edit/archive/
+  delete live in a triple-dot menu on each project card; member assignment lives
+  on the project
   detail page; task assignment lives inside the task modal.
 - Avoid generic browser controls. Selects, dropdowns, modals, and lists use the
   same rounded geometry, border color, focus state, and spacing as the rest of
@@ -126,8 +127,9 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 - Assignee choices are scoped to members of the selected project.
 - Due date inputs send date-only values from the UI; the backend accepts and
   normalizes them.
-- General Tasks shows all accessible tasks. Project-specific task links use
-  `/tasks?projectId=<id>` and filter both tasks and workflow columns.
+- Tasks are scoped to a project. Task views use `/tasks?projectId=<id>` and
+  filter both tasks and workflow columns; the bare `/tasks` route redirects to
+  Projects.
 - Calendar and timeline views consume the same task query as the board/list views.
 - Clicking a task in board, list, calendar, timeline, or dashboard views opens the
   task modal. Managers can edit task fields; collaborators with access can read

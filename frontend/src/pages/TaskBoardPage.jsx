@@ -51,14 +51,31 @@ export default function TaskBoardPage() {
   const [filters, setFilters] = useState({ search: '', columnId: '', assigneeId: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
 
-  const columns = useMemo(
-    () => visibleProjects.flatMap((project) => (project.columns ?? []).map((column) => ({
-      ...column,
-      projectId: column.projectId || project.id,
-      projectName: project.name,
-    }))),
-    [visibleProjects]
-  );
+  const columns = useMemo(() => {
+    const map = new Map();
+    visibleProjects.forEach((project) => {
+      (project.columns ?? []).forEach((column) => {
+        map.set(column.id, {
+          ...column,
+          projectId: column.projectId || project.id,
+          projectName: project.name,
+        });
+      });
+    });
+    // Fall back to columns embedded in the tasks themselves so the board and
+    // table still render lanes/options when the projects context hasn't supplied
+    // columns (e.g. no active workspace yet). Tasks carry full column metadata.
+    tasks.forEach((task) => {
+      if (task.column && !map.has(task.column.id)) {
+        map.set(task.column.id, {
+          ...task.column,
+          projectId: task.column.projectId || task.projectId,
+          projectName: task.projectName || task.project?.name,
+        });
+      }
+    });
+    return [...map.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [visibleProjects, tasks]);
 
   const columnsById = useMemo(
     () => new Map(columns.map((column) => [column.id, column])),
@@ -210,8 +227,9 @@ export default function TaskBoardPage() {
       />
 
       <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+        <div className="flex flex-1 flex-col overflow-hidden p-6">
           <TaskFilters filters={filters} columns={columns} assignees={assignees} onChange={handleFilterChange} />
+          <div className="min-h-0 flex-1 overflow-hidden">
           {loading || projectsLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -250,6 +268,7 @@ export default function TaskBoardPage() {
               onTaskClick={(task) => setModal({ open: true, task })}
             />
           )}
+          </div>
         </div>
         <Outlet />
       </div>

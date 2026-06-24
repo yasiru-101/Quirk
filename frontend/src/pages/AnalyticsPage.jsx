@@ -5,7 +5,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { taskService } from '../services/taskService';
-import { getTaskColumnName, isOverdue, isTerminalColumn } from '../utils/helpers';
+import { getTaskColumnName, isOverdue } from '../utils/helpers';
+import { computeTaskMetrics, computeRiskTasks, computeColumnCounts, computeProjectHealth } from '../utils/analytics';
 
 export default function AnalyticsPage() {
   const { activeProject, activeWorkspace, projects } = useProject();
@@ -26,68 +27,10 @@ export default function AnalyticsPage() {
     return tasks.filter((task) => task.projectId === activeProject.id);
   }, [activeProject, tasks]);
 
-  const metrics = useMemo(() => {
-    const total = scopedTasks.length;
-    const completed = scopedTasks.filter((task) => isTerminalColumn(getTaskColumnName(task))).length;
-    const overdue = scopedTasks.filter((task) => isOverdue(task.dueDate) && !isTerminalColumn(getTaskColumnName(task))).length;
-    const assigned = scopedTasks.filter((task) => (task.assignees ?? []).length > 0).length;
-    const dueSoon = scopedTasks.filter((task) => {
-      if (!task.dueDate || isTerminalColumn(getTaskColumnName(task))) return false;
-      const diffDays = (new Date(task.dueDate) - new Date()) / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= 7;
-    }).length;
-    const activeTasks = scopedTasks.filter((task) => !isTerminalColumn(getTaskColumnName(task)));
-    const averageAgeDays = activeTasks.length
-      ? Math.round(activeTasks.reduce((sum, task) => sum + Math.max(0, (new Date() - new Date(task.createdAt)) / (1000 * 60 * 60 * 24)), 0) / activeTasks.length)
-      : 0;
-    return {
-      total,
-      completed,
-      overdue,
-      dueSoon,
-      assigned,
-      completionRate: total ? Math.round((completed / total) * 100) : 0,
-      assignmentRate: total ? Math.round((assigned / total) * 100) : 0,
-      overdueRate: total ? Math.round((overdue / total) * 100) : 0,
-      averageAgeDays,
-    };
-  }, [scopedTasks]);
-
-  const riskTasks = useMemo(() => (
-    scopedTasks
-      .filter((task) => !isTerminalColumn(getTaskColumnName(task)) && (isOverdue(task.dueDate) || !(task.assignees ?? []).length))
-      .sort((a, b) => {
-        const ad = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        const bd = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        return ad - bd;
-      })
-      .slice(0, 5)
-  ), [scopedTasks]);
-
-  const columnCounts = useMemo(() => {
-    const counts = new Map();
-    scopedTasks.forEach((task) => {
-      const name = getTaskColumnName(task);
-      counts.set(name, (counts.get(name) || 0) + 1);
-    });
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  }, [scopedTasks]);
-
-  const projectHealth = useMemo(() => (
-    projects.map((project) => {
-      const projectTasks = tasks.filter((task) => task.projectId === project.id);
-      const total = projectTasks.length;
-      const done = projectTasks.filter((task) => isTerminalColumn(getTaskColumnName(task))).length;
-      const overdue = projectTasks.filter((task) => isOverdue(task.dueDate) && !isTerminalColumn(getTaskColumnName(task))).length;
-      return {
-        ...project,
-        total,
-        done,
-        overdue,
-        completionRate: total ? Math.round((done / total) * 100) : 0,
-      };
-    }).sort((a, b) => b.overdue - a.overdue || b.total - a.total)
-  ), [projects, tasks]);
+  const metrics = useMemo(() => computeTaskMetrics(scopedTasks), [scopedTasks]);
+  const riskTasks = useMemo(() => computeRiskTasks(scopedTasks), [scopedTasks]);
+  const columnCounts = useMemo(() => computeColumnCounts(scopedTasks), [scopedTasks]);
+  const projectHealth = useMemo(() => computeProjectHealth(projects, tasks), [projects, tasks]);
 
   const title = activeProject
     ? `${activeProject.name} Analytics`

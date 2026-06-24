@@ -90,12 +90,17 @@ export default function NotificationPanel({ open, onClose }) {
   // the user straight to that task so they can act on it.
   const handleItemClick = (notification) => {
     if (!notification.isRead) markRead(notification._id);
-    if (notification.relatedTaskId) {
+    
+    // Backend may attach the populated task object to relatedTaskId or relatedTask
+    const taskObj = typeof notification.relatedTaskId === 'object' ? notification.relatedTaskId : notification.relatedTask;
+    const taskId = taskObj?.id || taskObj?._id || notification.relatedTaskId;
+
+    if (taskId) {
       onClose();
-      if (notification.relatedTask?.column?.projectId) {
-        navigate(`/projects/${notification.relatedTask.column.projectId}/tasks/${notification.relatedTaskId}`);
+      if (taskObj?.column?.projectId) {
+        navigate(`/projects/${taskObj.column.projectId}/tasks/${taskId}`);
       } else {
-        navigate(`/tasks/${notification.relatedTaskId}`);
+        navigate(`/tasks?projectId=${taskObj?.projectId || ''}`);
       }
     }
   };

@@ -67,7 +67,7 @@ function ProjectsNav() {
 
   return (
     <div className="pt-2">
-      <div className="group flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
+      <div className="group flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider text-white/45">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -110,7 +110,7 @@ function ProjectsNav() {
                   key={project.id}
                   to={`/tasks?projectId=${project.id}`}
                   className={cn(
-                    'group flex h-9 items-center gap-2.5 rounded-full px-3 text-sm font-medium transition focus-ring',
+                    'group flex h-10 items-center gap-2.5 rounded-full px-3 text-[15px] font-medium transition focus-ring',
                     isActive
                       ? 'bg-[rgba(114,230,149,0.16)] text-[var(--colors-primary)]'
                       : 'text-white/55 hover:bg-[rgba(255,255,255,0.08)] hover:text-white'
@@ -161,7 +161,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             </button>
           </>
         ) : (
-          <img src="/full logo  - white.webp" alt="Quirk" className="h-9 w-auto object-contain" draggable={false} />
+          <img src="/full logo  - white.webp" alt="Quirk" className="h-14 w-auto object-contain" draggable={false} />
         )}
         {!collapsed && (
           <button

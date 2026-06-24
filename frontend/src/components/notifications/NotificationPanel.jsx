@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/notificationService';
 import { useSocket } from '../../context/SocketContext';
 import { getNotificationMeta, formatRelativeTime } from '../../utils/helpers';
@@ -23,6 +24,7 @@ export default function NotificationPanel({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
   const { on } = useSocket();
+  const navigate = useNavigate();
 
   // Load notifications
   useEffect(() => {
@@ -82,6 +84,16 @@ export default function NotificationPanel({ open, onClose }) {
   const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     try { await notificationService.markAllRead(); } catch {}
+  };
+
+  // Clicking a notification marks it read and, when it references a task, takes
+  // the user straight to that task so they can act on it.
+  const handleItemClick = (notification) => {
+    if (!notification.isRead) markRead(notification._id);
+    if (notification.relatedTaskId) {
+      onClose();
+      navigate(`/tasks/${notification.relatedTaskId}`);
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -154,7 +166,7 @@ export default function NotificationPanel({ open, onClose }) {
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--border-light)' }}>
             {notifications.map((n) => (
-              <NotificationItem key={n._id} notification={n} onMarkRead={markRead} />
+              <NotificationItem key={n._id} notification={n} onClick={handleItemClick} />
             ))}
           </ul>
         )}
@@ -165,8 +177,8 @@ export default function NotificationPanel({ open, onClose }) {
 }
 
 // ── Single Notification Item ──────────────────────────────────────────────────
-function NotificationItem({ notification, onMarkRead }) {
-  const { _id, type, message, isRead, createdAt } = notification;
+function NotificationItem({ notification, onClick }) {
+  const { type, message, isRead, createdAt, relatedTaskId } = notification;
   const meta = getNotificationMeta(type);
 
   const renderIcon = () => {
@@ -184,7 +196,7 @@ function NotificationItem({ notification, onMarkRead }) {
     <li
       className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer
         ${isRead ? 'opacity-60 hover:opacity-80' : 'hover:bg-hairline/40'}`}
-      onClick={() => !isRead && onMarkRead(_id)}
+      onClick={() => onClick(notification)}
     >
       {/* Icon */}
       <div
@@ -196,7 +208,12 @@ function NotificationItem({ notification, onMarkRead }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-xs text-ink leading-relaxed">{message}</p>
-        <p className="text-[10px] text-mute mt-1">{formatRelativeTime(createdAt)}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-[10px] text-mute">{formatRelativeTime(createdAt)}</p>
+          {relatedTaskId && (
+            <span className="text-[10px] font-semibold text-[var(--colors-primary)]">View task →</span>
+          )}
+        </div>
       </div>
 
       {/* Unread dot */}

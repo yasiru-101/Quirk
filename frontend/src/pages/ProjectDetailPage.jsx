@@ -170,35 +170,37 @@ export default function ProjectDetailPage() {
           <h2 className="text-[length:var(--typography-title)] font-semibold">Workflow</h2>
           <span className="pill">Project board</span>
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="flex flex-col gap-3">
           {(project.columns ?? []).map((column, index) => (
-            <div key={column.id} className="rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
+            <div key={column.id} className="flex flex-col md:flex-row md:items-center gap-4 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
               {isPM ? (
-                <div className="space-y-3">
-                  <Input
-                    value={columnDrafts[column.id] ?? column.name}
-                    onChange={(event) => setColumnDrafts((current) => ({ ...current, [column.id]: event.target.value }))}
-                    onBlur={() => saveColumn(column)}
-                    className="h-10 text-sm"
-                    aria-label={`Rename ${column.name}`}
-                  />
-                  <div className="flex items-center gap-1 mt-1">
-                    <button type="button" disabled={index === 0 || savingColumn === column.id} onClick={() => moveColumn(column, -1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move left">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      value={columnDrafts[column.id] ?? column.name}
+                      onChange={(event) => setColumnDrafts((current) => ({ ...current, [column.id]: event.target.value }))}
+                      onBlur={() => saveColumn(column)}
+                      className="h-10 text-sm w-full"
+                      aria-label={`Rename ${column.name}`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button type="button" disabled={index === 0 || savingColumn === column.id} onClick={() => moveColumn(column, -1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move up">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
                     </button>
-                    <button type="button" disabled={index === (project.columns?.length ?? 1) - 1 || savingColumn === column.id} onClick={() => moveColumn(column, 1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move right">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    <button type="button" disabled={index === (project.columns?.length ?? 1) - 1 || savingColumn === column.id} onClick={() => moveColumn(column, 1)} className="p-1.5 text-[var(--colors-mute)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-hover)] rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Move down">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                     </button>
-                    <div className="flex-1" />
+                    <div className="w-px h-4 bg-[var(--colors-hairline)] mx-1" />
                     <button type="button" disabled={(project.columns?.length ?? 0) <= 1 || savingColumn === column.id} onClick={() => deleteColumn(column)} className="p-1.5 text-[var(--colors-priority-urgent)] opacity-70 hover:opacity-100 hover:bg-[var(--colors-priority-urgent)]/10 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Delete column">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
                 </div>
               ) : (
-                <p className="font-semibold text-[var(--colors-ink)]">{column.name}</p>
+                <p className="font-semibold text-[var(--colors-ink)] flex-1">{column.name}</p>
               )}
-              <p className="mt-2 text-sm text-[var(--colors-body)]">Tasks in this column inherit this workflow state.</p>
+              <p className="text-sm text-[var(--colors-body)] hidden md:block">Tasks in this column inherit this workflow state.</p>
             </div>
           ))}
         </div>

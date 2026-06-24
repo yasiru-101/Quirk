@@ -17,7 +17,7 @@ import { ROLES } from '../utils/constants';
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role, user } = useAuth();
+  const { role, user: currentUser } = useAuth();
   const { success, error: toastError } = useToast();
   const { projects, canManageWorkspace } = useProject();
 
@@ -98,7 +98,7 @@ export default function TaskDetailPage() {
   const taskColumns = columns.filter((column) => column.projectId === task.projectId);
   const columnName = getTaskColumnName(task);
   const taskProject = projects.find((project) => project.id === task.projectId);
-  const projectMembership = taskProject?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id);
+  const projectMembership = taskProject?.members?.find((member) => member.userId === currentUser?.id || member.user?.id === currentUser?.id);
   const canManageTask = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
 
   return (
@@ -184,7 +184,9 @@ export default function TaskDetailPage() {
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--colors-surface-dark)] text-[10px] font-bold text-white">
                     {getInitials(user.name)}
                   </div>
-                  <span className="text-sm font-semibold text-[var(--colors-ink)]">{user.name}</span>
+                  <span className="text-sm font-semibold text-[var(--colors-ink)]">
+                    {user.name} {user._id === currentUser?.id || user.id === currentUser?.id ? '(Me)' : ''}
+                  </span>
                 </div>
               ))}
             </div>

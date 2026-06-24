@@ -76,8 +76,7 @@ function ToastItem({ toast, dismiss }) {
   return (
     <div
       role="alert"
-      className="pointer-events-auto card flex items-start gap-3 p-4 shadow-lg slide-up overflow-hidden relative"
-      style={{ background: 'var(--bg-elevated)' }}
+      className="pointer-events-auto flex items-start gap-3 p-4 shadow-xl slide-up overflow-hidden relative rounded-xl border border-[var(--colors-hairline)] bg-[var(--colors-surface-elevated)]"
     >
       {/* accent bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${s.bar} rounded-l`} />
@@ -92,17 +91,17 @@ function ToastItem({ toast, dismiss }) {
       {/* text */}
       <div className="flex-1 min-w-0">
         {title && (
-          <p className="text-sm font-semibold text-ink leading-snug">{title}</p>
+          <p className="text-sm font-semibold text-[var(--colors-ink)] leading-snug">{title}</p>
         )}
         {message && (
-          <p className="text-xs text-body mt-0.5 leading-relaxed">{message}</p>
+          <p className="text-xs text-[var(--colors-body)] mt-0.5 leading-relaxed">{message}</p>
         )}
       </div>
 
       {/* dismiss */}
       <button
         onClick={() => dismiss(id)}
-        className="flex-shrink-0 text-mute hover:text-body transition-colors focus-ring rounded"
+        className="flex-shrink-0 text-[var(--colors-mute)] hover:text-[var(--colors-body)] transition-colors focus-ring rounded p-0.5 hover:bg-[var(--colors-surface-hover)]"
         aria-label="Dismiss"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

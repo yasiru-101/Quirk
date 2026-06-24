@@ -59,7 +59,7 @@ function NewDmModal({ onClose, workspaceId }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-[#111813] border border-[rgba(255,255,255,0.08)] rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+      <div className="bg-[var(--colors-surface-dark-elevated)] border border-white/10 rounded-2xl w-full max-w-md mx-4 shadow-2xl">
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[rgba(255,255,255,0.06)]">
           <h2 className="text-white font-semibold text-base">New Direct Message</h2>
           <button
@@ -224,7 +224,7 @@ export default function ChatPage() {
   const [showDmModal, setShowDmModal] = useState(false);
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#0C120E]">
+    <div className="flex h-full overflow-hidden bg-[var(--colors-surface-dark)]">
       {/* ── Left panel: conversation list ─────────────────────────────── */}
       <aside
         className={`flex flex-col border-r border-[rgba(255,255,255,0.06)] flex-shrink-0 transition-all duration-200 ${

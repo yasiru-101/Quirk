@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProject } from '../context/ProjectContext';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
+import TaskModal from '../components/tasks/TaskModal';
 import { ROLES } from '../utils/constants';
 import { formatDate, getTaskColumnName, isOverdue, isTerminalColumn, cn } from '../utils/helpers';
 
@@ -24,10 +27,22 @@ function StatCard({ label, value, loading }) {
 
 export default function DashboardPage() {
   const { user, role } = useAuth();
+  const { projects } = useProject();
+  const navigate = useNavigate();
   const [stats, setStats] = useState([]);
   const [recentTasks, setRecentTasks] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [taskModal, setTaskModal] = useState({ open: false, task: null });
+
+  const columns = React.useMemo(
+    () => projects.flatMap((project) => (project.columns ?? []).map((column) => ({
+      ...column,
+      projectId: column.projectId || project.id,
+      projectName: project.name,
+    }))),
+    [projects]
+  );
 
   useEffect(() => {
     setLoadingStats(true);
@@ -130,11 +145,11 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Quick Actions:</p>
           {role === ROLES.PROJECT_MANAGER ? (
             <>
-              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">+ New Task</button>
-              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">+ New Project</button>
+              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/tasks', { state: { createTask: Date.now() } })}>+ New Task</button>
+              <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>+ New Project</button>
             </>
           ) : (
-            <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline">My Tasks</button>
+            <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/tasks')}>My Tasks</button>
           )}
         </div>
       ) : (
@@ -175,7 +190,11 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-[var(--colors-hairline)]">
                   {recentTasks.map((t) => (
-                    <tr key={t.id} className="hover:bg-[var(--colors-canvas-soft)] transition-colors">
+                    <tr
+                      key={t.id}
+                      onClick={() => setTaskModal({ open: true, task: t })}
+                      className="cursor-pointer transition-colors hover:bg-[var(--colors-canvas-soft)]"
+                    >
                       <td className="py-4 px-2 text-[length:var(--typography-body-md)] font-medium text-[var(--colors-ink)]">{t.title}</td>
                       <td className="py-4 px-2">
                         <span className="bg-[var(--colors-surface-pressed)] text-[var(--colors-ink)] px-3 py-1 text-[length:var(--typography-body-sm)] uppercase tracking-wider rounded-[var(--radius-pill)] whitespace-nowrap">
@@ -208,6 +227,16 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+      <TaskModal
+        open={taskModal.open}
+        onClose={() => setTaskModal({ open: false, task: null })}
+        task={taskModal.task}
+        projects={projects}
+        columns={columns}
+        onSaved={(savedTask) => {
+          setRecentTasks((current) => current.map((task) => (task._id === savedTask._id ? savedTask : task)));
+        }}
+      />
     </div>
   );
 }

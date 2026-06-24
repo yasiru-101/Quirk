@@ -48,7 +48,7 @@ export default function TaskBoardPage() {
   const [view, setView] = useState('kanban');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', columnId: '', priority: '' });
+  const [filters, setFilters] = useState({ search: '', columnId: '', assigneeId: '', priority: '' });
   const [modal, setModal] = useState({ open: false, task: null });
 
   const columns = useMemo(
@@ -64,6 +64,24 @@ export default function TaskBoardPage() {
     () => new Map(columns.map((column) => [column.id, column])),
     [columns]
   );
+
+  const assignees = useMemo(() => {
+    const users = new Map();
+    visibleProjects.forEach((project) => {
+      (project.members ?? []).forEach((member) => {
+        const memberUser = member.user;
+        const id = member.userId || memberUser?._id || memberUser?.id;
+        if (id && memberUser) users.set(id, { ...memberUser, id });
+      });
+    });
+    tasks.forEach((task) => {
+      (task.assignees ?? []).forEach((memberUser) => {
+        const id = memberUser._id || memberUser.id;
+        if (id) users.set(id, { ...memberUser, id });
+      });
+    });
+    return [...users.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [tasks, visibleProjects]);
 
   useEffect(() => {
     setLoading(true);
@@ -115,6 +133,7 @@ export default function TaskBoardPage() {
     } else if (filters.columnId && task.columnId !== filters.columnId) {
       return false;
     }
+    if (filters.assigneeId && !(task.assignees ?? []).some((assignee) => (assignee._id || assignee.id) === filters.assigneeId)) return false;
     if (filters.priority && task.priority !== filters.priority) return false;
     return true;
   });
@@ -192,7 +211,7 @@ export default function TaskBoardPage() {
 
       <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-          <TaskFilters filters={filters} columns={columns} onChange={handleFilterChange} />
+          <TaskFilters filters={filters} columns={columns} assignees={assignees} onChange={handleFilterChange} />
           {loading || projectsLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -205,7 +224,7 @@ export default function TaskBoardPage() {
               columns={displayColumns}
               canManageTasks={canCreateTask}
               onColumnChange={handleColumnChange}
-              onCardClick={(task) => navigate(`/tasks/${task._id}`)}
+              onCardClick={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
             />
           ) : view === 'table' ? (
@@ -213,6 +232,7 @@ export default function TaskBoardPage() {
               tasks={filtered}
               columns={columns}
               canManageTasks={canCreateTask}
+              onOpen={(task) => setModal({ open: true, task })}
               onEdit={(task) => setModal({ open: true, task })}
               onDelete={handleDelete}
               onColumnChange={handleColumnChange}

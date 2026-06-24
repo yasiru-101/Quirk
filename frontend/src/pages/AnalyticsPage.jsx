@@ -8,7 +8,7 @@ import { taskService } from '../services/taskService';
 import { getTaskColumnName, isOverdue, isTerminalColumn } from '../utils/helpers';
 
 export default function AnalyticsPage() {
-  const { activeProject, projects } = useProject();
+  const { activeProject, activeWorkspace, projects } = useProject();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,15 +31,38 @@ export default function AnalyticsPage() {
     const completed = scopedTasks.filter((task) => isTerminalColumn(getTaskColumnName(task))).length;
     const overdue = scopedTasks.filter((task) => isOverdue(task.dueDate) && !isTerminalColumn(getTaskColumnName(task))).length;
     const assigned = scopedTasks.filter((task) => (task.assignees ?? []).length > 0).length;
+    const dueSoon = scopedTasks.filter((task) => {
+      if (!task.dueDate || isTerminalColumn(getTaskColumnName(task))) return false;
+      const diffDays = (new Date(task.dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+      return diffDays >= 0 && diffDays <= 7;
+    }).length;
+    const activeTasks = scopedTasks.filter((task) => !isTerminalColumn(getTaskColumnName(task)));
+    const averageAgeDays = activeTasks.length
+      ? Math.round(activeTasks.reduce((sum, task) => sum + Math.max(0, (new Date() - new Date(task.createdAt)) / (1000 * 60 * 60 * 24)), 0) / activeTasks.length)
+      : 0;
     return {
       total,
       completed,
       overdue,
+      dueSoon,
       assigned,
       completionRate: total ? Math.round((completed / total) * 100) : 0,
       assignmentRate: total ? Math.round((assigned / total) * 100) : 0,
+      overdueRate: total ? Math.round((overdue / total) * 100) : 0,
+      averageAgeDays,
     };
   }, [scopedTasks]);
+
+  const riskTasks = useMemo(() => (
+    scopedTasks
+      .filter((task) => !isTerminalColumn(getTaskColumnName(task)) && (isOverdue(task.dueDate) || !(task.assignees ?? []).length))
+      .sort((a, b) => {
+        const ad = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+        const bd = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+        return ad - bd;
+      })
+      .slice(0, 5)
+  ), [scopedTasks]);
 
   const columnCounts = useMemo(() => {
     const counts = new Map();
@@ -50,7 +73,25 @@ export default function AnalyticsPage() {
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [scopedTasks]);
 
-  const title = activeProject ? `${activeProject.name} Analytics` : 'Global Analytics';
+  const projectHealth = useMemo(() => (
+    projects.map((project) => {
+      const projectTasks = tasks.filter((task) => task.projectId === project.id);
+      const total = projectTasks.length;
+      const done = projectTasks.filter((task) => isTerminalColumn(getTaskColumnName(task))).length;
+      const overdue = projectTasks.filter((task) => isOverdue(task.dueDate) && !isTerminalColumn(getTaskColumnName(task))).length;
+      return {
+        ...project,
+        total,
+        done,
+        overdue,
+        completionRate: total ? Math.round((done / total) * 100) : 0,
+      };
+    }).sort((a, b) => b.overdue - a.overdue || b.total - a.total)
+  ), [projects, tasks]);
+
+  const title = activeProject
+    ? `${activeProject.name} Analytics`
+    : `${activeWorkspace?.name || 'Workspace'} Analytics`;
 
   return (
     <div className="page-shell animate-in space-y-8">
@@ -60,7 +101,7 @@ export default function AnalyticsPage() {
           <div>
             <h1 className="text-[length:var(--typography-heading-1)] font-normal text-white">{title}</h1>
             <p className="mt-3 max-w-2xl text-white/62">
-              A compact readout of throughput, completion, assignment, and overdue risk across your current workspace.
+              Business signals for delivery health, ownership coverage, and schedule risk across the current workspace.
             </p>
           </div>
           <div className="rounded-[var(--radius-xl)] border border-white/10 bg-white/5 p-5">
@@ -76,9 +117,11 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
           ['Total tasks', metrics.total],
-          ['Completed', metrics.completed],
-          ['Overdue', metrics.overdue],
+          ['Completion', `${metrics.completionRate}%`],
+          ['Overdue risk', `${metrics.overdueRate}%`],
+          ['Due in 7 days', metrics.dueSoon],
           ['Assigned', `${metrics.assignmentRate}%`],
+          ['Avg active age', `${metrics.averageAgeDays}d`],
         ].map(([label, value]) => (
           <div key={label} className="feature-card">
             <p className="mb-3 text-[length:var(--typography-caption)] font-semibold text-[color:var(--colors-ink-muted)]">{label}</p>
@@ -109,20 +152,44 @@ export default function AnalyticsPage() {
         </section>
 
         <section className="feature-card min-h-[320px]">
-          <h2 className="mb-6 text-[length:var(--typography-title)] font-semibold">Project coverage</h2>
+          <h2 className="mb-6 text-[length:var(--typography-title)] font-semibold">Project delivery health</h2>
           <div className="space-y-3">
-            {projects.slice(0, 6).map((project) => (
+            {projectHealth.slice(0, 6).map((project) => (
               <div key={project.id} className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-4">
                 <div>
                   <p className="font-semibold text-[var(--colors-ink)]">{project.name}</p>
-                  <p className="text-sm text-[var(--colors-body)]">{project.columns?.length || 0} workflow columns</p>
+                  <p className="text-sm text-[var(--colors-body)]">{project.done}/{project.total} completed</p>
                 </div>
-                <span className="pill">Active</span>
+                <span className={project.overdue ? 'pill text-[var(--colors-priority-urgent)]' : 'pill'}>
+                  {project.overdue ? `${project.overdue} overdue` : `${project.completionRate}% done`}
+                </span>
               </div>
             ))}
           </div>
         </section>
       </div>
+
+      <section className="feature-card">
+        <h2 className="mb-5 text-[length:var(--typography-title)] font-semibold">Needs attention</h2>
+        {riskTasks.length ? (
+          <div className="divide-y divide-[var(--colors-hairline)]">
+            {riskTasks.map((task) => (
+              <div key={task._id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="font-semibold text-[var(--colors-ink)]">{task.title}</p>
+                  <p className="text-sm text-[var(--colors-body)]">{task.project?.name || task.projectName || 'No project'} - {getTaskColumnName(task)}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {isOverdue(task.dueDate) && <span className="pill text-[var(--colors-priority-urgent)]">Overdue</span>}
+                  {!(task.assignees ?? []).length && <span className="pill">Unassigned</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--colors-body)]">No overdue or unassigned active tasks in this scope.</p>
+        )}
+      </section>
     </div>
   );
 }

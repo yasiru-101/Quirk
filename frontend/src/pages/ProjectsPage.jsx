@@ -8,10 +8,11 @@ import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import Input from '../components/common/Input';
+import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
-import { normalizeError } from '../services/api';
+import api, { normalizeError } from '../services/api';
 import { ROLES } from '../utils/constants';
 
 const EMPTY_PROJECT = {
@@ -210,6 +211,9 @@ export default function ProjectsPage() {
                 {(project.columns ?? []).slice(0, 4).map((column) => (
                   <span key={column.id} className="pill bg-[var(--colors-canvas)]">{column.name}</span>
                 ))}
+                {(project.columns ?? []).length > 4 && (
+                  <span className="pill bg-[var(--colors-canvas)]">+{project.columns.length - 4} more</span>
+                )}
               </div>
               {canCreate && (
                 <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--colors-hairline)] pt-4">
@@ -260,36 +264,32 @@ export default function ProjectsPage() {
           {!modal.project && (
             <>
               {role === ROLES.ADMIN && !activeWorkspaceId && workspaces.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Workspace</label>
-                  <select
+                <SelectField
+                  label="Workspace"
                     name="workspaceId"
                     value={form.workspaceId}
                     onChange={handleChange}
-                    className={`h-12 rounded-[var(--radius-md)] border bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:bg-[var(--colors-canvas)] ${errors.workspaceId ? 'border-red-500 focus:border-red-500' : 'border-[var(--colors-hairline)] focus:border-[var(--colors-primary)]'}`}
+                  error={errors.workspaceId}
+                  selectClassName="h-12 bg-[var(--colors-canvas-softer)] px-4 pr-11"
                   >
                     <option value="">Select workspace...</option>
                     {workspaces.map(w => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
-                  </select>
-                  {errors.workspaceId && <span className="ml-1 text-xs text-red-500">{errors.workspaceId}</span>}
-                </div>
+                </SelectField>
               )}
-              <div className="flex flex-col gap-2">
-                <label className="ml-1 text-sm font-semibold text-[var(--colors-ink)]">Template</label>
-                <select
-                  name="templateId"
-                  value={form.templateId}
-                  onChange={handleChange}
-                  className="h-12 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-4 text-sm font-semibold text-[var(--colors-ink)] outline-none transition focus:border-[var(--colors-primary)] focus:bg-[var(--colors-canvas)]"
-                >
-                  <option value="">Select a template...</option>
+              <SelectField
+                label="Workflow template"
+                name="templateId"
+                value={form.templateId}
+                onChange={handleChange}
+                selectClassName="h-12 bg-[var(--colors-canvas-softer)] px-4 pr-11"
+              >
+                  <option value="">Start from blank - Basic Kanban</option>
                   {templates.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
-                </select>
-              </div>
+              </SelectField>
             </>
           )}
         </form>

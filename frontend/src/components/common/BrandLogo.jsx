@@ -29,13 +29,13 @@ export default function BrandLogo({ size = 'md', showText = true, variant, class
   const iconSrc = '/logo icon.webp';
 
   return (
-    <div className={cn('flex items-center overflow-hidden', heightClass, className)}>
+    <div className={cn('flex items-center overflow-hidden', heightClass, showText ? 'w-[245px]' : 'w-auto', className)}>
       <img
         src={showText ? fullLogoSrc : iconSrc}
         alt="Quirk logo"
         className={cn(
-          "h-full w-auto object-contain object-left transition-transform",
-          showText ? "scale-[1.7] origin-left" : ""
+          'h-full max-w-none object-contain object-left transition-transform',
+          showText ? 'origin-left scale-[1.35]' : 'w-auto'
         )}
         draggable={false}
       />

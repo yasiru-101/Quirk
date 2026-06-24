@@ -38,13 +38,7 @@ export default function TopBar() {
   const searchRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  const handleNewTask = () => {
-    if (pathname === '/tasks') {
-      window.dispatchEvent(new CustomEvent('task:create'));
-      return;
-    }
-    navigate('/tasks', { state: { createTask: Date.now() } });
-  };
+
   // Ctrl+K keyboard shortcut to focus search
   useEffect(() => {
     const handler = (e) => {

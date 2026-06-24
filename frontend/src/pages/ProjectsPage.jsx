@@ -3,7 +3,7 @@
  * @description Project overview using workspace project data.
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
@@ -47,6 +47,7 @@ export default function ProjectsPage() {
   } = useProject();
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const canCreate = role === ROLES.ADMIN || canManageWorkspace;
   const [modal, setModal] = useState({ open: false, project: null });
   const [form, setForm] = useState(EMPTY_PROJECT);
@@ -96,6 +97,16 @@ export default function ProjectsPage() {
     setModal({ open: false, project: null });
     setErrors({});
   };
+
+  // Open the create modal when navigated here with a create intent (e.g. from
+  // the sidebar projects tree's "+ New project" action).
+  React.useEffect(() => {
+    if (location.state?.createProject && canCreate) {
+      openCreate();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.createProject]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

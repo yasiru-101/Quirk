@@ -12,7 +12,7 @@ export default function UserManagementPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   return (
-    <div className="space-y-6 animate-in pb-10">
+    <div className="page-shell animate-in space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--colors-hairline)] pb-6">
         <div>

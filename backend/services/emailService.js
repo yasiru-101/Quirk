@@ -235,8 +235,51 @@ const sendOtpEmail = async ({ to, purpose, code }) => {
   return await sendEtherealEmail({ to, subject, html });
 };
 
+/**
+ * Generic transactional template with a single call-to-action button.
+ */
+const getActionTemplate = (heading, body, actionUrl, actionLabel) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; }
+    .header { font-size: 20px; font-weight: bold; color: #0f172a; margin-bottom: 16px; }
+    .content { font-size: 15px; color: #475569; }
+    .btn { display: inline-block; margin: 24px 0; padding: 12px 22px; background-color: #16a34a; color: #ffffff !important; text-decoration: none; border-radius: 999px; font-weight: 600; }
+    .footer { margin-top: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">${heading}</div>
+    <div class="content">
+      <p>${body}</p>
+      ${actionUrl ? `<a class="btn" href="${actionUrl}">${actionLabel || 'Open in Quirk'}</a>` : ''}
+    </div>
+    <div class="footer">You are receiving this because of activity on a Quirk task. Manage notifications in your account settings.</div>
+  </div>
+</body>
+</html>
+`;
+
+/**
+ * Sends a task-activity notification email (assignment, mention, deadline) using
+ * Azure ACS if configured, otherwise Ethereal.
+ */
+const sendTaskNotificationEmail = async ({ to, name, subject, heading, body, actionUrl }) => {
+  const html = getActionTemplate(heading, body, actionUrl, 'View task');
+  if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
+    return await sendAzureEmail({ to, name: name || to, subject, html });
+  }
+  console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
+  return await sendEtherealEmail({ to, subject, html });
+};
+
 module.exports = {
   sendOnboardingEmail,
+  sendTaskNotificationEmail,
   sendInvitationEmail,
   sendOtpEmail,
 };

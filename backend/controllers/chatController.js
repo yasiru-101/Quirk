@@ -15,7 +15,7 @@
  */
 
 const prisma = require('../config/db');
-const { getIO } = require('../services/socketService');
+const { getIO, emitToUser } = require('../services/socketService');
 const { listMessagesQuerySchema } = require('../validations/chatSchemas');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -42,6 +42,48 @@ async function getParticipant(conversationId, userId) {
   return prisma.conversationParticipant.findUnique({
     where: { conversationId_userId: { conversationId, userId } },
   });
+}
+
+/**
+ * Notify conversation participants who were @mentioned in a chat message.
+ * A mention is "@" immediately followed by a participant's full name
+ * (case-insensitive), e.g. "@Emma Wilson". The sender is never notified of their
+ * own mention. Delivered both as a persisted notification and a realtime event.
+ */
+async function notifyMentions(conversationId, content, sender) {
+  if (!content || !content.includes('@')) return;
+
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: {
+      project: { select: { name: true } },
+      participants: { include: { user: { select: { id: true, name: true } } } },
+    },
+  });
+  if (!conversation) return;
+
+  const haystack = content.toLowerCase();
+  const label =
+    conversation.type === 'PROJECT'
+      ? `${conversation.project?.name ?? 'project'} chat`
+      : 'a direct message';
+  const preview = content.length > 120 ? `${content.slice(0, 117)}...` : content;
+
+  for (const participant of conversation.participants) {
+    const user = participant.user;
+    if (!user || user.id === sender.id) continue;
+    if (!user.name) continue;
+    if (!haystack.includes(`@${user.name.toLowerCase()}`)) continue;
+
+    const notification = await prisma.notification.create({
+      data: {
+        recipientId: user.id,
+        type: 'Comment',
+        message: `${sender.name} mentioned you in ${label}: "${preview}"`,
+      },
+    });
+    emitToUser(user.id, 'notification', notification);
+  }
 }
 
 // ─── List Conversations ───────────────────────────────────────────────────────
@@ -299,6 +341,12 @@ const sendMessage = async (req, res) => {
     if (io) {
       io.to(`conv:${conversationId}`).emit('chat:message', message);
     }
+
+    // Fire-and-forget: notify any participants @mentioned in the message. Never
+    // let a notification failure break message delivery.
+    notifyMentions(conversationId, content, req.user).catch((err) =>
+      console.error(`Chat mention notify failed: ${err.message}`)
+    );
 
     return res.status(201).json({ message });
   } catch (error) {

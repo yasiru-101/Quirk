@@ -195,13 +195,31 @@ export default function TaskBoardPage() {
 
   const handleColumnChange = async (taskId, columnId) => {
     const column = columnsById.get(columnId);
+    const previous = tasks.find((t) => t._id === taskId);
+    if (previous?.columnId === columnId) return;
     setTasks((prev) => prev.map((t) => (t._id === taskId ? { ...t, columnId, column: column || t.column } : t)));
     try {
       const { data } = await taskService.updateTaskColumn(taskId, columnId);
       setTasks((prev) => prev.map((t) => (t._id === taskId ? data.task : t)));
+      success(`Moved "${data.task?.title ?? previous?.title ?? 'task'}" to ${column?.name ?? 'new column'}`);
     } catch {
+      // Roll back the optimistic move so the board reflects the true state.
+      setTasks((prev) => prev.map((t) => (t._id === taskId && previous ? previous : t)));
       toastError('Failed to move task. Please try again.');
     }
+  };
+
+  // Toggle a task between its project's terminal column (Done/Completed) and the
+  // first open column. Used by the timeline's inline complete control.
+  const handleToggleComplete = (task) => {
+    const projectId = task.column?.projectId || task.projectId;
+    const projectColumns = columns.filter((c) => (c.projectId || projectId) === projectId);
+    const pool = projectColumns.length ? projectColumns : columns;
+    const done = isTerminalColumn(getTaskColumnName(task));
+    const target = done
+      ? pool.find((c) => !isTerminalColumn(c.name)) || pool[0]
+      : pool.find((c) => isTerminalColumn(c.name)) || pool[pool.length - 1];
+    if (target && target.id !== task.columnId) handleColumnChange(task._id, target.id);
   };
 
   const handleDelete = async (taskId) => {
@@ -287,6 +305,7 @@ export default function TaskBoardPage() {
               tasks={sorted}
               columns={columns}
               onTaskClick={(task) => setModal({ open: true, task })}
+              onMarkComplete={handleToggleComplete}
             />
           )}
           </div>

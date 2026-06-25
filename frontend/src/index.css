@@ -52,8 +52,8 @@
     --colors-status-backlog-text: #5b616e;
     --colors-status-todo-bg: #eef0f3;
     --colors-status-todo-text: #313641;
-    --colors-status-progress-bg: #e7f9ec;
-    --colors-status-progress-text: #167a36;
+    --colors-status-progress-bg: #fff3e0;
+    --colors-status-progress-text: #b45309;
     --colors-status-review-bg: #eaf7ff;
     --colors-status-review-text: #1b5f8c;
     --colors-status-done-bg: #ddf7e6;
@@ -164,8 +164,8 @@
     --colors-status-backlog-text: #b4bac3;
     --colors-status-todo-bg: rgba(255, 255, 255, 0.08);
     --colors-status-todo-text: #d4d8df;
-    --colors-status-progress-bg: rgba(118, 230, 149, 0.16);
-    --colors-status-progress-text: #8ce6a3;
+    --colors-status-progress-bg: rgba(251, 191, 36, 0.16);
+    --colors-status-progress-text: #fbbf24;
     --colors-status-review-bg: rgba(96, 165, 250, 0.18);
     --colors-status-review-text: #93c5fd;
     --colors-status-done-bg: rgba(118, 230, 149, 0.22);

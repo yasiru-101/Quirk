@@ -58,6 +58,11 @@ spec:
                 secretKeyRef:
                   name: quirk-secrets
                   key: AZURE_ACS_SENDER_ADDRESS
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: GEMINI_API_KEY
           # Readiness probe — traffic only routed when healthy
           readinessProbe:
             httpGet:

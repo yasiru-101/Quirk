@@ -75,14 +75,21 @@ export default function NotificationPanel({ open, onClose }) {
   }, [open, onClose]);
 
   const markRead = async (id) => {
+    let wasUnread = false;
     setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      prev.map((n) => {
+        if (n._id === id && !n.isRead) wasUnread = true;
+        return n._id === id ? { ...n, isRead: true } : n;
+      })
     );
+    // Tell the bell badge to drop by one (only if it was actually unread).
+    if (wasUnread) window.dispatchEvent(new CustomEvent('notifications:read'));
     try { await notificationService.markRead(id); } catch {}
   };
 
   const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    window.dispatchEvent(new CustomEvent('notifications:readAll'));
     try { await notificationService.markAllRead(); } catch {}
   };
 

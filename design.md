@@ -108,8 +108,10 @@ scan, dense enough for daily operations, and never like a generic admin theme.
 
 - Project cards show the project initial, name, description, column count,
   workflow chips, overflow count, and project status.
-- Workspace Owners/Admins and platform Admins can create, edit, archive, and
-  delete projects.
+- Workspace Admins, workspace Project Managers, and platform administrators can
+  create projects according to their scope. Project edits, archives, and deletes
+  remain restricted to project managers, workspace Admins, or platform
+  administrators.
 - Project creation offers a starter template (Basic Kanban, Software
   Development, Marketing Campaign) and lets the creator edit the workflow
   columns — rename, reorder, add, remove — before the project is created.
@@ -117,7 +119,8 @@ scan, dense enough for daily operations, and never like a generic admin theme.
   assignment. Project Managers and workspace managers can add, rename, reorder,
   and delete workflow columns after creation.
 - Project Managers can manage members and create tasks only inside projects they
-  manage unless they also hold workspace Owner/Admin permissions.
+  manage unless they also hold workspace Admin permissions or platform
+  administrator access.
 
 ## Tasks
 

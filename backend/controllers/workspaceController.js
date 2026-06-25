@@ -239,6 +239,39 @@ const inviteMember = async (req, res) => {
   }
 };
 
+// ─── Verify an Invitation (Public) ──────────────────────────────────────────
+// @route  GET /api/workspaces/invitations/verify
+// @access Public
+const verifyInvitation = async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ message: 'Token is required' });
+
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { workspace: true },
+    });
+    if (!invitation || invitation.status !== 'pending') {
+      return res.status(400).json({ message: 'This invitation is invalid or has already been used.' });
+    }
+    if (invitation.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'This invitation has expired.' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } });
+
+    return res.status(200).json({
+      valid: true,
+      email: invitation.email,
+      workspaceName: invitation.workspace.name,
+      existingUser: !!existingUser,
+    });
+  } catch (error) {
+    console.error(`Verify invitation error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error verifying invitation' });
+  }
+};
+
 // ─── Accept an Invitation ───────────────────────────────────────────────────
 // @route  POST /api/workspaces/invitations/accept
 // @access Any authenticated user (must match the invited email)
@@ -285,5 +318,6 @@ module.exports = {
   updateMemberRole,
   removeMember,
   inviteMember,
+  verifyInvitation,
   acceptInvitation,
 };

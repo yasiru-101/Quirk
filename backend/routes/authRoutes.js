@@ -8,6 +8,7 @@ const {
   refresh,
   resetPassword,
   register,
+  registerInvited,
   verifyEmail,
   resendVerification,
   verifyTwoFactor,
@@ -24,6 +25,7 @@ const {
   loginSchema,
   resetPasswordSchema,
   registerSchema,
+  registerInvitedSchema,
   verifyEmailSchema,
   resendVerificationSchema,
   verifyTwoFactorSchema,
@@ -110,6 +112,16 @@ router.post('/login', validate(loginSchema), login);
  *       400: { description: Validation failed or email already in use }
  */
 router.post('/register', validate(registerSchema), register);
+
+/**
+ * @openapi
+ * /auth/register-invited:
+ *   post:
+ *     summary: Register a new account via an invitation token
+ *     description: Bypasses email verification. Creates an account, accepts the invite, and signs the user in.
+ *     tags: [Authentication]
+ */
+router.post('/register-invited', validate(registerInvitedSchema), registerInvited);
 
 /**
  * @openapi

@@ -11,6 +11,9 @@ export const authService = {
   register: (name, email, password, confirmPassword) =>
     api.post('/auth/register', { name, email, password, confirmPassword }),
 
+  registerInvited: (name, password, confirmPassword, token) =>
+    api.post('/auth/register-invited', { name, password, confirmPassword, token }),
+
   verifyEmail: (email, code) =>
     api.post('/auth/verify-email', { email, code }),
 

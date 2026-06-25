@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
 import api from '../../services/api';
 import { getInitials } from '../../utils/helpers';
+import { ROLES } from '../../utils/constants';
 
 const BREADCRUMBS = {
   '/dashboard': ['Workspace', 'Overview'],
@@ -29,9 +30,13 @@ export default function TopBar({ onOpenMobileNav }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
-  const { activeWorkspace } = useProject();
+  const { user, logout, role, isPlatformAdmin } = useAuth();
+  const { activeWorkspace, canManageWorkspace } = useProject();
   const profileRef = useRef(null);
+
+  // Only task creators (platform admins, workspace Owners/Admins, project managers)
+  // see the quick "New task" action. Collaborators cannot create tasks.
+  const canCreateTasks = isPlatformAdmin || canManageWorkspace || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER;
 
   // Close the profile menu on outside click or Escape so it always minimizes.
   useEffect(() => {
@@ -273,12 +278,14 @@ export default function TopBar({ onOpenMobileNav }) {
 
           <NotificationBell onClick={() => setPanelOpen(true)} />
 
-          <button
-            onClick={handleNewTask}
-            className="hidden h-10 items-center rounded-full bg-[var(--colors-primary)] px-4 text-sm font-semibold text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring sm:flex"
-          >
-            New task
-          </button>
+          {canCreateTasks && (
+            <button
+              onClick={handleNewTask}
+              className="hidden h-10 items-center rounded-full bg-[var(--colors-primary)] px-4 text-sm font-semibold text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring sm:flex"
+            >
+              New task
+            </button>
+          )}
 
           <div className="relative" ref={profileRef}>
             <button

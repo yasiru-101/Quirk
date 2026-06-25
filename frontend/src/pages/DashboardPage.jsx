@@ -13,7 +13,7 @@ import { useProject } from '../context/ProjectContext';
 import { taskService } from '../services/taskService';
 import TaskModal from '../components/tasks/TaskModal';
 import { ROLES } from '../utils/constants';
-import { formatDate, getTaskColumnName, isOverdue, isTerminalColumn, cn } from '../utils/helpers';
+import { formatDate, getTaskColumnName, isOverdue, isTerminalColumn, getStatusColor, getPriorityColor, cn } from '../utils/helpers';
 import { computeTaskMetrics, computeRiskTasks, computeProjectHealth } from '../utils/analytics';
 
 function StatCard({ label, value, loading, accent }) {
@@ -172,8 +172,17 @@ export default function DashboardPage() {
                       <tr key={t.id} onClick={() => openTask(t)} className="cursor-pointer transition-colors hover:bg-[var(--colors-canvas-soft)]">
                         <td className="px-4 py-3 text-[length:var(--typography-body-md)] font-medium text-[var(--colors-ink)]">{t.title}</td>
                         <td className="px-4 py-3 text-[length:var(--typography-body-sm)] text-[var(--colors-body)]">{t.project?.name || t.projectName || '—'}</td>
-                        <td className="px-4 py-3"><span className="pill whitespace-nowrap">{getTaskColumnName(t)}</span></td>
-                        <td className="px-4 py-3"><span className="pill whitespace-nowrap">{t.priority}</span></td>
+                        <td className="px-4 py-3">
+                          <span className={cn('inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold', getStatusColor(getTaskColumnName(t)))}>
+                            {getTaskColumnName(t)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--colors-canvas-soft)] px-2.5 py-1 text-[11px] font-bold', getPriorityColor(t.priority))}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {t.priority}
+                          </span>
+                        </td>
                         <td className={cn('px-4 py-3 text-[length:var(--typography-body-sm)]', overdue ? 'font-bold text-[var(--colors-priority-urgent)]' : 'text-[var(--colors-body)]')}>
                           {t.dueDate ? formatDate(t.dueDate) : '—'}
                         </td>

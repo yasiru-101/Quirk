@@ -6,7 +6,7 @@
 
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
-const { resolveProjectAccess } = require('../middleware/membership');
+const { resolveProjectAccess, resolveTaskAccess } = require('../middleware/membership');
 const { isPlatformAdmin } = require('../utils/roles');
 
 const taskResponseInclude = {
@@ -374,17 +374,17 @@ const updateTaskColumn = async (req, res) => {
       });
     }
 
-    // Safeguard: If caller is a Collaborator, check if they are assigned to this task
-    if (req.user.role === 'Collaborator') {
+    // Managers (project managers, workspace owners/admins, platform admins) may move
+    // any task on the board. Everyone else (plain collaborators) may only move tasks
+    // they created or are assigned to. We check capability by resource — not by the
+    // caller's *global* role — so a workspace owner whose global role is Collaborator
+    // is not wrongly blocked.
+    const managerAccess = await resolveTaskAccess(req.user, targetId, ['Project Manager']);
+    if (!managerAccess.ok) {
       const isAssigned = await prisma.taskAssignment.findUnique({
-        where: {
-          taskId_userId: {
-            taskId: targetId,
-            userId: req.user.id,
-          },
-        },
+        where: { taskId_userId: { taskId: targetId, userId: req.user.id } },
       });
-      if (!isAssigned) {
+      if (!isAssigned && task.createdBy !== req.user.id) {
         return res.status(403).json({
           message: 'Access denied: You can only move tasks assigned to you.',
         });

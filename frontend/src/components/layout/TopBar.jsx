@@ -22,7 +22,7 @@ const BREADCRUMBS = {
   '/chat': ['Workspace', 'Chat'],
 };
 
-export default function TopBar() {
+export default function TopBar({ onOpenMobileNav }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const crumbs = BREADCRUMBS[pathname] ?? ['Quirk', 'Overview'];
@@ -31,6 +31,24 @@ export default function TopBar() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const { activeWorkspace } = useProject();
+  const profileRef = useRef(null);
+
+  // Close the profile menu on outside click or Escape so it always minimizes.
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onPointerDown = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e) => e.key === 'Escape' && setProfileMenuOpen(false);
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [profileMenuOpen]);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,6 +119,15 @@ export default function TopBar() {
     <>
       <header className="sticky top-0 z-30 flex h-[60px] flex-shrink-0 items-center justify-between border-b border-[var(--colors-hairline)] bg-[rgba(255,255,255,0.86)] px-6 backdrop-blur-xl dark:bg-[rgba(10,11,13,0.86)]">
         <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--colors-ink-muted)]">
+          <button
+            onClick={onOpenMobileNav}
+            className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-ink)] focus-ring lg:hidden"
+            aria-label="Open navigation menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
           <span>{activeWorkspace?.name || crumbs[0]}</span>
           <span className="text-[color:var(--colors-ink-faint)]">/</span>
           <span className="text-[color:var(--colors-ink)]">{crumbs[1]}</span>
@@ -253,9 +280,11 @@ export default function TopBar() {
             New task
           </button>
 
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             <button
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              onClick={() => setProfileMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={profileMenuOpen}
               className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-xs font-bold text-[var(--colors-ink)] focus-ring transition hover:bg-[var(--colors-surface-pressed)]"
             >
               {getInitials(user?.name)}
@@ -279,7 +308,7 @@ export default function TopBar() {
                     await logout();
                     navigate('/login');
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-[var(--colors-ink)] hover:bg-[var(--colors-surface-pressed)] transition"
+                  className="w-full text-left px-4 py-2 text-sm font-semibold text-[var(--colors-priority-urgent)] hover:bg-[var(--colors-priority-urgent)]/10 transition"
                 >
                   Sign out
                 </button>

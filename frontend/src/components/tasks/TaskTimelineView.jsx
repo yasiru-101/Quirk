@@ -13,12 +13,34 @@ import {
   isToday, 
   isSameDay 
 } from 'date-fns';
-import { getStatusColor, getTaskColumnName, cn } from '../../utils/helpers';
+import { getStatusColor, getTaskColumnName, isTerminalColumn, cn } from '../../utils/helpers';
 
 const DAY_WIDTH = 40; // width of day column in px
 
-export default function TaskTimelineView({ tasks, columns = [], onTaskClick }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+// Pick the month to open on so that tasks are actually visible: the month of the
+// task date (due date, falling back to creation date) closest to today. Without
+// this the view always opens on the current calendar month and looks empty when
+// the work lives in another month.
+const pickInitialMonth = (tasks) => {
+  if (!tasks?.length) return new Date();
+  const now = Date.now();
+  let best = null;
+  let bestDist = Infinity;
+  for (const task of tasks) {
+    const ref = task.dueDate || task.createdAt;
+    if (!ref) continue;
+    const time = new Date(ref).getTime();
+    const dist = Math.abs(time - now);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = new Date(ref);
+    }
+  }
+  return best || new Date();
+};
+
+export default function TaskTimelineView({ tasks, columns = [], onTaskClick, onMarkComplete }) {
+  const [currentMonth, setCurrentMonth] = useState(() => pickInitialMonth(tasks));
   const [groupBy, setGroupBy] = useState('column');
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -214,6 +236,7 @@ export default function TaskTimelineView({ tasks, columns = [], onTaskClick }) {
                     groupTasks.map((task) => {
                       const coords = getBarCoordinates(task, days);
                       const columnName = getTaskColumnName(task);
+                      const done = isTerminalColumn(columnName);
 
                       return (
                         <div
@@ -221,8 +244,26 @@ export default function TaskTimelineView({ tasks, columns = [], onTaskClick }) {
                           className="flex h-12 border-b border-[var(--colors-hairline)] bg-[var(--colors-canvas)] hover:bg-[var(--colors-canvas-soft)] transition-colors relative"
                         >
                           {/* Task Name Sticky Column */}
-                          <div className="w-60 shrink-0 sticky left-0 z-10 bg-[var(--colors-canvas)] border-r border-[var(--colors-hairline)] group-hover:bg-[var(--colors-canvas-soft)] flex items-center px-6 text-[12px] font-medium text-[var(--colors-ink)] truncate pr-4">
-                            <span className="truncate" title={task.title}>{task.title}</span>
+                          <div className="w-60 shrink-0 sticky left-0 z-10 bg-[var(--colors-canvas)] border-r border-[var(--colors-hairline)] group-hover:bg-[var(--colors-canvas-soft)] flex items-center gap-2 px-4 text-[12px] font-medium text-[var(--colors-ink)] truncate">
+                            {onMarkComplete && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onMarkComplete(task); }}
+                                className={cn(
+                                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors focus-ring',
+                                  done
+                                    ? 'border-[var(--colors-primary)] bg-[var(--colors-primary)] text-[var(--colors-on-primary)]'
+                                    : 'border-[var(--colors-hairline-mid)] text-transparent hover:border-[var(--colors-primary)] hover:text-[var(--colors-primary)]'
+                                )}
+                                title={done ? 'Reopen task' : 'Mark task complete'}
+                                aria-label={done ? 'Reopen task' : 'Mark task complete'}
+                                aria-pressed={done}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </button>
+                            )}
+                            <span className={cn('truncate', done && 'line-through text-[var(--colors-ink-muted)]')} title={task.title}>{task.title}</span>
                           </div>
 
                           {/* Days Grid Columns */}

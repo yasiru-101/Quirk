@@ -12,6 +12,8 @@ import { authService } from '../services/authService';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import BrandLogo from '../components/common/BrandLogo';
+import { validatePassword } from '../utils/helpers';
+import { PASSWORD_POLICY } from '../utils/constants';
 
 export default function AcceptInvitePage() {
   const [params] = useSearchParams();
@@ -76,6 +78,10 @@ export default function AcceptInvitePage() {
     const nextErrors = {};
     if (!form.name) nextErrors.name = 'Name is required';
     if (!form.password) nextErrors.password = 'Password is required';
+    else {
+      const passwordErrors = validatePassword(form.password);
+      if (passwordErrors.length) nextErrors.password = passwordErrors.join(', ');
+    }
     if (form.password && form.password !== form.confirmPassword) {
       nextErrors.confirmPassword = "Passwords don't match";
     }
@@ -184,6 +190,7 @@ export default function AcceptInvitePage() {
                 error={errors.password}
                 placeholder="Create a strong password"
               />
+              <p className="text-xs text-[var(--colors-body)] -mt-2">{PASSWORD_POLICY.HINT}</p>
 
               <Input
                 id="invite-confirm-password"

@@ -9,6 +9,7 @@ import NotificationPanel from '../notifications/NotificationPanel';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import api from '../../services/api';
 import { getInitials } from '../../utils/helpers';
 import { ROLES } from '../../utils/constants';
@@ -32,6 +33,7 @@ export default function TopBar({ onOpenMobileNav }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, role, isPlatformAdmin } = useAuth();
   const { activeWorkspace, canManageWorkspace } = useProject();
+  const confirm = useConfirm();
   const profileRef = useRef(null);
 
   // Only task creators (platform admins, workspace Owners/Admins, project managers)
@@ -311,7 +313,12 @@ export default function TopBar({ onOpenMobileNav }) {
                 <button
                   onClick={async () => {
                     setProfileMenuOpen(false);
-                    if (!window.confirm('Sign out of Quirk?')) return;
+                    const ok = await confirm({
+                      title: 'Sign out',
+                      message: 'Sign out of Quirk?',
+                      confirmLabel: 'Sign out',
+                    });
+                    if (!ok) return;
                     await logout();
                     navigate('/login');
                   }}

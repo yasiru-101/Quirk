@@ -64,6 +64,13 @@
     --colors-priority-medium: #2764a8;
     --colors-priority-low: #5b616e;
 
+    /* Password-strength meter scale (very-weak → strong). */
+    --colors-strength-1: #ef4444;
+    --colors-strength-2: #f59e0b;
+    --colors-strength-3: #eab308;
+    --colors-strength-4: #22c55e;
+    --colors-strength-5: #10b981;
+
     --surface: var(--colors-canvas);
     --border: var(--colors-hairline);
     --bg-base: var(--colors-canvas);
@@ -175,6 +182,13 @@
     --colors-priority-high: #fbbf24;
     --colors-priority-medium: #60a5fa;
     --colors-priority-low: #9ca3af;
+
+    /* Password-strength meter scale, brightened for dark surfaces. */
+    --colors-strength-1: #f87171;
+    --colors-strength-2: #fbbf24;
+    --colors-strength-3: #facc15;
+    --colors-strength-4: #4ade80;
+    --colors-strength-5: #34d399;
 
     --surface: var(--colors-canvas-softer);
     --border: var(--colors-hairline);

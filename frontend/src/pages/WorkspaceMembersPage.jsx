@@ -12,6 +12,7 @@ import EmptyState from '../components/common/EmptyState';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { normalizeError } from '../services/api';
 import { getInitials, getRoleBadgeStyle } from '../utils/helpers';
 
@@ -31,6 +32,7 @@ export default function WorkspaceMembersPage() {
     removeWorkspaceMember,
   } = useProject();
   const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'Collaborator' });
@@ -83,7 +85,13 @@ export default function WorkspaceMembersPage() {
   };
 
   const remove = async (member) => {
-    if (!window.confirm(`Remove ${member.user?.name || 'this member'} from ${activeWorkspace?.name}?`)) return;
+    const ok = await confirm({
+      title: 'Remove member',
+      message: `Remove ${member.user?.name || 'this member'} from ${activeWorkspace?.name}?`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await removeWorkspaceMember(member.userId);
       success('Member removed');

@@ -21,8 +21,16 @@ export default function Dropdown({
         setOpen(false);
       }
     }
+    // Close on Escape so keyboard users can dismiss the menu without a pointer.
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const normalizedOptions = options.map(opt => 

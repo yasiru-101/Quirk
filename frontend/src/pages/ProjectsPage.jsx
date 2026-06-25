@@ -12,6 +12,7 @@ import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { normalizeError } from '../services/api';
 import api from '../services/api';
 import { ROLES } from '../utils/constants';
@@ -47,6 +48,7 @@ export default function ProjectsPage() {
     deleteProject,
   } = useProject();
   const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const location = useLocation();
   const canCreate = isPlatformAdmin || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
@@ -165,7 +167,12 @@ export default function ProjectsPage() {
   };
 
   const archiveProject = async (project) => {
-    if (!window.confirm(`Archive ${project.name}? Tasks remain available, but the project is hidden from active work.`)) return;
+    const ok = await confirm({
+      title: 'Archive project',
+      message: `Archive ${project.name}? Tasks remain available, but the project is hidden from active work.`,
+      confirmLabel: 'Archive',
+    });
+    if (!ok) return;
     try {
       await updateProject(project.id, { status: 'archived' });
       success('Project archived');
@@ -176,7 +183,13 @@ export default function ProjectsPage() {
   };
 
   const removeProject = async (project) => {
-    if (!window.confirm(`Delete ${project.name}? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: 'Delete project',
+      message: `Delete ${project.name}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteProject(project.id);
       success('Project deleted');
@@ -250,7 +263,7 @@ export default function ProjectsPage() {
                       {menuId === project.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)} />
-                          <div role="menu" className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-1 shadow-lg">
+                          <div role="menu" onKeyDown={(e) => e.key === 'Escape' && setMenuId(null)} className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-1 shadow-lg">
                             {[
                               ['Project settings', () => navigate(`/projects/${project.id}`)],
                               ['Edit details', () => openEdit(project)],

@@ -14,6 +14,7 @@ import ViewHeader from '../components/common/ViewHeader';
 import ViewToolbar from '../components/common/ViewToolbar';
 import { taskService } from '../services/taskService';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useProject } from '../context/ProjectContext';
@@ -23,6 +24,7 @@ import { ROLES } from '../utils/constants';
 export default function TaskBoardPage() {
   const { role, user, isPlatformAdmin } = useAuth();
   const { error: toastError, success } = useToast();
+  const confirm = useConfirm();
   const { on } = useSocket();
   const { projects, loading: projectsLoading, canManageWorkspace } = useProject();
   const navigate = useNavigate();
@@ -223,7 +225,13 @@ export default function TaskBoardPage() {
   };
 
   const handleDelete = async (taskId) => {
-    if (!window.confirm('Delete this task? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete task',
+      message: 'Delete this task? This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     setTasks((prev) => prev.filter((t) => t._id !== taskId));
     try {
       await taskService.deleteTask(taskId);

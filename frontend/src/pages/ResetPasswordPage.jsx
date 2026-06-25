@@ -26,11 +26,11 @@ function StrengthMeter({ password }) {
   const pct = (passed / CHECKS.length) * 100;
 
   const color =
-    passed <= 1 ? '#ef4444' :
-    passed <= 2 ? '#f59e0b' :
-    passed <= 3 ? '#eab308' :
-    passed <= 4 ? '#22c55e' :
-    '#10b981';
+    passed <= 1 ? 'var(--colors-strength-1)' :
+    passed <= 2 ? 'var(--colors-strength-2)' :
+    passed <= 3 ? 'var(--colors-strength-3)' :
+    passed <= 4 ? 'var(--colors-strength-4)' :
+    'var(--colors-strength-5)';
 
   const label =
     passed <= 1 ? 'Very weak' :

@@ -7,6 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../services/taskService';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import CommentsPanel from '../components/tasks/CommentsPanel';
 import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
@@ -19,6 +20,7 @@ export default function TaskDetailPage() {
   const navigate = useNavigate();
   const { role, user: currentUser, isPlatformAdmin } = useAuth();
   const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
   const { projects, canManageWorkspace } = useProject();
 
   const columns = useMemo(
@@ -56,7 +58,13 @@ export default function TaskDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this task? This action cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete task',
+      message: 'Delete this task? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await taskService.deleteTask(id);
       success('Task deleted');

@@ -11,16 +11,48 @@ import { createPortal } from 'react-dom';
 export default function Modal({ open, onClose, title, size = 'md', children, footer }) {
   const overlayRef = useRef(null);
   const dialogRef  = useRef(null);
+  const lastFocusedRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      // Trap Tab focus inside the dialog so keyboard users can't reach the
+      // inert content behind the modal.
+      if (e.key === 'Tab') {
+        const focusable = dialogRef.current?.querySelectorAll(
+          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
   useEffect(() => {
-    if (open) dialogRef.current?.focus();
+    if (open) {
+      // Remember what had focus so it can be restored when the dialog closes,
+      // then move focus into the dialog.
+      lastFocusedRef.current = document.activeElement;
+      dialogRef.current?.focus();
+      return () => {
+        const toRestore = lastFocusedRef.current;
+        if (toRestore && typeof toRestore.focus === 'function') toRestore.focus();
+      };
+    }
   }, [open]);
 
   useEffect(() => {

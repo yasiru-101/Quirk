@@ -7,6 +7,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { getInitials } from '../../utils/helpers';
 
 function formatTimestamp(iso) {
@@ -89,6 +90,7 @@ function MessageBubble({ message, isOwn, showHeader, onDelete }) {
 export default function MessageThread() {
   const { user } = useAuth();
   const { messages, loadingMessages, hasMore, loadMore, deleteMessage, activeConversationId } = useChat();
+  const confirm = useConfirm();
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -108,10 +110,16 @@ export default function MessageThread() {
   const handleDelete = useCallback(
     async (messageId) => {
       if (!activeConversationId) return;
-      if (!window.confirm('Are you sure you want to delete this message? This action cannot be undone.')) return;
+      const ok = await confirm({
+        title: 'Delete message',
+        message: 'Are you sure you want to delete this message? This action cannot be undone.',
+        confirmLabel: 'Delete',
+        danger: true,
+      });
+      if (!ok) return;
       await deleteMessage(activeConversationId, messageId);
     },
-    [activeConversationId, deleteMessage]
+    [activeConversationId, deleteMessage, confirm]
   );
 
   if (!activeConversationId) {

@@ -14,6 +14,7 @@ const {
   updateMemberRole,
   removeMember,
   inviteMember,
+  verifyInvitation,
   acceptInvitation,
 } = require('../controllers/workspaceController');
 
@@ -26,6 +27,9 @@ const {
   acceptInvitationSchema,
   updateMemberRoleSchema,
 } = require('../validations/workspaceSchemas');
+
+// Public route for invitation verification
+router.get('/invitations/verify', verifyInvitation);
 
 router.use(protect);
 

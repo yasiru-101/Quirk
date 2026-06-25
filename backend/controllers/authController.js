@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const prisma = require('../config/db');
 const otpService = require('../services/otpService');
 const emailService = require('../services/emailService');
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 // Helper to generate access token (15 mins)
 // JWT_SECRET must be configured in .env — no hardcoded fallback for security
@@ -418,6 +421,75 @@ const register = async (req, res) => {
   }
 };
 
+// @desc    Register via invitation token (bypasses email verify)
+// @route   POST /api/auth/register-invited
+// @access  Public
+const registerInvited = async (req, res) => {
+  const { name, password, token } = req.body;
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { tokenHash: hashToken(token) },
+    });
+    if (!invitation || invitation.status !== 'pending') {
+      return res.status(400).json({ message: 'This invitation is invalid or has already been used.' });
+    }
+    if (invitation.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'This invitation has expired.' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'An account with this email already exists.' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email: invitation.email,
+          passwordHash,
+          role: 'Collaborator',
+          mustResetPassword: false,
+          emailVerified: true, // Bypass verification!
+        },
+      });
+
+      await tx.workspaceMember.create({
+        data: {
+          workspaceId: invitation.workspaceId,
+          userId: newUser.id,
+          role: invitation.role,
+        },
+      });
+
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted', acceptedAt: new Date() },
+      });
+
+      return newUser;
+    });
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const userResponse = { ...user };
+    delete userResponse.passwordHash;
+
+    return res.status(201).json({
+      message: 'Account created and workspace joined.',
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error(`Register via invite error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error during registration' });
+  }
+};
+
 // @desc    Verify email with a one-time code and complete sign-in
 // @route   POST /api/auth/verify-email
 // @access  Public
@@ -581,6 +653,7 @@ module.exports = {
   refresh,
   resetPassword,
   register,
+  registerInvited,
   verifyEmail,
   resendVerification,
   verifyTwoFactor,

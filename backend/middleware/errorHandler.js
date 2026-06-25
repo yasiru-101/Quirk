@@ -63,6 +63,14 @@ const errorHandler = (err, req, res, next) => {
     response.message = 'Not authorized, token has expired';
   }
 
+  // For unmapped server errors, never echo the raw error message to the client in
+  // production — it can leak ORM/internal detail. Mapped 4xx errors (validation,
+  // not-found, auth) keep their user-facing messages.
+  if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+    response.message = 'Internal server error occurred';
+    delete response.errors;
+  }
+
   // Send the standardized JSON error response with SRS-compliant errorCode
   response.errorCode = statusCode;
   res.status(statusCode).json(response);

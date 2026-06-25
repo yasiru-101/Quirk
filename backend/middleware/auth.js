@@ -35,6 +35,7 @@ const protect = async (req, res, next) => {
         isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
+        tokenValidFrom: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -54,6 +55,22 @@ const protect = async (req, res, next) => {
         message: 'Not authorized, user account is deactivated',
       });
     }
+
+    // 5b. Reject sessions issued before the user's session cutoff (set on password
+    // change/reset). Compared in whole seconds — JWT `iat` is second-precision — so a
+    // token minted immediately after the cutoff is not falsely rejected. Null cutoff
+    // means no invalidation has occurred and every existing token stays valid.
+    if (user.tokenValidFrom && decoded.iat) {
+      const cutoffSec = Math.floor(new Date(user.tokenValidFrom).getTime() / 1000);
+      if (decoded.iat < cutoffSec) {
+        return res.status(401).json({
+          errorCode: 401,
+          message: 'Session expired. Please sign in again.',
+        });
+      }
+    }
+    // Don't expose the cutoff timestamp on req.user.
+    delete user.tokenValidFrom;
 
     // 6. Enforce password reset policy on all routes except auth exemptions
     const isAuthExempt =

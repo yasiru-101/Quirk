@@ -23,6 +23,9 @@ const chatRoutes          = require('./routes/chatRoutes');
 const searchRoutes        = require('./routes/searchRoutes');
 const platformRoutes      = require('./routes/platformRoutes');
 const errorHandler        = require('./middleware/errorHandler');
+const prisma              = require('./config/db');
+const { protect }         = require('./middleware/auth');
+const { resolveTaskAccess } = require('./middleware/membership');
 
 const app = express();
 
@@ -115,12 +118,47 @@ app.use('/api/auth/register', authActionLimiter);
 app.use('/api/auth/verify-email', authActionLimiter);
 app.use('/api/auth/resend-verification', authActionLimiter);
 app.use('/api/auth/verify-2fa', authActionLimiter);
+// Password-recovery endpoints send email and brute-force the reset code, so they
+// belong under the same strict limiter to resist email-bombing and code guessing.
+app.use('/api/auth/forgot-password', authActionLimiter);
+app.use('/api/auth/reset-password-otp', authActionLimiter);
 
 // ─── API Documentation ──────────────────────────────────────────────────────
 serveSwagger(app);
 
 // ─── Static File Serving (Local uploads fallback for development) ───────────
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// These files are task attachments and must not be world-readable. Require a valid
+// session and verify the caller has access to the owning task before the static
+// handler serves the bytes. (In production, Azure Blob + SAS URLs handle this and
+// this branch is unused.) The lookup maps the request path back to the stored
+// blobUrl ("/uploads/<filename>").
+app.use(
+  '/uploads',
+  protect,
+  async (req, res, next) => {
+    try {
+      const blobUrl = `/uploads${decodeURIComponent(req.path)}`;
+      const attachment = await prisma.attachment.findFirst({
+        where: { blobUrl },
+        select: { taskId: true },
+      });
+      if (!attachment) {
+        return res.status(404).json({ errorCode: 404, message: 'Attachment not found' });
+      }
+      const access = await resolveTaskAccess(req.user, attachment.taskId);
+      if (!access.ok) {
+        return res.status(403).json({
+          errorCode: 403,
+          message: 'Access denied. You do not have access to this attachment.',
+        });
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  },
+  express.static(path.join(__dirname, 'uploads'))
+);
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);

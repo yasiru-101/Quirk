@@ -24,6 +24,11 @@ const ALLOWED_MIME_TYPES = [
   'application/x-zip-compressed',
 ];
 
+// The MIME type is client-supplied and trivially spoofed, so we also require the
+// file extension to be in a known-good set. Both must pass — this rejects, e.g.,
+// an `evil.exe` relabelled with an image Content-Type.
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.zip'];
+
 // ─── Storage Configuration (Dynamic fallback) ───────────────────────────────
 const useAzure = !!process.env.AZURE_BLOB_CONNECTION_STRING;
 
@@ -56,7 +61,8 @@ const storage = useAzure
  * Rejects unsupported file types with a descriptive error message.
  */
 const fileFilter = (req, file, cb) => {
-  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error('Unsupported file type. Allowed: PDF, DOCX, JPEG, PNG, ZIP.'), false);

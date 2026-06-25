@@ -25,6 +25,8 @@ model Workspace {
   projects      Project[]
   invitations   Invitation[]
   conversations Conversation[]
+
+  @@index([ownerId])
 }
 
 // ─── WorkspaceMember Model (Many-to-Many Join Table) ─────────────────────────
@@ -42,6 +44,7 @@ model WorkspaceMember {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([workspaceId, userId])
+  @@index([userId])
 }
 
 // ─── Invitation Model ─────────────────────────────────────────────────────────
@@ -64,6 +67,7 @@ model Invitation {
 
   @@index([workspaceId, status])
   @@index([email])
+  @@index([invitedBy])
 }
 
 // ─── OtpCode Model ──────────────────────────────────────────────────────────
@@ -101,6 +105,12 @@ model User {
   // until the email is confirmed via a one-time code.
   emailVerified    Boolean @default(true)
   twoFactorEnabled Boolean @default(false)
+
+  // Session cutoff for stateless JWTs. When a password is reset/changed this is set
+  // to "now"; the auth middleware rejects any access token issued before this moment,
+  // so a credential change invalidates all previously issued sessions. Null = no
+  // cutoff (all existing tokens remain valid), keeping prior sessions working.
+  tokenValidFrom DateTime?
 
   // Extended profile fields (SRS §Onboarding)
   avatarUrl          String?
@@ -153,6 +163,10 @@ model Project {
   columns      KanbanColumn[]
   epics        Epic[]
   conversation Conversation?
+
+  @@index([workspaceId])
+  @@index([createdBy])
+  @@index([templateId])
 }
 
 // ─── ProjectTemplate Model ───────────────────────────────────────────────────
@@ -190,6 +204,7 @@ model ProjectMember {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([projectId, userId])
+  @@index([userId])
 }
 
 // ─── KanbanColumn Model ───────────────────────────────────────────────────────
@@ -221,6 +236,8 @@ model Epic {
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tasks   Task[]
+
+  @@index([projectId])
 }
 
 // ─── Task Model ──────────────────────────────────────────────────────────────
@@ -268,6 +285,9 @@ model Task {
 
   @@index([projectId])
   @@index([parentTaskId])
+  @@index([createdBy])
+  @@index([columnId])
+  @@index([epicId])
 }
 
 // ─── TaskDependency Model ────────────────────────────────────────────────────
@@ -294,6 +314,7 @@ model TaskAssignment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([taskId, userId])
+  @@index([userId])
 }
 
 // ─── TimeLog Model ────────────────────────────────────────────────────────────
@@ -311,6 +332,7 @@ model TimeLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([userId])
 }
 
 // ─── ActivityLog Model ────────────────────────────────────────────────────────
@@ -342,6 +364,9 @@ model Comment {
   task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   attachments Attachment[]
+
+  @@index([taskId])
+  @@index([userId])
 }
 
 // ─── Attachment Model ────────────────────────────────────────────────────────
@@ -359,6 +384,10 @@ model Attachment {
   task     Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   comment  Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
   uploader User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@index([commentId])
+  @@index([uploadedBy])
 }
 
 // ─── Notification Model ──────────────────────────────────────────────────────
@@ -375,6 +404,7 @@ model Notification {
   relatedTask Task? @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
 
   @@index([recipientId, isRead])
+  @@index([relatedTaskId])
 }
 
 // ─── Conversation Model ───────────────────────────────────────────────────────
@@ -428,4 +458,5 @@ model ChatMessage {
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
 
   @@index([conversationId, createdAt])
+  @@index([senderId])
 }

@@ -63,23 +63,33 @@ const verifyCode = async (userId, purpose, code) => {
     return { ok: false, reason: 'This code has expired. Please request a new one.' };
   }
 
-  if (record.attempts >= MAX_ATTEMPTS) {
+  // Atomically claim one attempt, but only while the code is still unconsumed and
+  // under the cap. Performing the limit check and the increment as a single
+  // conditional write closes the race where several concurrent submissions each
+  // read `attempts < MAX` and collectively exceed the brute-force limit.
+  const claim = await prisma.otpCode.updateMany({
+    where: { id: record.id, consumedAt: null, attempts: { lt: MAX_ATTEMPTS } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claim.count === 0) {
     return { ok: false, reason: 'Too many incorrect attempts. Please request a new code.' };
   }
 
   const matches = await bcrypt.compare(code, record.codeHash);
   if (!matches) {
-    await prisma.otpCode.update({
-      where: { id: record.id },
-      data: { attempts: { increment: 1 } },
-    });
     return { ok: false, reason: 'Invalid code.' };
   }
 
-  await prisma.otpCode.update({
-    where: { id: record.id },
+  // Consume atomically; the `consumedAt: null` guard prevents a concurrent request
+  // from accepting the same code twice.
+  const consumed = await prisma.otpCode.updateMany({
+    where: { id: record.id, consumedAt: null },
     data: { consumedAt: new Date() },
   });
+  if (consumed.count === 0) {
+    return { ok: false, reason: 'No active code. Please request a new one.' };
+  }
+
   return { ok: true };
 };
 

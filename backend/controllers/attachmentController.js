@@ -3,9 +3,19 @@
  * @description Controller handling file attachment upload and download operations.
  */
 
+const fs = require('fs/promises');
 const prisma = require('../config/db');
 const blobService = require('../services/blobService');
 const { resolveTaskAccess } = require('../middleware/membership');
+
+// Remove a file multer already wrote to disk when the request is rejected before a
+// DB record is created, so failed/unauthorized uploads don't accumulate as orphans.
+// No-op for in-memory (Azure) uploads, which were never written locally.
+const cleanupTempFile = async (file) => {
+  if (file?.path) {
+    await fs.unlink(file.path).catch(() => {});
+  }
+};
 
 // @desc    Upload a file attachment and create a database record
 // @route   POST /api/attachments/upload
@@ -23,33 +33,35 @@ const uploadFile = async (req, res) => {
     // 2. Extract metadata from the uploaded file (populated by multer)
     const { originalname, mimetype, size, filename } = req.file;
 
-    // 3. Build the download URL (Azure Blob URL if buffer exists, otherwise local relative path)
-    let blobUrl;
-    if (req.file.buffer) {
-      const uploadResult = await blobService.uploadFile(req.file.buffer, originalname, mimetype);
-      blobUrl = uploadResult.blobUrl;
-    } else {
-      blobUrl = `/uploads/${filename}`;
-    }
-
-    // 4. Read optional associations from request body (taskId is required by model)
+    // 3. Read associations and authorize BEFORE persisting the blob, so an
+    //    unauthorized upload never reaches durable storage (Azure or DB).
     const { taskId, commentId } = req.body;
 
     if (!taskId) {
+      await cleanupTempFile(req.file);
       return res.status(400).json({
         message: 'Validation failed',
         errors: { taskId: 'taskId is required when uploading an attachment.' },
       });
     }
 
-    // Authorize: the caller must have access to the target task.
     const access = await resolveTaskAccess(req.user, taskId);
     if (!access.ok) {
+      await cleanupTempFile(req.file);
       return res.status(access.status === 404 ? 404 : 403).json({
         message: access.status === 404
           ? 'Task not found'
           : 'Access denied. You do not have access to this task.',
       });
+    }
+
+    // 4. Build the download URL (Azure Blob URL if buffer exists, otherwise local relative path)
+    let blobUrl;
+    if (req.file.buffer) {
+      const uploadResult = await blobService.uploadFile(req.file.buffer, originalname, mimetype);
+      blobUrl = uploadResult.blobUrl;
+    } else {
+      blobUrl = `/uploads/${filename}`;
     }
 
     // 5. Create the attachment record using Prisma

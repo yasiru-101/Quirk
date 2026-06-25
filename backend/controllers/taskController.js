@@ -291,6 +291,15 @@ const updateTask = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // A task cannot be its own parent: the self-relation cascades on delete, so a
+    // self-reference is a corrupt state that has no valid subtask semantics.
+    if (parentTaskId !== undefined && parentTaskId === targetId) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: { parentTaskId: 'A task cannot be its own parent.' },
+      });
+    }
+
     const nextProjectId = projectId !== undefined ? projectId : task.projectId;
     const placement = columnId !== undefined || projectId !== undefined
       ? await resolveTaskPlacement({ projectId: nextProjectId, columnId })

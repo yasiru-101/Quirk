@@ -7,6 +7,11 @@ const emailService = require('../services/emailService');
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+// A fixed bcrypt hash compared against when no user matches the supplied email. It
+// makes the failed-login path do the same work as the success path, so response
+// timing no longer reveals whether an account exists. Computed once at startup.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('account-enumeration-guard', 12);
+
 // Helper to generate access token (15 mins)
 // JWT_SECRET must be configured in .env — no hardcoded fallback for security
 const generateAccessToken = (user) => {
@@ -101,14 +106,14 @@ const forgotPassword = async (req, res) => {
       console.error(`Failed to send password reset email to ${user.email}:`, err.message);
     }
 
-    // In development, log to console
+    // In development, log to console so developers can retrieve the code without it
+    // ever travelling in the HTTP response (which could leak if NODE_ENV is wrong).
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEV] Password Reset OTP for ${user.email}: ${code}`);
     }
 
     return res.status(200).json({
       message: 'If an account exists, an OTP will be sent.',
-      ...(process.env.NODE_ENV === 'development' && { devOtp: code }),
     });
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);
@@ -138,7 +143,9 @@ const resetPasswordWithOtp = async (req, res) => {
     const newHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: newHash, mustResetPassword: false },
+      // Bumping tokenValidFrom invalidates any sessions that existed before this
+      // reset, so a password recovery also evicts a hijacked session.
+      data: { passwordHash: newHash, mustResetPassword: false, tokenValidFrom: new Date() },
     });
 
     return res.status(200).json({ message: 'Password reset successfully' });
@@ -159,27 +166,23 @@ const login = async (req, res) => {
   try {
     // Find user using Prisma
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
+
+    // Always run a bcrypt comparison — against the user's hash, or a dummy hash when
+    // the email is unknown — so the response time does not betray account existence.
+    const isMatch = await bcrypt.compare(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    if (!user || !isMatch) {
       return res.status(401).json({
         message: 'Invalid credentials',
         errors: { email: 'Invalid email or password' },
       });
     }
 
-    // Verify account is active
+    // Verify account is active. Checked only after the password is confirmed so the
+    // deactivated-account message cannot be used to enumerate accounts pre-auth.
     if (!user.isActive) {
       return res.status(401).json({
         message: 'Account is deactivated',
         errors: { email: 'Your account has been deactivated. Please contact an admin.' },
-      });
-    }
-
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({
-        message: 'Invalid credentials',
-        errors: { email: 'Invalid email or password' },
       });
     }
 
@@ -356,6 +359,9 @@ const resetPassword = async (req, res) => {
       data: {
         passwordHash: newPasswordHash,
         mustResetPassword: false,
+        // Invalidate all prior sessions; the fresh tokens issued just below carry a
+        // later `iat`, so the current caller stays signed in while others are evicted.
+        tokenValidFrom: new Date(),
       },
     });
 

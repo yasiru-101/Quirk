@@ -39,6 +39,7 @@ const NAV_ITEMS = [
     ),
     label: 'Members',
     to: '/members',
+    managersOnly: true,
     roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
   },
   {
@@ -147,9 +148,17 @@ function ProjectsNav() {
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, isPlatformAdmin, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, leaveWorkspace } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, canManageWorkspace, leaveWorkspace } = useProject();
   const navigate = useNavigate();
-  const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role) && (!item.platformOnly || isPlatformAdmin));
+  // Manager access: platform admins, workspace Owners/Admins, or users whose global
+  // role manages work. Plain collaborators are excluded.
+  const canManage = isPlatformAdmin || canManageWorkspace || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER;
+  const visibleNav = NAV_ITEMS.filter(
+    (item) =>
+      item.roles.includes(role) &&
+      (!item.platformOnly || isPlatformAdmin) &&
+      (!item.managersOnly || canManage)
+  );
 
   const handleLeaveWorkspace = async () => {
     if (!activeWorkspaceId || !activeWorkspace) return;

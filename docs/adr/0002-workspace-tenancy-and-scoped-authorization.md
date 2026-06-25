@@ -36,7 +36,8 @@ Authorization is enforced by dedicated middleware:
   grants workspace Admins access to projects inside their workspace.
 - `requireTaskAccess(...roles)` resolves a task to its project before checking
   access.
-- `requirePlatformAdmin` protects SaaS-wide user administration under `/users`.
+- `requirePlatformAdmin` protects SaaS-wide user administration under `/users`
+  and platform support APIs under `/platform`.
 
 Users join a workspace by accepting a tokenized invitation. Only the SHA-256 hash
 of an invitation token is stored, so the database alone cannot be used to accept

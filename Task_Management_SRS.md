@@ -73,8 +73,10 @@ Authorization has three scopes:
 | Workspace | Tenant membership and workspace-level management | `Admin`, `Project Manager`, `Collaborator` |
 | Project | Project execution and task control | `Project Manager`, `Collaborator` |
 
-Platform administrators can manage users across the SaaS platform and bypass
-tenant object checks for support operations.
+Platform administrators use a separate SaaS control plane for support
+operations. They can manage users across the SaaS platform and access
+support-focused tenant information without treating their own workspace as the
+platform administration surface.
 
 Workspace Admins can manage workspace members, invitations, and projects in that
 workspace. Project Managers can create projects in workspaces they belong to and
@@ -86,20 +88,30 @@ All authorization shall be object-level. A role check alone is not sufficient:
 the backend must verify that the caller belongs to the workspace, project, or
 task context being accessed.
 
-### 2.4 Platform User Management
+### 2.4 Platform Administration Console
 
 Accessible only to platform administrators.
 
 The system shall allow platform administrators to:
 
+- View SaaS overview metrics including users, workspaces, projects, pending
+  invitations, and recent growth.
+- Search and review tenant workspaces for support, including owner, admins,
+  member counts, project counts, and invitation counts.
 - Create users with temporary passwords.
 - View searchable user lists.
 - Assign tenant roles: `Admin`, `Project Manager`, or `Collaborator`.
 - Grant or revoke platform administrator access.
 - Deactivate users.
+- Review recent support-relevant audit events across users, workspaces,
+  invitations, and task activity.
 
 The system shall prevent removing or deactivating the last active platform
 administrator.
+
+The platform administration console shall be separate from the workspace app
+shell. It shall not present the workspace switcher, project tree, tenant task
+board, or workspace New Task workflow as its primary interface.
 
 ### 2.5 Workspace Management
 
@@ -283,7 +295,9 @@ The backend follows a layered MVC structure:
 - `prisma/` for database schema.
 
 The frontend is a React + Vite single-page application with contexts for auth,
-projects/workspaces, sockets, chat, theme, and toasts.
+projects/workspaces, sockets, chat, theme, and toasts. It shall provide a
+workspace app shell for tenant project work and a separate `/platform` console
+shell for SaaS administration and support.
 
 Deployment shall use Docker containers and cloud hosting. Kubernetes manifests
 and GitHub Actions support AKS-style delivery.

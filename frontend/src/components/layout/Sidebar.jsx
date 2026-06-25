@@ -59,7 +59,7 @@ const NAV_ITEMS = [
       </svg>
     ),
     label: 'Platform',
-    to: '/platform/users',
+    to: '/platform',
     platformOnly: true,
     roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
   },

@@ -17,6 +17,7 @@ import { ChatProvider }   from './context/ChatContext';
 // Guards & Layout
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AppLayout      from './components/layout/AppLayout';
+import PlatformLayout from './components/layout/PlatformLayout';
 
 // Pages
 import LoginPage          from './pages/LoginPage';
@@ -33,7 +34,10 @@ import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
 import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
 import AcceptInvitePage    from './pages/AcceptInvitePage';
+import PlatformOverviewPage from './pages/PlatformOverviewPage';
+import PlatformWorkspacesPage from './pages/PlatformWorkspacesPage';
 import PlatformUsersPage   from './pages/PlatformUsersPage';
+import PlatformAuditPage   from './pages/PlatformAuditPage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import ChatPage           from './pages/ChatPage';
@@ -132,16 +136,6 @@ export default function App() {
                   />
 
                   <Route
-                    path="platform/users"
-                    element={
-                      <ProtectedRoute>
-                        <PlatformUsersPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Settings */}
-                  <Route
                     path="settings"
                     element={
                       <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
@@ -159,6 +153,20 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   />
+                </Route>
+
+                <Route
+                  path="/platform"
+                  element={
+                    <ProtectedRoute>
+                      <PlatformLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<PlatformOverviewPage />} />
+                  <Route path="workspaces" element={<PlatformWorkspacesPage />} />
+                  <Route path="users" element={<PlatformUsersPage />} />
+                  <Route path="audit" element={<PlatformAuditPage />} />
                 </Route>
 
                 {/* ── Catch-all ──────────────────────────────────────────── */}

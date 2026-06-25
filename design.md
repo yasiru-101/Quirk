@@ -104,6 +104,20 @@ scan, dense enough for daily operations, and never like a generic admin theme.
   task board with the create state.
 - Notifications remain available globally from the bell.
 
+### Platform Console
+
+- Platform administration uses a separate console shell under `/platform`, not
+  the workspace app shell.
+- The console supports SaaS operator workflows: overview metrics, workspace
+  support, user management, and audit review.
+- It does not show the workspace switcher, active workspace project tree, New
+  Task action, or tenant task-board navigation.
+- The workspace app may show a platform-only entry point for platform
+  administrators, but that entry point opens the platform overview.
+- Platform administrators may still own or join normal workspaces, but their
+  own workspace is separate from the operator console and is not the intended
+  place for SaaS support workflows.
+
 ## Projects
 
 - Project cards show the project initial, name, description, column count,

@@ -75,6 +75,8 @@ Project roles are:
 Platform administrator access is intentionally separate from tenant roles. A
 workspace `Admin` is not automatically a platform administrator, and a platform
 administrator does not need a special tenant role to perform support operations.
+The platform console is a separate SaaS control plane for operations and
+support, not another tenant workspace task board.
 
 Legacy `Owner` workspace membership rows are treated as workspace admins for
 backward compatibility, but new workspaces and invitations use `Admin`,
@@ -84,8 +86,9 @@ Object-level authorization is mandatory. A role check alone is not enough; the
 backend must verify that the caller belongs to the workspace, project, or task
 context being accessed. See
 [ADR 0002](./adr/0002-workspace-tenancy-and-scoped-authorization.md),
-[ADR 0004](./adr/0004-task-level-object-authorization.md), and
-[ADR 0008](./adr/0008-platform-admin-and-srs-tenant-roles.md).
+[ADR 0004](./adr/0004-task-level-object-authorization.md),
+[ADR 0008](./adr/0008-platform-admin-and-srs-tenant-roles.md), and
+[ADR 0009](./adr/0009-separate-platform-support-console.md).
 
 ## Authentication and Sessions
 
@@ -155,21 +158,34 @@ frontend/src/
   index.css       Design-system tokens and Tailwind
 ```
 
+The workspace app shell and platform console shell are separate:
+
+- The workspace app shell shows workspace switching, project navigation, task
+  creation, chat, notifications, and tenant settings.
+- The platform console shell is visible only to platform administrators and
+  focuses on SaaS overview, tenant support, user management, and audit review.
+  It intentionally omits workspace switching, task-board navigation, and tenant
+  task creation.
+
 Notable routes:
 
 - `/dashboard` - operational overview.
 - `/projects` and `/projects/:id` - workspace projects and project settings.
 - `/tasks?projectId=<id>` - project-scoped task board.
 - `/members` - workspace membership.
-- `/platform/users` - platform user administration, visible only to platform
-  administrators.
 - `/chat` - workspace/project/direct messaging.
+- `/platform` - platform support overview, visible only to platform
+  administrators.
+- `/platform/workspaces` - tenant workspace support list.
+- `/platform/users` - platform user administration.
+- `/platform/audit` - recent support audit feed.
 
 ## Roadmap Status
 
 - [x] UUID identifier consistency.
 - [x] Workspace tenancy and scoped authorization.
 - [x] Platform administrator separation from tenant roles.
+- [x] Separate platform support console.
 - [x] Workspace invitations and self-service leave.
 - [x] Self-service registration, email verification, login 2FA, and password
   reset.

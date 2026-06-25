@@ -89,6 +89,10 @@ jobs:
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/backend-deployment.yaml
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/frontend-deployment.yaml
 
+      - name: Update GEMINI_API_KEY Secret in AKS
+        run: |
+          kubectl patch secret quirk-secrets -n quirk -p="{\"stringData\":{\"GEMINI_API_KEY\":\"${{ secrets.GEMINI_API_KEY }}\"}}"
+
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/namespace.yaml

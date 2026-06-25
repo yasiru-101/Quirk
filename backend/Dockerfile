@@ -10,8 +10,9 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 COPY package*.json ./
-# Install only production dependencies (no devDependencies)
-RUN npm install --omit=dev
+# Install only production dependencies (no devDependencies). npm ci is deterministic
+# (installs exactly the lockfile) and cache-friendly for reproducible image builds.
+RUN npm ci --omit=dev
 
 # ── Stage 2: Generate Prisma client ──────────────────────────────────────────
 FROM node:22-alpine AS prisma-gen
@@ -19,7 +20,7 @@ WORKDIR /app
 
 COPY package*.json ./
 # Install all deps (including prisma CLI in devDependencies)
-RUN npm install
+RUN npm ci
 
 COPY prisma ./prisma
 # Generate Prisma client from schema
@@ -40,6 +41,12 @@ COPY --from=prisma-gen /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy application source (excludes .dockerignore entries)
 COPY . .
+
+# Drop privileges: run as the built-in unprivileged 'node' user. Source files copied
+# as root stay world-readable (0644/0755), so only the local uploads fallback dir
+# needs to be writable by 'node' (production uses Azure Blob instead).
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+USER node
 
 # Expose backend port
 EXPOSE 5000

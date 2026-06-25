@@ -32,14 +32,14 @@ jobs:
       - name: Backend — install, syntax check & Prisma validate
         run: |
           cd backend
-          npm ci
+          npm install
           find . -path ./node_modules -prune -o -name '*.js' -print | xargs -r -n1 node --check
           npx prisma validate
 
       - name: Frontend — install & build
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build
 
   # ── Build & Push Docker Images ─────────────────────────────────────────────
@@ -70,7 +70,7 @@ jobs:
       - name: Push Prisma DB Schema to Azure Postgres
         run: |
           cd backend
-          npm ci
+          npm install
           npx prisma generate
           npx prisma db push
         env:

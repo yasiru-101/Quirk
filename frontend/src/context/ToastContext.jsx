@@ -34,10 +34,10 @@ export function ToastProvider({ children }) {
     [dismiss]
   );
 
-  const success = (msg, title = 'Success') => toast({ type: 'success', title, message: msg });
-  const error   = (msg, title = 'Error')   => toast({ type: 'error',   title, message: msg });
-  const warning = (msg, title = 'Warning') => toast({ type: 'warning', title, message: msg });
-  const info    = (msg, title = 'Info')    => toast({ type: 'info',    title, message: msg });
+  const success = useCallback((msg, title = 'Success') => toast({ type: 'success', title, message: msg }), [toast]);
+  const error   = useCallback((msg, title = 'Error')   => toast({ type: 'error',   title, message: msg }), [toast]);
+  const warning = useCallback((msg, title = 'Warning') => toast({ type: 'warning', title, message: msg }), [toast]);
+  const info    = useCallback((msg, title = 'Info')    => toast({ type: 'info',    title, message: msg }), [toast]);
 
   return (
     <ToastContext.Provider value={{ toast, success, error, warning, info, dismiss }}>

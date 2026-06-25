@@ -22,6 +22,7 @@ const timeLogRoutes       = require('./routes/timeLogRoutes');
 const chatRoutes          = require('./routes/chatRoutes');
 const searchRoutes        = require('./routes/searchRoutes');
 const platformRoutes      = require('./routes/platformRoutes');
+const aiRoutes            = require('./routes/aiRoutes');
 const errorHandler        = require('./middleware/errorHandler');
 const prisma              = require('./config/db');
 const { protect }         = require('./middleware/auth');
@@ -174,6 +175,7 @@ app.use('/api/workspaces',    workspaceRoutes);       // Workspaces, members, in
 app.use('/api/chat',          chatRoutes);            // Chat conversations and messages
 app.use('/api/search',        searchRoutes);          // Global search
 app.use('/api/platform',      platformRoutes);        // SaaS platform console
+app.use('/api/ai',            aiRoutes);              // AI Assistant routes
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

@@ -9,11 +9,12 @@ import TopBar from './TopBar';
 import ErrorBoundary from '../common/ErrorBoundary';
 import { useProject } from '../../context/ProjectContext';
 import { cn } from '../../utils/helpers';
+import MorphPanel from '../ui/ai-input';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { workspaces, workspaceLoading } = useProject();
+  const { workspaces, workspaceLoading, activeWorkspaceId, activeProject } = useProject();
   const { pathname, search } = useLocation();
 
   // Close the mobile drawer whenever the route changes so navigating from it
@@ -68,6 +69,9 @@ export default function AppLayout() {
           </ErrorBoundary>
         </main>
       </div>
+      
+      {/* AI Assistant Floating Bubble */}
+      <MorphPanel workspaceId={activeWorkspaceId} projectId={activeProject?.id} />
     </div>
   );
 }

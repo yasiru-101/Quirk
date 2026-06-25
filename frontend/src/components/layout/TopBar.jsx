@@ -94,7 +94,7 @@ export default function TopBar() {
       window.dispatchEvent(new CustomEvent('task:create'));
       return;
     }
-    navigate('/projects');
+    navigate('/tasks', { state: { createTask: Date.now() } });
   };
 
   return (

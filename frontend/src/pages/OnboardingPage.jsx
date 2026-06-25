@@ -184,7 +184,7 @@ export default function OnboardingPage() {
 
           <div className="mt-10 flex items-center justify-between border-t border-[var(--colors-hairline)] pt-6">
             {currentStep === 1 && workspaces?.length > 0 ? (
-              <Button variant="secondary" onClick={() => navigate('/projects')}>
+              <Button variant="secondary" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
             ) : (

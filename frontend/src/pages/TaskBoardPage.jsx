@@ -246,23 +246,6 @@ export default function TaskBoardPage() {
         onTabChange={setView}
       />
 
-      <ViewToolbar
-        filters={[
-          { id: 'column', label: 'Column' },
-          { id: 'assignee', label: 'Assignee' },
-        ]}
-        activeFilters={['column']}
-        actions={
-          canCreateTask && (
-            <button
-              onClick={() => setModal({ open: true, task: null })}
-              className="rounded-full bg-[var(--colors-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring"
-            >
-              Add task
-            </button>
-          )
-        }
-      />
 
       <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
         <div className="flex flex-1 flex-col overflow-hidden p-6">

@@ -51,6 +51,18 @@ const NAV_ITEMS = [
     to: '/chat',
     roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
   },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3l7 4v5c0 4.5-2.8 7.5-7 9-4.2-1.5-7-4.5-7-9V7l7-4z" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    ),
+    label: 'Platform',
+    to: '/platform/users',
+    platformOnly: true,
+    roles: [ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR],
+  },
 ];
 
 // ── Notion-style collapsible projects tree ────────────────────────────────────
@@ -58,11 +70,11 @@ const NAV_ITEMS = [
 // (/tasks?projectId=<id>). Managers get an inline create action.
 function ProjectsNav() {
   const { projects, loading, canManageWorkspace } = useProject();
-  const { role } = useAuth();
+  const { role, isPlatformAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(true);
-  const canCreate = role === ROLES.ADMIN || canManageWorkspace;
+  const canCreate = isPlatformAdmin || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
   const activeProjectId = new URLSearchParams(location.search).get('projectId');
 
   return (
@@ -134,10 +146,17 @@ function ProjectsNav() {
 }
 
 export default function Sidebar({ collapsed, onToggle }) {
-  const { user, role, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, refreshWorkspaces } = useProject();
+  const { user, role, isPlatformAdmin, logout } = useAuth();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, leaveWorkspace } = useProject();
   const navigate = useNavigate();
-  const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const visibleNav = NAV_ITEMS.filter((item) => item.roles.includes(role) && (!item.platformOnly || isPlatformAdmin));
+
+  const handleLeaveWorkspace = async () => {
+    if (!activeWorkspaceId || !activeWorkspace) return;
+    if (!window.confirm(`Leave ${activeWorkspace.name}? You will lose access to its projects and tasks.`)) return;
+    await leaveWorkspace();
+    navigate('/projects');
+  };
 
   return (
     <aside
@@ -205,6 +224,15 @@ export default function Sidebar({ collapsed, onToggle }) {
             <p className="mt-2 truncate text-sm font-semibold text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
           )}
           <p className="mt-2 text-xs text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
+          {activeWorkspaceId && activeWorkspaceRole && !['Owner', 'Admin'].includes(activeWorkspaceRole) && (
+            <button
+              type="button"
+              onClick={handleLeaveWorkspace}
+              className="mt-3 text-xs font-semibold text-white/45 transition hover:text-white focus-ring"
+            >
+              Leave workspace
+            </button>
+          )}
         </div>
       )}
 

@@ -38,8 +38,8 @@ export const authService = {
   refreshToken: () =>
     api.post('/auth/refresh'),
 
-  resetPassword: (currentPassword, newPassword) =>
-    api.post('/auth/reset-password', { currentPassword, newPassword }),
+  resetPassword: (currentPassword, newPassword, confirmPassword) =>
+    api.post('/auth/reset-password', { currentPassword, newPassword, confirmPassword }),
 
   /** Called on app boot to get the current user from the valid cookie */
   me: () =>

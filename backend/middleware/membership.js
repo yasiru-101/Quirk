@@ -9,13 +9,12 @@
  *
  * They run after `protect`, which populates `req.user`.
  *
- * A platform Administrator (User.role === 'Admin') bypasses these checks: that role
- * is reserved for system-wide user management and support.
+ * A platform administrator (User.isPlatformAdmin) bypasses these checks. Tenant
+ * roles remain scoped to the workspace or project named by the request.
  */
 
 const prisma = require('../config/db');
-
-const PLATFORM_ADMIN = 'Admin';
+const { isPlatformAdmin, isWorkspaceAdmin } = require('../utils/roles');
 
 const deny = (res, status, message) =>
   res.status(status).json({ errorCode: status, message });
@@ -29,7 +28,7 @@ const deny = (res, status, message) =>
 const requireWorkspaceRole = (...allowedRoles) => async (req, res, next) => {
   try {
     if (!req.user) return deny(res, 401, 'Authentication required.');
-    if (req.user.role === PLATFORM_ADMIN) return next();
+    if (isPlatformAdmin(req.user)) return next();
 
     const workspaceId =
       req.params.workspaceId || req.params.id || req.body.workspaceId;
@@ -60,7 +59,7 @@ const requireWorkspaceRole = (...allowedRoles) => async (req, res, next) => {
  * @returns {Promise<{ ok: boolean, status?: number, membership?: object }>}
  */
 const resolveProjectAccess = async (user, projectId, allowedRoles) => {
-  if (user.role === PLATFORM_ADMIN) return { ok: true };
+  if (isPlatformAdmin(user)) return { ok: true };
 
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -80,7 +79,7 @@ const resolveProjectAccess = async (user, projectId, allowedRoles) => {
     const wm = await prisma.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId: project.workspaceId, userId: user.id } },
     });
-    if (wm && (wm.role === 'Owner' || wm.role === 'Admin')) return { ok: true };
+    if (isWorkspaceAdmin(wm)) return { ok: true };
   }
 
   return { ok: false, status: 403 };
@@ -125,7 +124,7 @@ const requireProjectRole = (...allowedRoles) => async (req, res, next) => {
  * @returns {Promise<{ ok: boolean, status?: number }>}
  */
 const resolveTaskAccess = async (user, taskId, allowedProjectRoles = []) => {
-  if (user.role === PLATFORM_ADMIN) return { ok: true };
+  if (isPlatformAdmin(user)) return { ok: true };
 
   const task = await prisma.task.findUnique({
     where: { id: taskId },

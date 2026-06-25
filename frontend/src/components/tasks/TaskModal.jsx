@@ -27,7 +27,7 @@ const EMPTY_FORM = {
 };
 
 export default function TaskModal({ open, onClose, task = null, projects = [], columns = [], onSaved }) {
-  const { role, user } = useAuth();
+  const { role, user, isPlatformAdmin } = useAuth();
   const { canManageWorkspace } = useProject();
   const { success, error: toastError } = useToast();
   const isEdit = !!task;
@@ -37,6 +37,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
   const [loading, setLoading] = useState(false);
 
   const canManageProject = (project) =>
+    isPlatformAdmin ||
     role === ROLES.ADMIN ||
     canManageWorkspace ||
     project?.members?.some((member) => (member.userId === user?.id || member.user?.id === user?.id) && member.role === ROLES.PROJECT_MANAGER);
@@ -76,7 +77,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
     [selectedProject, user?.id]
   );
 
-  const canManageTask = role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
+  const canManageTask = isPlatformAdmin || role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
 
   const availableUsers = useMemo(() => {
     const members = selectedProject?.members || [];

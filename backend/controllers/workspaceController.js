@@ -11,6 +11,7 @@
 const crypto = require('crypto');
 const prisma = require('../config/db');
 const emailService = require('../services/emailService');
+const { WORKSPACE_ADMIN_ROLES, isWorkspaceAdmin } = require('../utils/roles');
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -27,7 +28,7 @@ const createWorkspace = async (req, res) => {
         data: { name, description: description || null, ownerId: req.user.id },
       });
       await tx.workspaceMember.create({
-        data: { workspaceId: created.id, userId: req.user.id, role: 'Owner' },
+        data: { workspaceId: created.id, userId: req.user.id, role: 'Admin' },
       });
       return created;
     });
@@ -129,20 +130,13 @@ const updateMemberRole = async (req, res) => {
     });
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
-    // Only a workspace Owner may grant the Owner role.
-    if (role === 'Owner' && req.workspaceMembership?.role !== 'Owner') {
-      return res.status(403).json({
-        message: 'Only an Owner may transfer ownership to another member.',
+    // Never leave a workspace without an administrator.
+    if (isWorkspaceAdmin(member) && !WORKSPACE_ADMIN_ROLES.includes(role)) {
+      const adminCount = await prisma.workspaceMember.count({
+        where: { workspaceId, role: { in: WORKSPACE_ADMIN_ROLES } },
       });
-    }
-
-    // Never leave a workspace without an Owner.
-    if (member.role === 'Owner' && role !== 'Owner') {
-      const ownerCount = await prisma.workspaceMember.count({
-        where: { workspaceId, role: 'Owner' },
-      });
-      if (ownerCount <= 1) {
-        return res.status(400).json({ message: 'A workspace must retain at least one Owner.' });
+      if (adminCount <= 1) {
+        return res.status(400).json({ message: 'A workspace must retain at least one Admin.' });
       }
     }
 
@@ -167,8 +161,13 @@ const removeMember = async (req, res) => {
       where: { workspaceId_userId: { workspaceId, userId } },
     });
     if (!member) return res.status(404).json({ message: 'Member not found' });
-    if (member.role === 'Owner') {
-      return res.status(400).json({ message: 'The workspace Owner cannot be removed.' });
+    if (isWorkspaceAdmin(member)) {
+      const adminCount = await prisma.workspaceMember.count({
+        where: { workspaceId, role: { in: WORKSPACE_ADMIN_ROLES } },
+      });
+      if (adminCount <= 1) {
+        return res.status(400).json({ message: 'A workspace must retain at least one Admin.' });
+      }
     }
 
     await prisma.workspaceMember.delete({
@@ -178,6 +177,40 @@ const removeMember = async (req, res) => {
   } catch (error) {
     console.error(`Remove member error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error removing member' });
+  }
+};
+
+// @route  DELETE /api/workspaces/:id/leave
+// @access Workspace member
+const leaveWorkspace = async (req, res) => {
+  const workspaceId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    const member = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+    });
+    if (!member) return res.status(404).json({ message: 'Workspace membership not found' });
+
+    if (isWorkspaceAdmin(member)) {
+      const adminCount = await prisma.workspaceMember.count({
+        where: { workspaceId, role: { in: WORKSPACE_ADMIN_ROLES } },
+      });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          message: 'You are the last workspace Admin. Assign another Admin before leaving.',
+        });
+      }
+    }
+
+    await prisma.workspaceMember.delete({
+      where: { workspaceId_userId: { workspaceId, userId } },
+    });
+
+    return res.status(200).json({ message: 'You left the workspace successfully' });
+  } catch (error) {
+    console.error(`Leave workspace error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error leaving workspace' });
   }
 };
 
@@ -317,6 +350,7 @@ module.exports = {
   listMembers,
   updateMemberRole,
   removeMember,
+  leaveWorkspace,
   inviteMember,
   verifyInvitation,
   acceptInvitation,

@@ -18,10 +18,11 @@
  */
 
 const { z } = require('zod');
+const { PLATFORM_ROLES } = require('../utils/roles');
 
 // ─── Allowed role values ─────────────────────────────────────────────────────
 // These must match the role values defined in the Prisma User model (prisma/schema.prisma).
-const VALID_ROLES = ['Admin', 'Project Manager', 'Collaborator'];
+const VALID_ROLES = PLATFORM_ROLES;
 
 // ─── Create User Schema ──────────────────────────────────────────────────────
 // Used on: POST /api/users
@@ -47,6 +48,11 @@ const createUserSchema = z.object({
     required_error: 'Role is required',
     invalid_type_error: `Role must be one of: ${VALID_ROLES.join(', ')}`,
   }),
+
+  isPlatformAdmin: z
+    .boolean({ invalid_type_error: 'isPlatformAdmin must be a boolean' })
+    .optional()
+    .default(false),
 });
 
 // ─── Update User Schema ─────────────────────────────────────────────────────
@@ -81,6 +87,10 @@ const updateUserSchema = z
     // isActive: optional boolean for activating/deactivating users
     isActive: z
       .boolean({ invalid_type_error: 'isActive must be a boolean' })
+      .optional(),
+
+    isPlatformAdmin: z
+      .boolean({ invalid_type_error: 'isPlatformAdmin must be a boolean' })
       .optional(),
   })
   .refine(

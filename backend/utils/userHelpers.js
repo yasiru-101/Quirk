@@ -93,28 +93,24 @@ const generateTempPassword = (length = 12) => {
  *   await checkLastAdmin(userId);
  *   // If this line is reached, it's safe to proceed.
  */
-const checkLastAdmin = async (userId) => {
+const checkLastPlatformAdmin = async (userId) => {
   const targetId = userId;
 
-  // Count how many active users currently hold the 'Admin' role
   const activeAdminCount = await prisma.user.count({
     where: {
-      role: 'Admin',
+      isPlatformAdmin: true,
       isActive: true,
     },
   });
 
-  // If there's only one active Admin left, check if it's the user being modified
   if (activeAdminCount <= 1) {
-    // Find the single remaining Admin to compare IDs
     const lastAdmin = await prisma.user.findFirst({
-      where: { role: 'Admin', isActive: true },
+      where: { isPlatformAdmin: true, isActive: true },
     });
 
-    // If the user being modified IS the last Admin, block the operation
     if (lastAdmin && lastAdmin.id === targetId) {
       const error = new Error(
-        'Cannot modify the last active Administrator. At least one Admin must remain active.'
+        'Cannot modify the last active platform administrator. At least one platform administrator must remain active.'
       );
       error.status = 400;
       throw error;
@@ -124,6 +120,6 @@ const checkLastAdmin = async (userId) => {
 
 module.exports = {
   generateTempPassword,
-  checkLastAdmin,
+  checkLastPlatformAdmin,
   PASSWORD_REGEX,
 };

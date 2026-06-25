@@ -1,41 +1,42 @@
-﻿# 7. Role escalation prevention and leave-workspace
+# 7. Workspace admin retention and leave-workspace
 
 - Status: Accepted
 - Date: 2026-06-25
+- Updated: 2026-06-25
 
 ## Context
 
-The workspace invitation endpoint accepted any role including Owner, which meant an
-Admin could invite an external user directly as an Owner — escalating workspace
-control outside the intended transfer path. The updateMemberRole endpoint similarly
-allowed any workspace Admin to promote any member to Owner without restriction.
+Workspace membership is scoped to the tenant and uses the SRS roles: `Admin`,
+`Project Manager`, and `Collaborator`. Workspace Admins can invite members,
+change member roles, and remove members.
 
-Additionally, users had no self-service path to leave a workspace they no longer
-needed access to. The only way to be removed was through an Admin action, which
-created friction and trust concerns.
+Without safeguards, a workspace could accidentally lose all Admin members. That
+would leave the tenant without anyone who can manage membership, invitations, or
+project administration. Users also need a self-service path to leave workspaces
+they no longer use.
 
 ## Decision
 
-1. **Invitation role restricted**: The inviteMemberSchema ole field is validated
-   against ['Admin', 'Member'] only. The Owner role cannot be granted through an
-   invitation.
+1. **Invitation roles are restricted**: invitations may grant only workspace
+   `Admin`, `Project Manager`, or `Collaborator`.
 
-2. **Role update caller-rank check**: updateMemberRole now checks that only a user
-   whose own workspace role is Owner may set another member's role to Owner.
-   Admins may promote members to Admin or demote them, but not grant ownership.
+2. **Workspace Admin must be retained**: role updates, member removal, and
+   self-service leave all block operations that would leave a workspace without
+   at least one Admin.
 
-3. **Leave workspace route added**: DELETE /api/workspaces/:id/leave allows any
-   workspace member to remove themselves. The sole Owner is blocked from leaving
-   until they transfer ownership to at least one other member.
+3. **Leave workspace route added**: `DELETE /api/workspaces/:id/leave` allows any
+   workspace member to remove themselves from that workspace.
 
-4. **Frontend leave button**: The sidebar displays a Leave workspace button for
-   non-Owner members.
+4. **Frontend leave button**: the sidebar displays a Leave workspace action for
+   non-Admin members of the active workspace.
+
+Legacy `Owner` rows count as Admin-equivalent for compatibility, but new data
+uses the SRS roles.
 
 ## Consequences
 
-- Ownership can only be transferred by an existing Owner, not handed out by invite
-  or by an Admin acting unilaterally.
-- All existing invitations already in-flight remain valid as they were sent before
-  this restriction.
-- Users can self-service remove themselves from workspaces they no longer use,
-  reducing Admin overhead.
+- Workspace administration remains recoverable because each workspace must retain
+  at least one Admin.
+- Users can remove themselves from workspaces they no longer need.
+- Workspace role assignment stays aligned with the SRS and no longer exposes a
+  separate ownership role.

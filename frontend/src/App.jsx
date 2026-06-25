@@ -33,6 +33,7 @@ import SettingsPage       from './pages/SettingsPage';
 import OnboardingPage     from './pages/OnboardingPage';
 import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
 import AcceptInvitePage    from './pages/AcceptInvitePage';
+import PlatformUsersPage   from './pages/PlatformUsersPage';
 import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import ChatPage           from './pages/ChatPage';
@@ -126,6 +127,15 @@ export default function App() {
                     element={
                       <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
                         <WorkspaceMembersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="platform/users"
+                    element={
+                      <ProtectedRoute>
+                        <PlatformUsersPage />
                       </ProtectedRoute>
                     }
                   />

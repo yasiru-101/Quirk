@@ -143,6 +143,16 @@ export function ProjectProvider({ children }) {
     await refreshWorkspaces();
   };
 
+  const leaveWorkspace = async () => {
+    await api.delete(`/workspaces/${activeWorkspaceId}/leave`);
+    const nextActiveId = await refreshWorkspaces();
+    if (!nextActiveId) {
+      setProjects([]);
+      setWorkspaceMembers([]);
+      setPendingInvites([]);
+    }
+  };
+
   const addProjectMember = async (projectId, payload) => {
     await api.post(`/projects/${projectId}/members`, payload);
     await refreshProjects();
@@ -176,6 +186,7 @@ export function ProjectProvider({ children }) {
         inviteWorkspaceMember,
         updateWorkspaceMemberRole,
         removeWorkspaceMember,
+        leaveWorkspace,
         createProject,
         updateProject,
         deleteProject,

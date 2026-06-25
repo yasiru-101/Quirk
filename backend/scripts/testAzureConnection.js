@@ -10,7 +10,7 @@ async function testBlobConnection() {
   const containerName = process.env.AZURE_BLOB_CONTAINER_NAME || 'taskflow-attachments';
 
   if (!connStr) {
-    console.error('❌ Error: AZURE_BLOB_CONNECTION_STRING is missing from .env');
+    console.error('[FAIL] Error: AZURE_BLOB_CONNECTION_STRING is missing from .env');
     return false;
   }
 
@@ -21,7 +21,7 @@ async function testBlobConnection() {
 
     console.log(`Checking/Creating container: "${containerName}"...`);
     await containerClient.createIfNotExists();
-    console.log('✅ Container checked/created successfully.');
+    console.log('[OK] Container checked/created successfully.');
 
     const testBlobName = `test-connection-${Date.now()}.txt`;
     const blockBlobClient = containerClient.getBlockBlobClient(testBlobName);
@@ -29,15 +29,15 @@ async function testBlobConnection() {
 
     console.log(`Uploading test blob: "${testBlobName}"...`);
     await blockBlobClient.upload(content, content.length);
-    console.log('✅ Upload successful.');
+    console.log('[OK] Upload successful.');
 
     console.log('Deleting test blob...');
     await blockBlobClient.delete();
-    console.log('✅ Deletion successful.');
-    console.log('🎉 Azure Blob Storage connection works perfectly!\n');
+    console.log('[OK] Deletion successful.');
+    console.log('[OK] Azure Blob Storage connection works correctly.\n');
     return true;
   } catch (error) {
-    console.error(`❌ Azure Blob Storage failed: ${error.message}\n`);
+    console.error(`[FAIL] Azure Blob Storage failed: ${error.message}\n`);
     return false;
   }
 }
@@ -48,11 +48,11 @@ async function testEmailConnection() {
   const senderAddress = process.env.AZURE_ACS_SENDER_ADDRESS;
 
   if (!connStr) {
-    console.error('❌ Error: AZURE_ACS_CONNECTION_STRING is missing from .env');
+    console.error('[FAIL] Error: AZURE_ACS_CONNECTION_STRING is missing from .env');
     return false;
   }
   if (!senderAddress) {
-    console.error('❌ Error: AZURE_ACS_SENDER_ADDRESS is missing from .env');
+    console.error('[FAIL] Error: AZURE_ACS_SENDER_ADDRESS is missing from .env');
     return false;
   }
 
@@ -60,13 +60,13 @@ async function testEmailConnection() {
     console.log(`Initializing EmailClient with endpoint: ${connStr.match(/endpoint=([^;]+)/)?.[1] || 'Unknown'}`);
     const emailClient = new EmailClient(connStr);
 
-    console.log('✅ EmailClient initialized successfully.');
+    console.log('[OK] EmailClient initialized successfully.');
     console.log(`Sender Address configured: "${senderAddress}"`);
     console.log('Note: To fully verify emails, a test email must be sent to an actual address.');
-    console.log('🎉 Azure Communication Services client setup is valid!\n');
+    console.log('[OK] Azure Communication Services client setup is valid.\n');
     return true;
   } catch (error) {
-    console.error(`❌ Azure Communication Services initialization failed: ${error.message}\n`);
+    console.error(`[FAIL] Azure Communication Services initialization failed: ${error.message}\n`);
     return false;
   }
 }
@@ -78,11 +78,11 @@ async function run() {
   
   if (blobOk && emailOk) {
     console.log('===================================================');
-    console.log('🎉 ALL AZURE CONFIGURATIONS ARE CORRECT AND ACTIVE!');
+    console.log('[OK] ALL AZURE CONFIGURATIONS ARE CORRECT AND ACTIVE.');
     console.log('===================================================');
   } else {
     console.log('===================================================');
-    console.log('❌ SOME AZURE INTEGRATIONS FAILED. PLEASE CHECK ERRORS ABOVE.');
+    console.log('[FAIL] SOME AZURE INTEGRATIONS FAILED. PLEASE CHECK ERRORS ABOVE.');
     console.log('===================================================');
   }
 }

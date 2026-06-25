@@ -5,9 +5,7 @@
 
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
-
-const isWorkspaceManager = (membership) =>
-  membership && ['Owner', 'Admin'].includes(membership.role);
+const { isPlatformAdmin, canCreateProjectInWorkspace } = require('../utils/roles');
 
 // ─── Helper: verify project exists and (optionally) check PM ownership ────────
 const findProject = async (id, res) => {
@@ -32,10 +30,10 @@ const findProject = async (id, res) => {
 const createProject = async (req, res) => {
   const { name, description, templateType, templateId, workspaceId, columns: customColumns } = req.body;
   try {
-    // Projects belong to a workspace. Platform Admins can create projects anywhere.
-    // Otherwise, you must be a member of the workspace AND either be a workspace manager 
-    // (Owner/Admin) or hold the 'Project Manager' platform role.
-    if (req.user.role !== 'Admin') {
+    // Projects belong to a workspace. Platform admins can create projects anywhere.
+    // Otherwise, you must be a member of the workspace and have a tenant role
+    // allowed to create projects there.
+    if (!isPlatformAdmin(req.user)) {
       const membership = await prisma.workspaceMember.findUnique({
         where: { workspaceId_userId: { workspaceId, userId: req.user.id } },
       });
@@ -46,9 +44,9 @@ const createProject = async (req, res) => {
         });
       }
 
-      if (!isWorkspaceManager(membership) && req.user.role !== 'Project Manager') {
+      if (!canCreateProjectInWorkspace(req.user, membership)) {
         return res.status(403).json({
-          message: 'Access denied. Only Project Managers or workspace managers can create projects.',
+          message: 'Access denied. Only workspace Admins and Project Managers can create projects.',
         });
       }
     }
@@ -135,7 +133,7 @@ const getProjects = async (req, res) => {
     // to, or projects in workspaces they own or administer.
     const where = { deletedAt: null };
     if (workspaceId) where.workspaceId = workspaceId;
-    if (req.user.role !== 'Admin') {
+    if (!isPlatformAdmin(req.user)) {
       where.OR = [
         { members: { some: { userId: req.user.id } } },
         {

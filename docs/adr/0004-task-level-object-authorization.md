@@ -20,7 +20,7 @@ middleware. The task is loaded, mapped to its project, and authorized through th
 existing `resolveProjectAccess`:
 
 - **Participant access** (no roles): granted to the task's creator, its assignees,
-  members of its project, and Owners/Admins of its workspace. Used for reads, status
+  members of its project, and Admins of its workspace. Used for reads, status
   updates, comments, time logs, activity, and attachments.
 - **Manager access** (`'Project Manager'`): required to update, delete, or assign a
   task. For a task with no project, only its creator qualifies.

@@ -16,13 +16,13 @@ const {
 } = require('../controllers/userController');
 
 const { protect } = require('../middleware/auth');
-const rbac = require('../middleware/rbac');
+const requirePlatformAdmin = require('../middleware/platformAdmin');
 const validate = require('../middleware/validate');
 const { createUserSchema, updateUserSchema } = require('../validations/userSchemas');
 
 // Enforce authentication ('protect') and role validation ('rbac') for ALL user routes
 router.use(protect);
-router.use(rbac('Admin'));
+router.use(requirePlatformAdmin);
 
 /**
  * @openapi
@@ -55,6 +55,9 @@ router.use(rbac('Admin'));
  *                 type: string
  *                 enum: [Admin, Project Manager, Collaborator]
  *                 example: Project Manager
+ *               isPlatformAdmin:
+ *                 type: boolean
+ *                 example: false
  *     responses:
  *       201:
  *         description: User created successfully.
@@ -63,7 +66,7 @@ router.use(rbac('Admin'));
  *       401:
  *         description: Not authenticated.
  *       403:
- *         description: Not authorized (requires Admin role).
+ *         description: Not authorized (requires platform administrator access).
  */
 router.post('/', validate(createUserSchema), createUser);
 
@@ -72,7 +75,7 @@ router.post('/', validate(createUserSchema), createUser);
  * /users:
  *   get:
  *     summary: Get all users
- *     description: Lists users matching search queries or filtering. Restricted to Admins.
+ *     description: Lists users matching search queries or filtering. Restricted to platform administrators.
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -87,6 +90,11 @@ router.post('/', validate(createUserSchema), createUser);
  *         schema:
  *           type: string
  *         description: Filter by role
+ *       - name: isPlatformAdmin
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *         description: Platform administrator flag
  *       - name: isActive
  *         in: query
  *         schema:
@@ -107,7 +115,7 @@ router.get('/', getUsers);
  * /users/{id}:
  *   get:
  *     summary: Get user details by ID
- *     description: Retrieves user information. Restricted to Admins.
+ *     description: Retrieves user information. Restricted to platform administrators.
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -130,7 +138,7 @@ router.get('/:id', getUserById);
  * /users/{id}:
  *   put:
  *     summary: Update user details
- *     description: Updates name, role, or active status. Prevents demoting the last admin. Restricted to Admins.
+ *     description: Updates name, role, platform-admin flag, or active status. Prevents removing the last platform administrator.
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []
@@ -154,6 +162,8 @@ router.get('/:id', getUserById);
  *                 enum: [Admin, Project Manager, Collaborator]
  *               isActive:
  *                 type: boolean
+ *               isPlatformAdmin:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: User updated successfully.
@@ -169,7 +179,7 @@ router.put('/:id', validate(updateUserSchema), updateUser);
  * /users/{id}/deactivate:
  *   patch:
  *     summary: Soft deactivate a user
- *     description: Deactivates a user's login access. Safeguard prevents deactivating last admin. Restricted to Admins.
+ *     description: Deactivates a user's login access. Safeguard prevents deactivating the last platform administrator.
  *     tags: [Users]
  *     security:
  *       - cookieAuth: []

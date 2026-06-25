@@ -41,6 +41,19 @@ export default function NotificationBell({ onClick }) {
     return unsub;
   }, [on]);
 
+  // Keep the badge in sync when notifications are read from the panel. The panel
+  // owns its own list state, so it broadcasts these events instead of sharing it.
+  useEffect(() => {
+    const decrement = () => setUnread((n) => Math.max(0, n - 1));
+    const clear = () => setUnread(0);
+    window.addEventListener('notifications:read', decrement);
+    window.addEventListener('notifications:readAll', clear);
+    return () => {
+      window.removeEventListener('notifications:read', decrement);
+      window.removeEventListener('notifications:readAll', clear);
+    };
+  }, []);
+
   return (
     <button
       id="notification-bell-btn"

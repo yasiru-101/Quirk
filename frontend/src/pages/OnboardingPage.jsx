@@ -41,7 +41,7 @@ export default function OnboardingPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { createWorkspace, createProject, refreshProjects } = useProject();
+  const { createWorkspace, createProject, refreshProjects, workspaces } = useProject();
   const { error: toastError, success } = useToast();
   const totalSteps = STEPS.length;
   const step = STEPS[currentStep - 1];
@@ -183,9 +183,15 @@ export default function OnboardingPage() {
           </div>
 
           <div className="mt-10 flex items-center justify-between border-t border-[var(--colors-hairline)] pt-6">
-            <Button variant="secondary" onClick={prevStep} disabled={currentStep === 1}>
-              Back
-            </Button>
+            {currentStep === 1 && workspaces?.length > 0 ? (
+              <Button variant="secondary" onClick={() => navigate('/projects')}>
+                Cancel
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={prevStep} disabled={currentStep === 1}>
+                Back
+              </Button>
+            )}
             {currentStep < totalSteps ? (
               <Button variant="primary" onClick={nextStep}>
                 Continue

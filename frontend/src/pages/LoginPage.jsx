@@ -3,7 +3,7 @@
  * @description Authentication portal with a split-screen layout.
  */
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { normalizeError } from '../services/api';
@@ -213,12 +213,12 @@ export default function LoginPage() {
               </Button>
               <p className="text-center text-sm text-[var(--colors-body)]">
                 Don&apos;t have an account?{' '}
-                <a
-                  href="/register"
-                  className="font-semibold text-[var(--colors-primary-active)] hover:underline"
-                >
-                  Sign up
-                </a>
+                  <Link
+                    to={`/register${location.search}`}
+                    className="font-semibold text-[var(--colors-primary-active)] hover:underline"
+                  >
+                    Sign up
+                  </Link>
               </p>
             </form>
           )}

@@ -3,7 +3,7 @@
  * @description Registration portal matching the split-screen login layout.
  */
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
 import { normalizeError } from '../services/api';
@@ -16,8 +16,10 @@ import { PASSWORD_POLICY } from '../utils/constants';
 export default function RegisterPage() {
   const { error: toastError } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirect = new URLSearchParams(location.search).get('redirect');
 
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +39,9 @@ export default function RegisterPage() {
       const passwordErrors = validatePassword(form.password);
       if (passwordErrors.length) nextErrors.password = passwordErrors.join(', ');
     }
+    if (form.password && form.password !== form.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords don't match";
+    }
     return nextErrors;
   };
 
@@ -50,8 +55,8 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const { data } = await authService.register(form.name, form.email, form.password);
-      navigate('/verify-email', { state: { email: data.email || form.email }, replace: true });
+      const { data } = await authService.register(form.name, form.email, form.password, form.confirmPassword);
+      navigate('/verify-email', { state: { email: data.email || form.email, redirect }, replace: true });
     } catch (err) {
       const { message, fieldErrors } = normalizeError(err);
       if (fieldErrors) setErrors(fieldErrors);
@@ -132,7 +137,19 @@ export default function RegisterPage() {
               onChange={handleChange}
               error={errors.password}
               autoComplete="new-password"
-              placeholder="Choose a password"
+              placeholder="Create a strong password"
+            />
+
+            <Input
+              id="register-confirm-password"
+              label="Confirm Password"
+              type="password"
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              error={errors.confirmPassword}
+              autoComplete="new-password"
+              placeholder="Confirm your password"
             />
             <p className="text-xs text-[var(--colors-body)]">{PASSWORD_POLICY.HINT}</p>
 

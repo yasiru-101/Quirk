@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
   
   const [step, setStep] = useState(1); // 1: Email, 2: OTP & New Password
   
-  const [form, setForm] = useState({ email: '', code: '', newPassword: '' });
+  const [form, setForm] = useState({ email: '', code: '', newPassword: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +52,9 @@ export default function ForgotPasswordPage() {
     const nextErrors = {};
     if (!form.code) nextErrors.code = 'Code is required';
     if (!form.newPassword) nextErrors.newPassword = 'New password is required';
+    if (form.newPassword && form.newPassword !== form.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords don't match";
+    }
     
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
@@ -63,7 +66,8 @@ export default function ForgotPasswordPage() {
       await api.post('/auth/reset-password-otp', {
         email: form.email,
         code: form.code,
-        newPassword: form.newPassword
+        newPassword: form.newPassword,
+        confirmPassword: form.confirmPassword
       });
       success('Password reset successfully. You can now log in.');
       navigate('/login');
@@ -139,7 +143,20 @@ export default function ForgotPasswordPage() {
                 value={form.newPassword}
                 onChange={handleChange}
                 error={errors.newPassword}
-                placeholder="Enter new password"
+                autoComplete="new-password"
+                placeholder="Enter a new password"
+              />
+
+              <Input
+                id="reset-confirm-password"
+                label="Confirm Password"
+                type="password"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                error={errors.confirmPassword}
+                autoComplete="new-password"
+                placeholder="Confirm your new password"
               />
               <Button type="submit" variant="primary" loading={loading} className="h-12 w-full text-base font-semibold">
                 Reset Password

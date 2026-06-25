@@ -4,10 +4,12 @@
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from './AuthContext';
 
 const ProjectContext = createContext();
 
 export function ProjectProvider({ children }) {
+  const { user } = useAuth();
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceIdState] = useState(() => {
     if (typeof window === 'undefined') return '';
@@ -84,8 +86,10 @@ export function ProjectProvider({ children }) {
   };
 
   useEffect(() => {
-    fetchWorkspaces();
-  }, []);
+    if (user) {
+      fetchWorkspaces();
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchProjects();

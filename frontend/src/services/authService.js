@@ -8,8 +8,8 @@ export const authService = {
   login: (email, password) =>
     api.post('/auth/login', { email, password }),
 
-  register: (name, email, password) =>
-    api.post('/auth/register', { name, email, password }),
+  register: (name, email, password, confirmPassword) =>
+    api.post('/auth/register', { name, email, password, confirmPassword }),
 
   verifyEmail: (email, code) =>
     api.post('/auth/verify-email', { email, code }),

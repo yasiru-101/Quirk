@@ -18,7 +18,8 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
-  const from = location.state?.from?.pathname || '/onboarding';
+  const redirect = location.state?.redirect;
+  const from = redirect || location.state?.from?.pathname || '/onboarding';
 
   const [code, setCode] = useState('');
   const [error, setError] = useState('');

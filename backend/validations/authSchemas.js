@@ -25,6 +25,10 @@ const resetPasswordSchema = z.object({
       passwordRegex,
       'New password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character'
     ),
+  confirmPassword: z.string({ required_error: 'Please confirm your new password' }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
 // Six-digit one-time code (email verification / 2FA).
@@ -51,6 +55,10 @@ const registerSchema = z.object({
       passwordRegex,
       'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character'
     ),
+  confirmPassword: z.string({ required_error: 'Please confirm your password' }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
 const verifyEmailSchema = z.object({
@@ -76,6 +84,10 @@ const resetPasswordWithOtpSchema = z.object({
       passwordRegex,
       'New password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character'
     ),
+  confirmPassword: z.string({ required_error: 'Please confirm your new password' }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
 const verifyTwoFactorSchema = z.object({

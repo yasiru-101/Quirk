@@ -49,7 +49,7 @@ export default function ProjectsPage() {
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const canCreate = role === ROLES.ADMIN || canManageWorkspace;
+  const canCreate = role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
   const [modal, setModal] = useState({ open: false, project: null });
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});

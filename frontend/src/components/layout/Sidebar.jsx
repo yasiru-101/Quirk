@@ -62,7 +62,7 @@ function ProjectsNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(true);
-  const canCreate = role === ROLES.ADMIN || canManageWorkspace;
+  const canCreate = role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
   const activeProjectId = new URLSearchParams(location.search).get('projectId');
 
   return (

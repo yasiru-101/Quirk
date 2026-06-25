@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      await authService.resetPassword(form.currentPassword, form.newPassword);
+      await authService.resetPassword(form.currentPassword, form.newPassword, form.confirmPassword);
       updateUser({ mustResetPassword: false });
       toastSuccess('Password updated successfully. Welcome aboard!');
       navigate('/dashboard', { replace: true });

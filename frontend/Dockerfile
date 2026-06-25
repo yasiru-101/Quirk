@@ -9,12 +9,17 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+# Deterministic, lockfile-faithful install for reproducible builds.
+RUN npm ci
 
 COPY . .
 
-# VITE_API_URL is injected at build time via GitHub Actions secret
-# It should be the production backend URL e.g. http://<AKS-PUBLIC-IP>
+# VITE_API_URL is an OPTIONAL build-time override for the API base URL.
+# In this deployment it must be left EMPTY/unset: the app falls back to the relative
+# "/api" path (see src/utils/constants.js), and nginx proxies /api, /socket.io and
+# /api-docs to the backend service (see nginx.conf). The backend has no public
+# ingress route, and an absolute cross-origin URL here would also break the
+# SameSite=strict auth cookies. Only set this for a split-origin setup with CORS.
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 

@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-06-23
 
+> Update: ADR 0008 separates platform administrators from tenant roles and
+> aligns workspace roles with the SRS (`Admin`, `Project Manager`,
+> `Collaborator`). Legacy `Owner` rows are still treated as workspace admins for
+> compatibility.
+
 ## Context
 
 The application began as a single-tenant tool with one global role per user

@@ -90,6 +90,11 @@ router.post('/', validate(createUserSchema), createUser);
  *         schema:
  *           type: string
  *         description: Filter by role
+ *       - name: isPlatformAdmin
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *         description: Platform administrator flag
  *       - name: isActive
  *         in: query
  *         schema:

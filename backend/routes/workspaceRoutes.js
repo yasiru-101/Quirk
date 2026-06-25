@@ -102,6 +102,21 @@ router.post('/invitations/accept', validate(acceptInvitationSchema), acceptInvit
  */
 router.get('/:id', requireWorkspaceRole(), getWorkspaceById);
 
+/**
+ * @openapi
+ * /workspaces/{id}/leave:
+ *   delete:
+ *     summary: Leave a workspace
+ *     description: Removes the caller's workspace membership. The last workspace Admin cannot leave.
+ *     tags: [Workspaces]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - { name: id, in: path, required: true, schema: { type: string } }
+ *     responses:
+ *       200: { description: Workspace left successfully }
+ *       400: { description: Last Admin cannot leave }
+ *       403: { description: Not a workspace member }
+ */
 router.delete('/:id/leave', requireWorkspaceRole(), leaveWorkspace);
 
 // ─── Members ──────────────────────────────────────────────────────────────────

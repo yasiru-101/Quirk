@@ -79,7 +79,7 @@ const createUser = async (req, res) => {
 // @route   GET /api/users
 // @access  Private (Admin only)
 const getUsers = async (req, res) => {
-  const { search, role, isActive } = req.query;
+  const { search, role, isActive, isPlatformAdmin } = req.query;
   const where = {};
 
   try {
@@ -99,6 +99,10 @@ const getUsers = async (req, res) => {
     // 3. Apply active status filter
     if (isActive !== undefined) {
       where.isActive = isActive === 'true';
+    }
+
+    if (isPlatformAdmin !== undefined) {
+      where.isPlatformAdmin = isPlatformAdmin === 'true';
     }
 
     // 4. Query database and select fields except passwordHash

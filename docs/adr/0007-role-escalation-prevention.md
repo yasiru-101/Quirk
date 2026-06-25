@@ -3,6 +3,10 @@
 - Status: Accepted
 - Date: 2026-06-25
 
+> Update: ADR 0008 replaces new `Owner` assignment with SRS workspace roles.
+> The invariant is now "a workspace must retain at least one Admin"; legacy
+> `Owner` rows count as admins for compatibility.
+
 ## Context
 
 The workspace invitation endpoint accepted any role including Owner, which meant an

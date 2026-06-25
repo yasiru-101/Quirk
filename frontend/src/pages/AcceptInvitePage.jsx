@@ -18,7 +18,7 @@ export default function AcceptInvitePage() {
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { refreshWorkspaces, setActiveWorkspaceId } = useProject();
-  const [status, setStatus] = useState('working'); // working | error
+  const [status, setStatus] = useState('working'); // working | unauthenticated | error
   const [message, setMessage] = useState('Joining workspace…');
   const attempted = useRef(false);
 
@@ -30,8 +30,7 @@ export default function AcceptInvitePage() {
       return;
     }
     if (!isAuthenticated) {
-      // Preserve the invite so the user returns here after signing in.
-      navigate(`/login?redirect=${encodeURIComponent(`/invite/accept?token=${token}`)}`, { replace: true });
+      setStatus('unauthenticated');
       return;
     }
     attempted.current = true;
@@ -56,6 +55,19 @@ export default function AcceptInvitePage() {
           <>
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[var(--colors-primary)] border-t-transparent" />
             <p className="text-[var(--colors-body)]">{message}</p>
+          </>
+        ) : status === 'unauthenticated' ? (
+          <>
+            <h1 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">You&apos;ve been invited!</h1>
+            <p className="mt-2 text-sm text-[var(--colors-body)]">To accept this invitation and join the workspace, please create an account or sign in.</p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Button variant="primary" onClick={() => navigate(`/register?redirect=${encodeURIComponent(`/invite/accept?token=${token}`)}`)}>
+                Create an account
+              </Button>
+              <Button variant="secondary" onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/invite/accept?token=${token}`)}`)}>
+                Sign in
+              </Button>
+            </div>
           </>
         ) : (
           <>

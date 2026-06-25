@@ -11,7 +11,7 @@ const hashToken = (token) => crypto.createHash('sha256').update(token).digest('h
 // JWT_SECRET must be configured in .env — no hardcoded fallback for security
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { id: user.id, role: user.role },
+    { id: user.id, role: user.role, isPlatformAdmin: user.isPlatformAdmin },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );

@@ -47,6 +47,10 @@ const rbac = (...allowedRoles) => {
       });
     }
 
+    if (req.user.isPlatformAdmin) {
+      return next();
+    }
+
     // --- 2. Check if the user's role is in the allowed list ---
     // Compare the authenticated user's role against the roles permitted for this route.
     if (!allowedRoles.includes(req.user.role)) {

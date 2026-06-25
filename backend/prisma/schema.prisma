@@ -35,7 +35,7 @@ model Workspace {
 model WorkspaceMember {
   workspaceId String
   userId      String
-  role        String   @default("Collaborator") // Owner, Admin, Project Manager, Collaborator
+  role        String   @default("Collaborator") // Admin, Project Manager, Collaborator; legacy Owner is treated as Admin
   joinedAt    DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -91,7 +91,8 @@ model User {
   name              String
   email             String  @unique
   passwordHash      String
-  role              String  @default("Collaborator") // Admin, Project Manager, Collaborator
+  role              String  @default("Collaborator") // Tenant role: Admin, Project Manager, Collaborator
+  isPlatformAdmin   Boolean @default(false)
   mustResetPassword Boolean @default(true)
   isActive          Boolean @default(true)
 

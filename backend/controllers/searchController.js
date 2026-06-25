@@ -4,6 +4,7 @@
  */
 
 const prisma = require('../config/db');
+const { isPlatformAdmin } = require('../utils/roles');
 
 // @desc    Search across workspace tasks, projects, and users
 // @route   GET /api/search
@@ -15,13 +16,12 @@ const globalSearch = async (req, res) => {
   }
 
   const userId = req.user.id;
-  const role = req.user.role;
 
   try {
-    const isPlatformAdmin = role === 'Admin';
+    const platformAdmin = isPlatformAdmin(req.user);
     
     // Project constraints
-    const projectWhere = isPlatformAdmin ? { deletedAt: null } : {
+    const projectWhere = platformAdmin ? { deletedAt: null } : {
       deletedAt: null,
       OR: [
         { members: { some: { userId } } },
@@ -30,7 +30,7 @@ const globalSearch = async (req, res) => {
     };
 
     // Task constraints
-    const taskWhere = isPlatformAdmin ? { deletedAt: null } : {
+    const taskWhere = platformAdmin ? { deletedAt: null } : {
       deletedAt: null,
       OR: [
         { createdBy: userId },
@@ -73,7 +73,7 @@ const globalSearch = async (req, res) => {
         select: { id: true, name: true, workspaceId: true }
       }),
 
-      isPlatformAdmin ? prisma.user.findMany({
+      platformAdmin ? prisma.user.findMany({
         where: {
           OR: [
             { name: { contains: q, mode: 'insensitive' } },

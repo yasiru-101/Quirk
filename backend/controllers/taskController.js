@@ -7,6 +7,7 @@
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
 const { resolveProjectAccess } = require('../middleware/membership');
+const { isPlatformAdmin } = require('../utils/roles');
 
 const taskResponseInclude = {
   column: {
@@ -193,7 +194,7 @@ const getTasks = async (req, res) => {
     // Scope to tasks the caller can access: created by them, assigned to them, in a
     // project they belong to, or in a workspace they own/administer. Platform admins
     // see everything.
-    if (req.user.role !== 'Admin') {
+    if (!isPlatformAdmin(req.user)) {
       where.OR = [
         { createdBy: req.user.id },
         { assignments: { some: { userId: req.user.id } } },

@@ -6,13 +6,13 @@
 
 const bcrypt = require('bcrypt');
 const prisma = require('../config/db');
-const { generateTempPassword, checkLastAdmin } = require('../utils/userHelpers');
+const { generateTempPassword, checkLastPlatformAdmin } = require('../utils/userHelpers');
 
 // @desc    Create new user and trigger onboarding email
 // @route   POST /api/users
 // @access  Private (Admin only)
 const createUser = async (req, res) => {
-  const { name, email, role } = req.body;
+  const { name, email, role, isPlatformAdmin = false } = req.body;
 
   try {
     // 1. Check if user already exists
@@ -37,6 +37,7 @@ const createUser = async (req, res) => {
         name,
         email,
         role,
+        isPlatformAdmin,
         passwordHash,
         mustResetPassword: true, // Force reset on initial login
         isActive: true,
@@ -108,6 +109,7 @@ const getUsers = async (req, res) => {
         name: true,
         email: true,
         role: true,
+        isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
         createdAt: true,
@@ -140,6 +142,7 @@ const getUserById = async (req, res) => {
         name: true,
         email: true,
         role: true,
+        isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
         createdAt: true,
@@ -169,7 +172,7 @@ const getUserById = async (req, res) => {
 // @access  Private (Admin only)
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, role, isActive } = req.body;
+  const { name, email, role, isActive, isPlatformAdmin } = req.body;
   const targetId = id;
 
   try {
@@ -183,12 +186,12 @@ const updateUser = async (req, res) => {
     }
 
     // 1. Safety check: Block role demotion or deactivation on the last active Admin
-    const isDemotingAdmin = user.role === 'Admin' && role && role !== 'Admin';
-    const isDeactivatingAdmin = user.role === 'Admin' && isActive === false;
+    const isRemovingPlatformAdmin = user.isPlatformAdmin && isPlatformAdmin === false;
+    const isDeactivatingPlatformAdmin = user.isPlatformAdmin && isActive === false;
 
-    if (isDemotingAdmin || isDeactivatingAdmin) {
+    if (isRemovingPlatformAdmin || isDeactivatingPlatformAdmin) {
       try {
-        await checkLastAdmin(targetId);
+        await checkLastPlatformAdmin(targetId);
       } catch (err) {
         return res.status(err.status || 400).json({
           message: err.message,
@@ -201,7 +204,9 @@ const updateUser = async (req, res) => {
       where: { id: targetId },
       data: {
         name: name || undefined,
+        email: email || undefined,
         role: role || undefined,
+        isPlatformAdmin: isPlatformAdmin !== undefined ? isPlatformAdmin : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
       },
     });
@@ -238,9 +243,9 @@ const deactivateUser = async (req, res) => {
     }
 
     // 1. Safety check: Block deactivating the last active Admin
-    if (user.role === 'Admin') {
+    if (user.isPlatformAdmin) {
       try {
-        await checkLastAdmin(targetId);
+        await checkLastPlatformAdmin(targetId);
       } catch (err) {
         return res.status(err.status || 400).json({
           message: err.message,

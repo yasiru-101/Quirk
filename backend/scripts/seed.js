@@ -27,14 +27,14 @@ const daysFromNow = (n) => new Date(Date.now() + n * DAY);
 const hash = async (raw) => bcrypt.hash(raw, await bcrypt.genSalt(12));
 
 // ─── Seed Data Definitions ──────────────────────────────────────────────────
-// platformRole = global User.role; orgRole = role inside the Northwind workspace.
+// tenantRole = ordinary product role; orgRole = role inside the Northwind workspace.
 const USERS = [
-  { key: 'sarah',  name: 'Sarah Chen',    email: 'admin@quirk.app', password: 'AdminPass123!',   platformRole: 'Admin',           orgRole: 'Owner',  jobTitle: 'Head of Product',      timezone: 'America/New_York',    mustResetPassword: false },
-  { key: 'marcus', name: 'Marcus Reyes',  email: 'pm@quirk.app',    password: 'ManagerPass123!', platformRole: 'Project Manager', orgRole: 'Admin',  jobTitle: 'Engineering Manager',  timezone: 'America/Los_Angeles', mustResetPassword: false },
-  { key: 'priya',  name: 'Priya Nair',    email: 'dev@quirk.app',   password: 'CollabPass123!',  platformRole: 'Collaborator',    orgRole: 'Member', jobTitle: 'Senior Engineer',      timezone: 'Asia/Kolkata',        mustResetPassword: false },
-  { key: 'emma',   name: 'Emma Wilson',   email: 'emma@quirk.app',  password: 'CollabPass123!',  platformRole: 'Collaborator',    orgRole: 'Member', jobTitle: 'Product Designer',     timezone: 'Europe/London',       mustResetPassword: true  },
-  { key: 'leo',    name: 'Leo Martins',   email: 'leo@quirk.app',   password: 'CollabPass123!',  platformRole: 'Collaborator',    orgRole: 'Member', jobTitle: 'Frontend Engineer',    timezone: 'America/Sao_Paulo',   mustResetPassword: false },
-  { key: 'aisha',  name: 'Aisha Khan',    email: 'aisha@quirk.app', password: 'CollabPass123!',  platformRole: 'Collaborator',    orgRole: 'Member', jobTitle: 'QA Engineer',          timezone: 'Asia/Dubai',          mustResetPassword: false },
+  { key: 'sarah',  name: 'Sarah Chen',    email: 'admin@quirk.app', password: 'AdminPass123!',   tenantRole: 'Admin',           orgRole: 'Admin',           isPlatformAdmin: true,  jobTitle: 'Head of Product',      timezone: 'America/New_York',    mustResetPassword: false },
+  { key: 'marcus', name: 'Marcus Reyes',  email: 'pm@quirk.app',    password: 'ManagerPass123!', tenantRole: 'Project Manager', orgRole: 'Project Manager', isPlatformAdmin: false, jobTitle: 'Engineering Manager',  timezone: 'America/Los_Angeles', mustResetPassword: false },
+  { key: 'priya',  name: 'Priya Nair',    email: 'dev@quirk.app',   password: 'CollabPass123!',  tenantRole: 'Collaborator',    orgRole: 'Collaborator',    isPlatformAdmin: false, jobTitle: 'Senior Engineer',      timezone: 'Asia/Kolkata',        mustResetPassword: false },
+  { key: 'emma',   name: 'Emma Wilson',   email: 'emma@quirk.app',  password: 'CollabPass123!',  tenantRole: 'Collaborator',    orgRole: 'Collaborator',    isPlatformAdmin: false, jobTitle: 'Product Designer',     timezone: 'Europe/London',       mustResetPassword: true  },
+  { key: 'leo',    name: 'Leo Martins',   email: 'leo@quirk.app',   password: 'CollabPass123!',  tenantRole: 'Collaborator',    orgRole: 'Collaborator',    isPlatformAdmin: false, jobTitle: 'Frontend Engineer',    timezone: 'America/Sao_Paulo',   mustResetPassword: false },
+  { key: 'aisha',  name: 'Aisha Khan',    email: 'aisha@quirk.app', password: 'CollabPass123!',  tenantRole: 'Collaborator',    orgRole: 'Collaborator',    isPlatformAdmin: false, jobTitle: 'QA Engineer',          timezone: 'Asia/Dubai',          mustResetPassword: false },
 ];
 
 const COLUMNS = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Done'];
@@ -78,7 +78,8 @@ const seedDatabase = async () => {
           name: def.name,
           email: def.email,
           passwordHash: await hash(def.password),
-          role: def.platformRole,
+          role: def.tenantRole,
+          isPlatformAdmin: def.isPlatformAdmin,
           jobTitle: def.jobTitle,
           timezone: def.timezone,
           mustResetPassword: def.mustResetPassword,
@@ -99,7 +100,7 @@ const seedDatabase = async () => {
           name: `${def.name.split(' ')[0]}'s Workspace`,
           description: 'Personal workspace.',
           ownerId: owner.id,
-          members: { create: { userId: owner.id, role: 'Owner' } },
+          members: { create: { userId: owner.id, role: 'Admin' } },
         },
       });
     }
@@ -314,7 +315,7 @@ const seedDatabase = async () => {
     console.log('\n=========================================');
     console.log('Database seeded: Northwind Labs demo org + personal workspaces.');
     console.log('Test accounts (all in "Northwind Labs"):');
-    console.log('  Admin / WS Owner : admin@quirk.app  / AdminPass123!');
+    console.log('  Platform Admin   : admin@quirk.app  / AdminPass123!');
     console.log('  Project Manager  : pm@quirk.app     / ManagerPass123!');
     console.log('  Collaborator     : dev@quirk.app    / CollabPass123!');
     console.log('  Collaborator     : leo@quirk.app    / CollabPass123!');

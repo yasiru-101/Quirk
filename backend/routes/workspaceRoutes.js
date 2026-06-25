@@ -13,6 +13,7 @@ const {
   listMembers,
   updateMemberRole,
   removeMember,
+  leaveWorkspace,
   inviteMember,
   verifyInvitation,
   acceptInvitation,
@@ -100,6 +101,8 @@ router.post('/invitations/accept', validate(acceptInvitationSchema), acceptInvit
  *       403: { description: Not a member }
  */
 router.get('/:id', requireWorkspaceRole(), getWorkspaceById);
+
+router.delete('/:id/leave', requireWorkspaceRole(), leaveWorkspace);
 
 // ─── Members ──────────────────────────────────────────────────────────────────
 router.get('/:id/members', requireWorkspaceRole(), listMembers);

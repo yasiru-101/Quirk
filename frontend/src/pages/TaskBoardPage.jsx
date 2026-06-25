@@ -21,7 +21,7 @@ import { getTaskColumnName, isOverdue, isTerminalColumn } from '../utils/helpers
 import { ROLES } from '../utils/constants';
 
 export default function TaskBoardPage() {
-  const { role, user } = useAuth();
+  const { role, user, isPlatformAdmin } = useAuth();
   const { error: toastError, success } = useToast();
   const { on } = useSocket();
   const { projects, loading: projectsLoading, canManageWorkspace } = useProject();
@@ -48,6 +48,7 @@ export default function TaskBoardPage() {
   );
 
   const canManageProject = (project) =>
+    isPlatformAdmin ||
     role === ROLES.ADMIN ||
     canManageWorkspace ||
     project?.members?.some((member) => (member.userId === user?.id || member.user?.id === user?.id) && member.role === ROLES.PROJECT_MANAGER);

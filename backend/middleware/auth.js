@@ -32,6 +32,7 @@ const protect = async (req, res, next) => {
         name: true,
         email: true,
         role: true,
+        isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
         createdAt: true,

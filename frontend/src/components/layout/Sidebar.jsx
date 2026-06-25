@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { getInitials, cn } from '../../utils/helpers';
 import { ROLES } from '../../utils/constants';
 
@@ -149,6 +150,7 @@ function ProjectsNav() {
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, isPlatformAdmin, logout } = useAuth();
   const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, canManageWorkspace, leaveWorkspace } = useProject();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   // Manager access: platform admins, workspace Owners/Admins, or users whose global
   // role manages work. Plain collaborators are excluded.
@@ -162,7 +164,13 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   const handleLeaveWorkspace = async () => {
     if (!activeWorkspaceId || !activeWorkspace) return;
-    if (!window.confirm(`Leave ${activeWorkspace.name}? You will lose access to its projects and tasks.`)) return;
+    const ok = await confirm({
+      title: 'Leave workspace',
+      message: `Leave ${activeWorkspace.name}? You will lose access to its projects and tasks.`,
+      confirmLabel: 'Leave',
+      danger: true,
+    });
+    if (!ok) return;
     await leaveWorkspace();
     navigate('/projects');
   };

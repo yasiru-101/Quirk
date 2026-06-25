@@ -11,6 +11,7 @@ import Input from '../components/common/Input';
 import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import api, { normalizeError } from '../services/api';
 import { ROLES } from '../utils/constants';
 
@@ -28,6 +29,7 @@ export default function ProjectDetailPage() {
   } = useProject();
   const { role, user, isPlatformAdmin } = useAuth();
   const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
   const [memberForm, setMemberForm] = useState({ userId: '', role: 'Collaborator' });
   const [columnDrafts, setColumnDrafts] = useState({});
   const [newColumnName, setNewColumnName] = useState('');
@@ -104,7 +106,13 @@ export default function ProjectDetailPage() {
   };
 
   const deleteColumn = async (column) => {
-    if (!window.confirm(`Delete "${column.name}"? Tasks in this column will become unassigned.`)) return;
+    const ok = await confirm({
+      title: 'Delete column',
+      message: `Delete "${column.name}"? Tasks in this column will become unassigned.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     setSavingColumn(column.id);
     try {
       await api.delete(`/projects/${project.id}/columns/${column.id}`);

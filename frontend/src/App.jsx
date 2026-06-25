@@ -13,6 +13,7 @@ import { ToastProvider }  from './context/ToastContext';
 import { ThemeProvider }  from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { ChatProvider }   from './context/ChatContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 // Guards & Layout
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -55,6 +56,7 @@ export default function App() {
         <AuthProvider>
           <SocketProvider>
             <ToastProvider>
+              <ConfirmProvider>
               <ProjectProvider>
                 <ChatProvider>
                 <Routes>
@@ -174,6 +176,7 @@ export default function App() {
               </Routes>
               </ChatProvider>
               </ProjectProvider>
+              </ConfirmProvider>
             </ToastProvider>
           </SocketProvider>
         </AuthProvider>

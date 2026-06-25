@@ -19,7 +19,14 @@ export default function TaskCard({ task, columns = [], canManage = false, onColu
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+      onKeyDown={(e) => {
+        // Match native button semantics: activate on Enter and Space (and stop
+        // Space from scrolling the column).
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
     >
       <div className="kc-tags">
         <span className={cn('kc-tag font-bold', getPriorityColor(task.priority))}>

@@ -5,6 +5,7 @@ import Modal from '../components/common/Modal';
 import EmptyState from '../components/common/EmptyState';
 import api, { normalizeError } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { getInitials, getRoleBadgeStyle } from '../utils/helpers';
 
 const ROLES = ['Admin', 'Project Manager', 'Collaborator'];
@@ -12,6 +13,7 @@ const EMPTY_FORM = { name: '', email: '', role: 'Collaborator', isPlatformAdmin:
 
 export default function PlatformUsersPage() {
   const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -73,7 +75,13 @@ export default function PlatformUsersPage() {
   };
 
   const deactivateUser = async (user) => {
-    if (!window.confirm(`Deactivate ${user.name}? They will no longer be able to sign in.`)) return;
+    const ok = await confirm({
+      title: 'Deactivate user',
+      message: `Deactivate ${user.name}? They will no longer be able to sign in.`,
+      confirmLabel: 'Deactivate',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.patch(`/users/${user.id}/deactivate`);
       await fetchUsers();

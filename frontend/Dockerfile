@@ -9,8 +9,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-# Deterministic, lockfile-faithful install for reproducible builds.
-RUN npm ci
+# Use npm install to gracefully handle missing platform-specific native dependencies in the lockfile
+RUN npm install
 
 COPY . .
 

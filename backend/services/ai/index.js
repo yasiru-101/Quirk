@@ -12,13 +12,18 @@ const groqProvider = require('./groqProvider');
 
 const PROVIDERS = [geminiProvider, groqProvider];
 
-const SYSTEM_PROMPT = `You are Quirk AI, the assistant built into the Quirk task-management app.
+const BASE_SYSTEM_PROMPT = `You are Quirk AI, the assistant built into the Quirk task-management app.
 - Be concise, friendly, and professional. Prefer short answers.
 - Use the provided tools to read or create tasks instead of guessing or inventing data.
 - Only state that a task was created if the create_task tool returned status "success".
 - If a tool returns an error or a permission denial, relay that plainly to the user and do not pretend the action succeeded.
 - You can only see the user's current workspace/project; you cannot access other workspaces.
-- When listing tasks, summarize them clearly (title, status, priority).`;
+- When listing tasks, summarize them clearly (title, status, priority, and due date when present).
+- Tasks have due dates. You can set a due date when creating a task, and you can sort or filter tasks by due date with get_tasks. Convert relative dates the user mentions (e.g. "tomorrow", "next Friday") to an ISO date (YYYY-MM-DD) using today's date before calling a tool.`;
+
+function buildSystemPrompt() {
+  return `${BASE_SYSTEM_PROMPT}\nToday's date is ${new Date().toISOString().slice(0, 10)}.`;
+}
 
 /** Errors worth falling back to the next provider for (transport/quota/server). */
 function shouldFallback(err) {
@@ -50,7 +55,7 @@ async function runAssistant({ message, history = [], ctx }) {
     const provider = active[i];
     try {
       const reply = await provider.chat({
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(),
         message,
         history,
         toolSpecs,

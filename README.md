@@ -7,6 +7,14 @@ different roles. It provides dynamic Kanban workflows, multiple task views,
 real-time notifications and chat, a SaaS platform console, and an optional in-app
 AI assistant.
 
+## 🔗 Live demo
+
+| Surface | URL |
+| --- | --- |
+| Frontend (SPA) | https://quirk-app.ddns.net |
+| Backend API | https://quirk-app.ddns.net/api |
+| API docs (Swagger UI) | https://quirk-app.ddns.net/api-docs |
+
 ## ✨ Features
 
 - **Authentication** — self-service registration, email verification, login,
@@ -110,9 +118,12 @@ For an overview of endpoint groups, auth, and the error format, see
 
 | Document | What it covers |
 | --- | --- |
+| [docs/DELIVERABLES.md](docs/DELIVERABLES.md) | Index of SRS deliverables and where each lives |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and request lifecycle |
 | [docs/adr/](docs/adr/README.md) | Architecture Decision Records |
+| [docs/DATABASE.md](docs/DATABASE.md) | Database schema, ERD, and data-model design |
 | [docs/API.md](docs/API.md) | API reference and Swagger entry point |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, Kubernetes, CI/CD, and demo URLs |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security posture and OWASP alignment |
 | [docs/AI_ASSISTANT.md](docs/AI_ASSISTANT.md) | AI assistant design, tools, and config |
 | [AGENTS.md](AGENTS.md) | Contributor working agreement |
@@ -133,6 +144,9 @@ rules (UUID identifiers, object-level authorization, Zod validation).
 
 ## 🚢 Deployment
 
-Merging to `main` triggers the GitHub Actions pipeline, which builds Docker
-images, runs Prisma schema sync via init containers, and deploys to Azure
-Kubernetes Service (AKS). Manifests live in [`k8s/`](k8s/).
+Merging to `main` triggers the GitHub Actions pipeline
+([`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml)), which validates the
+code, syncs the Prisma schema to Azure PostgreSQL, builds and pushes Docker images
+to ACR, and deploys to Azure Kubernetes Service (AKS). Manifests live in
+[`k8s/`](k8s/). For the full topology, manifest inventory, secrets, and a manual
+deploy reference, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

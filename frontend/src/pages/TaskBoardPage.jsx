@@ -256,10 +256,13 @@ export default function TaskBoardPage() {
     return columns;
   }, [columns, filters.columnId]);
 
-  const isKanban = view === 'kanban';
+  // List/table is the only view that page-scrolls naturally.
+  // Kanban, calendar and timeline all need a fixed height context so their
+  // internal scroll containers work correctly.
+  const isTableView = view === 'table';
 
   return (
-    <div className={`flex flex-col animate-in${isKanban ? ' h-full overflow-hidden' : ' min-h-full'}`}>
+    <div className={`flex flex-col animate-in${isTableView ? ' min-h-full' : ' h-full overflow-hidden'}`}>
       <ViewHeader
         title="Task Board"
         subtitle={scopedProject ? `Project-specific tasks for ${scopedProject.name}.` : 'Manage work across board, list, calendar, and timeline views.'}
@@ -273,10 +276,10 @@ export default function TaskBoardPage() {
         onTabChange={setView}
       />
 
-      <div className={`flex bg-[var(--colors-canvas-soft)]${isKanban ? ' flex-1 overflow-hidden' : ' flex-1'}`}>
-        <div className={`flex flex-1 flex-col p-6${isKanban ? ' overflow-hidden' : ''}`}>
+      <div className={`flex bg-[var(--colors-canvas-soft)]${isTableView ? ' flex-1' : ' flex-1 overflow-hidden'}`}>
+        <div className={`flex flex-1 flex-col p-6${isTableView ? '' : ' overflow-hidden'}`}>
           <TaskFilters filters={filters} columns={columns} assignees={assignees} onChange={handleFilterChange} />
-          <div className={isKanban ? 'min-h-0 flex-1 overflow-hidden' : 'mt-4'}>
+          <div className={isTableView ? 'mt-4' : 'min-h-0 flex-1 overflow-hidden'}>
           {loading || projectsLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (

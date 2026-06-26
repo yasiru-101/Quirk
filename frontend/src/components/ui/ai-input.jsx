@@ -152,8 +152,12 @@ export function MorphPanel({ workspaceId, projectId }) {
       const { data } = await api.post("/ai/chat", { message: trimmed, workspaceId, projectId, history })
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
     } catch (err) {
+      const status = err?.response?.status
       const { message } = normalizeError(err)
-      setMessages((prev) => [...prev, { role: "assistant", content: message || "Could not reach the AI service.", error: true }])
+      const content = status === 503
+        ? "Quirk AI isn't configured yet. Ask your admin to add a GEMINI_API_KEY or GROQ_API_KEY to the server .env file."
+        : message || "Could not reach the AI service."
+      setMessages((prev) => [...prev, { role: "assistant", content, error: true }])
     } finally {
       setIsProcessing(false)
     }
@@ -278,11 +282,16 @@ const ChatForm = React.forwardRef((_, ref) => {
             {/* Thread */}
             <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
               {messages.length === 0 && !isProcessing ? (
-                <div className="m-auto flex flex-col items-center gap-3 text-center">
+                <div className="m-auto flex flex-col items-center gap-3 text-center px-2">
                   <ColorOrb dimension="40px" />
                   <p className="text-sm text-[var(--colors-ink-faint)]">
                     Hi! Ask me about your tasks, or tell me to create one.
                   </p>
+                  {!workspaceId && !projectId && (
+                    <p className="text-xs text-[var(--colors-priority-urgent)] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">
+                      Open a workspace or project first so I have context to work with.
+                    </p>
+                  )}
                 </div>
               ) : (
                 messages.map((m, i) => <Bubble key={i} message={m} />)

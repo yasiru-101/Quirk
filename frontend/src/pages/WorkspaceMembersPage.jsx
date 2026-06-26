@@ -9,6 +9,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import EmptyState from '../components/common/EmptyState';
+import SelectField from '../components/common/SelectField';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
@@ -151,13 +152,12 @@ export default function WorkspaceMembersPage() {
                     </td>
                     <td className="px-5 py-4">
                       {canEdit ? (
-                        <select
+                        <SelectField
                           value={member.role}
                           onChange={(e) => changeRole(member, e.target.value)}
-                          className="h-9 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm font-semibold text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
-                        >
-                          {['Admin', 'Project Manager', 'Collaborator'].map((r) => <option key={r} value={r}>{r}</option>)}
-                        </select>
+                          options={['Admin', 'Project Manager', 'Collaborator'].map((r) => ({ value: r, label: r }))}
+                          className="w-[170px]"
+                        />
                       ) : (
                         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${getRoleBadgeStyle(member.role)}`}>{member.role}</span>
                       )}

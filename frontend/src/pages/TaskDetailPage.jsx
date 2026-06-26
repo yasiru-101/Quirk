@@ -12,6 +12,7 @@ import CommentsPanel from '../components/tasks/CommentsPanel';
 import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
 import { useProject } from '../context/ProjectContext';
+import SelectField from '../components/common/SelectField';
 import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../utils/helpers';
 import { ROLES } from '../utils/constants';
 
@@ -174,13 +175,13 @@ export default function TaskDetailPage() {
 
         <section className="space-y-2">
           <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Column</h3>
-          <select
+          <SelectField
+            variant="pill"
             value={task.columnId || ''}
-            onChange={(event) => handleColumnChange(event.target.value)}
-            className={cn('w-full cursor-pointer appearance-none rounded-full border px-4 py-2.5 text-sm font-bold outline-none focus-ring', getStatusColor(columnName))}
-          >
-            {taskColumns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
-          </select>
+            onChange={(e) => handleColumnChange(e.target.value)}
+            options={taskColumns.map((c) => ({ value: c.id, label: c.name }))}
+            triggerClassName={cn('w-full justify-between', getStatusColor(columnName))}
+          />
         </section>
 
         {task.assignees?.length > 0 && (

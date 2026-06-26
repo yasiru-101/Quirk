@@ -139,14 +139,36 @@ export default function CommentsPanel({ taskId }) {
               rows={3}
             />
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-[11px] font-bold text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors cursor-pointer uppercase tracking-widest px-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                </svg>
-                {file ? file.name : 'Attach file'}
-                <input type="file" className="sr-only" onChange={(e) => setFile(e.target.files[0])} />
-              </label>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <label className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[var(--colors-mute)] hover:text-[var(--colors-ink)] transition-colors cursor-pointer uppercase tracking-widest px-2 py-1 rounded-md hover:bg-[var(--colors-surface-pressed)]">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                  Attach
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip"
+                    onChange={(e) => setFile(e.target.files[0] ?? null)}
+                  />
+                </label>
+                {file && (
+                  <span className="flex items-center gap-1 min-w-0 rounded-full border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--colors-ink-muted)]">
+                    <span className="max-w-[140px] truncate">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFile(null)}
+                      className="ml-0.5 shrink-0 text-[var(--colors-mute)] hover:text-[var(--colors-priority-urgent)] transition-colors"
+                      aria-label="Remove attachment"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </div>
 
               <Button
                 type="button"
@@ -154,7 +176,7 @@ export default function CommentsPanel({ taskId }) {
                 disabled={!text.trim() || posting}
                 variant="primary"
                 loading={posting}
-                className="h-9 px-5 text-xs shadow-sm"
+                className="shrink-0 h-9 px-5 text-xs shadow-sm"
               >
                 Post Comment
               </Button>

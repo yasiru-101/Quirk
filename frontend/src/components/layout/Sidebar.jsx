@@ -14,6 +14,7 @@ import { ROLES } from '../../utils/constants';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
+import SelectField from '../common/SelectField';
 
 const NAV_ITEMS = [
   {
@@ -274,21 +275,12 @@ export default function Sidebar({ collapsed, onToggle }) {
             </div>
           </div>
           {workspaces.length > 1 ? (
-            <div className="relative mt-2">
-              <select
+            <div className="mt-2">
+              <SelectField
                 value={activeWorkspaceId}
-                onChange={(event) => setActiveWorkspaceId(event.target.value)}
-                className="h-10 w-full appearance-none rounded-[var(--radius-md)] border border-[var(--colors-hairline)] dark:border-white/10 bg-[var(--colors-canvas)] dark:bg-black/20 px-3 pr-8 text-sm font-semibold text-[var(--colors-ink)] dark:text-white outline-none transition focus:border-[var(--colors-primary)]"
-              >
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--colors-mute)] dark:text-white/45">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
+                onChange={(e) => setActiveWorkspaceId(e.target.value)}
+                options={workspaces.map((ws) => ({ value: ws.id, label: ws.name }))}
+              />
             </div>
           ) : (
             <p className="mt-2 truncate text-sm font-semibold text-[var(--colors-ink)] dark:text-white">{activeWorkspace?.name || 'No workspace yet'}</p>

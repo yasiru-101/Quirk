@@ -45,7 +45,10 @@ export const taskService = {
 
   uploadAttachment: (formData) =>
     api.post('/attachments/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      // Clearing Content-Type lets Axios auto-set multipart/form-data with the
+      // correct boundary. Manually setting it (even to 'multipart/form-data')
+      // omits the boundary and multer cannot parse the request.
+      headers: { 'Content-Type': null },
     }),
 
   getDownloadUrl: (attachmentId) =>

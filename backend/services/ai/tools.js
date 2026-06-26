@@ -160,7 +160,7 @@ async function createTask(args, ctx) {
   if (!ctx.projectId) {
     return {
       error: 'no_project',
-      message: 'Tasks can only be created inside a specific project. Ask the user to open a project first.',
+      message: 'No project is currently open. The user needs to navigate to a specific project (e.g. via the sidebar or Projects page) and then ask again.',
     };
   }
   if (!args.title || !String(args.title).trim()) {
@@ -186,6 +186,14 @@ async function createTask(args, ctx) {
     };
   }
 
+  // Find the first column (lowest order) of the project so the new task
+  // appears on the board immediately instead of floating without a column.
+  const firstColumn = await prisma.kanbanColumn.findFirst({
+    where: { projectId: ctx.projectId },
+    orderBy: { order: 'asc' },
+    select: { id: true },
+  });
+
   const task = await prisma.task.create({
     data: {
       title: String(args.title).trim(),
@@ -193,6 +201,7 @@ async function createTask(args, ctx) {
       priority: normalizePriority(args.priority),
       dueDate: dueDate || null,
       projectId: ctx.projectId,
+      columnId: firstColumn?.id ?? null,
       createdBy: ctx.user.id,
     },
   });

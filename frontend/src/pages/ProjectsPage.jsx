@@ -346,17 +346,13 @@ export default function ProjectsPage() {
               {isPlatformAdmin && !activeWorkspaceId && workspaces.length > 0 && (
                 <SelectField
                   label="Workspace"
-                    name="workspaceId"
-                    value={form.workspaceId}
-                    onChange={handleChange}
+                  name="workspaceId"
+                  value={form.workspaceId}
+                  onChange={handleChange}
                   error={errors.workspaceId}
-                  selectClassName="h-12 bg-[var(--colors-canvas-softer)] px-4 pr-11"
-                  >
-                    <option value="">Select workspace...</option>
-                    {workspaces.map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                </SelectField>
+                  placeholder="Select workspace..."
+                  options={workspaces.map((w) => ({ value: w.id, label: w.name }))}
+                />
               )}
               <div className="space-y-3">
                 <p className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Workflow template</p>

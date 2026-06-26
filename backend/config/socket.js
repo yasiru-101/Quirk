@@ -55,7 +55,6 @@ module.exports = (httpServer) => {
           id: true,
           name: true,
           email: true,
-          role: true,
           mustResetPassword: true,
           isActive: true,
           createdAt: true,

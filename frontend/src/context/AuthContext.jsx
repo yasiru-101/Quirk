@@ -62,7 +62,6 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isAuthenticated: !!user,
-    role: user?.role ?? null,
     isPlatformAdmin: user?.isPlatformAdmin ?? false,
     mustResetPassword: user?.mustResetPassword ?? false,
     login,

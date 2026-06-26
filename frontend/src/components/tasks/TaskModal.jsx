@@ -274,7 +274,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
                     <p className="text-sm font-bold text-[var(--colors-ink)] leading-tight">
                       {u.name} {u._id === user?.id || u.id === user?.id ? '(Me)' : ''}
                     </p>
-                    <p className="text-[11px] font-medium text-[var(--colors-mute)] mt-0.5 uppercase tracking-wide">{u.role}</p>
+                    <p className="text-[11px] font-medium text-[var(--colors-mute)] mt-0.5 lowercase tracking-wide">{u.email}</p>
                   </div>
                 </label>
               );

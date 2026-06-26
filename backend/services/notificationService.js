@@ -76,11 +76,11 @@ const notifyAssignment = async (taskId, assignedUserIds, assignerName) => {
       where: { id: targetTaskId },
       include: {
         creator: {
-          select: { id: true, name: true, email: true, role: true },
+          select: { id: true, name: true, email: true },
         },
         assignments: {
           include: {
-            user: { select: { id: true, name: true, email: true, role: true, isActive: true } },
+            user: { select: { id: true, name: true, email: true, isActive: true } },
           },
         },
         column: { select: { id: true, name: true, order: true, projectId: true } },

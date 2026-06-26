@@ -43,7 +43,6 @@ import ForbiddenPage      from './pages/ForbiddenPage';
 import NotFoundPage       from './pages/NotFoundPage';
 import ChatPage           from './pages/ChatPage';
 
-import { ROLES } from './utils/constants';
 
 /**
  * Main App component rendering the provider hierarchy and routing table.
@@ -101,7 +100,7 @@ export default function App() {
                   <Route
                     path="tasks"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <TaskBoardPage />
                       </ProtectedRoute>
                     }
@@ -113,7 +112,7 @@ export default function App() {
                   <Route
                     path="projects"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <ProjectsPage />
                       </ProtectedRoute>
                     }
@@ -121,7 +120,7 @@ export default function App() {
                   <Route
                     path="projects/:id"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <ProjectDetailPage />
                       </ProtectedRoute>
                     }
@@ -131,7 +130,7 @@ export default function App() {
                   <Route
                     path="members"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <WorkspaceMembersPage />
                       </ProtectedRoute>
                     }
@@ -140,7 +139,7 @@ export default function App() {
                   <Route
                     path="settings"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <SettingsPage />
                       </ProtectedRoute>
                     }
@@ -150,7 +149,7 @@ export default function App() {
                   <Route
                     path="chat"
                     element={
-                      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.COLLABORATOR]}>
+                      <ProtectedRoute>
                         <ChatPage />
                       </ProtectedRoute>
                     }

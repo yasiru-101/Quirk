@@ -64,7 +64,6 @@ async function upsertDemoUser(user) {
     update: {
       name: user.name,
       passwordHash,
-      role: user.role,
       isPlatformAdmin: user.isPlatformAdmin,
       mustResetPassword: false,
       isActive: true,
@@ -74,7 +73,6 @@ async function upsertDemoUser(user) {
       name: user.name,
       email: user.email,
       passwordHash,
-      role: user.role,
       isPlatformAdmin: user.isPlatformAdmin,
       mustResetPassword: false,
       isActive: true,

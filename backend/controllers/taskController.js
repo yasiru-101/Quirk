@@ -23,7 +23,6 @@ const taskResponseInclude = {
       id: true,
       name: true,
       email: true,
-      role: true,
     },
   },
   assignments: {
@@ -33,7 +32,6 @@ const taskResponseInclude = {
           id: true,
           name: true,
           email: true,
-          role: true,
           isActive: true,
         },
       },
@@ -244,7 +242,6 @@ const getTaskById = async (req, res) => {
                 id: true,
                 name: true,
                 email: true,
-                role: true,
               },
             },
           },

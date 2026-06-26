@@ -136,7 +136,6 @@ model User {
   name              String
   email             String  @unique
   passwordHash      String
-  role              String  @default("Collaborator") // Tenant role: Admin, Project Manager, Collaborator
   isPlatformAdmin   Boolean @default(false)
   mustResetPassword Boolean @default(true)
   isActive          Boolean @default(true)

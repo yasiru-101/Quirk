@@ -76,12 +76,12 @@ const NAV_ITEMS = [
 // Lists the active workspace's projects; each links to its task views
 // (/tasks?projectId=<id>). Managers get an inline create action.
 function ProjectsNav() {
-  const { projects, loading, canManageWorkspace } = useProject();
-  const { role, isPlatformAdmin } = useAuth();
+  const { projects, loading, canManageWorkspace, activeWorkspaceRole } = useProject();
+  const { isPlatformAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(true);
-  const canCreate = isPlatformAdmin || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
+  const canCreate = isPlatformAdmin || activeWorkspaceRole === ROLES.PROJECT_MANAGER || canManageWorkspace;
   const activeProjectId = new URLSearchParams(location.search).get('projectId');
 
   return (
@@ -153,7 +153,7 @@ function ProjectsNav() {
 }
 
 export default function Sidebar({ collapsed, onToggle }) {
-  const { user, role, isPlatformAdmin, logout } = useAuth();
+  const { user, isPlatformAdmin, logout } = useAuth();
   const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, canManageWorkspace, leaveWorkspace, updateWorkspace } = useProject();
   const confirm = useConfirm();
   const { success, error: toastError } = useToast();
@@ -184,12 +184,12 @@ export default function Sidebar({ collapsed, onToggle }) {
       setRenaming(false);
     }
   };
-  // Manager access: platform admins, workspace Owners/Admins, or users whose global
-  // role manages work. Plain collaborators are excluded.
-  const canManage = isPlatformAdmin || canManageWorkspace || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER;
+  // Manager access: platform admins, workspace Owners/Admins, or Project Managers
+  // in the active workspace. Plain collaborators are excluded.
+  const canManage = isPlatformAdmin || canManageWorkspace || activeWorkspaceRole === ROLES.PROJECT_MANAGER;
   const visibleNav = NAV_ITEMS.filter(
     (item) =>
-      item.roles.includes(role) &&
+      (item.roles.includes(activeWorkspaceRole) || isPlatformAdmin) &&
       (!item.platformOnly || isPlatformAdmin) &&
       (!item.managersOnly || canManage)
   );

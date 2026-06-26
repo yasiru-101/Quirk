@@ -16,7 +16,7 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync('account-enumeration-guard', 12);
 // JWT_SECRET must be configured in .env — no hardcoded fallback for security
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { id: user.id, role: user.role, isPlatformAdmin: user.isPlatformAdmin },
+    { id: user.id, isPlatformAdmin: user.isPlatformAdmin },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );
@@ -263,7 +263,6 @@ const updateProfile = async (req, res) => {
         id: true,
         name: true,
         email: true,
-        role: true,
         isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,

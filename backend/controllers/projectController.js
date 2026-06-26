@@ -13,7 +13,7 @@ const findProject = async (id, res) => {
     where: { id },
     include: {
       columns: { orderBy: { order: 'asc' } },
-      members: { include: { user: { select: { id: true, name: true, email: true, role: true, avatarUrl: true } } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
       epics:   { orderBy: { createdAt: 'asc' } },
     },
   });

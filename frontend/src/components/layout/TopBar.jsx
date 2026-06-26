@@ -302,7 +302,7 @@ export default function TopBar({ onOpenMobileNav }) {
               <div className="absolute right-0 top-12 w-48 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] py-2 shadow-lg z-50">
                 <div className="px-4 py-2 border-b border-[var(--colors-hairline)] mb-1">
                   <p className="truncate text-sm font-semibold text-[var(--colors-ink)]">{user?.name}</p>
-                  <p className="truncate text-xs text-[var(--colors-ink-muted)]">{user?.role}</p>
+                  <p className="truncate text-xs text-[var(--colors-ink-muted)]">{user?.email}</p>
                 </div>
                 <button
                   onClick={() => { setProfileMenuOpen(false); navigate('/settings'); }}

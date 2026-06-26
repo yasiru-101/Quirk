@@ -32,6 +32,19 @@ const inviteMemberSchema = z.object({
     .default('Collaborator'),
 });
 
+const updateWorkspaceSchema = z.object({
+  name: z
+    .string({ required_error: 'Workspace name is required' })
+    .trim()
+    .min(1, 'Workspace name cannot be empty')
+    .max(80, 'Workspace name cannot exceed 80 characters'),
+  description: z
+    .string()
+    .trim()
+    .max(300, 'Description cannot exceed 300 characters')
+    .optional(),
+});
+
 const acceptInvitationSchema = z.object({
   token: z.string({ required_error: 'Invitation token is required' }).min(1, 'Invitation token is required'),
 });
@@ -45,6 +58,7 @@ const updateMemberRoleSchema = z.object({
 
 module.exports = {
   createWorkspaceSchema,
+  updateWorkspaceSchema,
   inviteMemberSchema,
   acceptInvitationSchema,
   updateMemberRoleSchema,

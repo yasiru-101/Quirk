@@ -126,6 +126,12 @@ export function ProjectProvider({ children }) {
     await refreshProjects();
   };
 
+  const updateWorkspace = async (payload) => {
+    const { data } = await api.patch(`/workspaces/${activeWorkspaceId}`, payload);
+    await refreshWorkspaces();
+    return data.workspace;
+  };
+
   const inviteWorkspaceMember = async (payload) => {
     const { data } = await api.post(`/workspaces/${activeWorkspaceId}/invitations`, payload);
     return data;
@@ -183,6 +189,7 @@ export function ProjectProvider({ children }) {
         refreshWorkspaces,
         fetchWorkspaceMembers,
         createWorkspace,
+        updateWorkspace,
         inviteWorkspaceMember,
         updateWorkspaceMemberRole,
         removeWorkspaceMember,

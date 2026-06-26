@@ -171,7 +171,7 @@ export default function SettingsPage() {
                   <p className="text-xl font-semibold text-[var(--colors-ink)]">{user?.name || 'Quirk user'}</p>
                   <p className="text-sm text-[var(--colors-body)]">{user?.email}</p>
                 </div>
-                <span className="pill">{user?.role || 'Member'}</span>
+                {user?.isPlatformAdmin && <span className="pill">Platform admin</span>}
               </div>
 
               {/* Display name — self-service edit */}

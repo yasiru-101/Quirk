@@ -104,6 +104,21 @@ configured". See [AI_ASSISTANT.md](./AI_ASSISTANT.md) and [SECURITY.md](./SECURI
 GitHub Actions repository secrets used by the pipeline: `AZURE_CREDENTIALS`,
 `DATABASE_URL`, `VITE_API_URL`, `GEMINI_API_KEY`, `GROQ_API_KEY`.
 
+## Data maintenance
+
+To wipe all tenant data for a clean re-test while keeping the platform super-admin
+account(s), run the guarded reset script from `backend/`:
+
+```bash
+npm run db:reset-keep-admin -- --yes                 # keep all platform admins
+npm run db:reset-keep-admin -- --yes --email=admin@quirk.app   # keep just one
+```
+
+It deletes every workspace, project, task, conversation, invitation, and
+non-platform-admin user, then leaves the kept admin with a clean slate. It refuses
+to run without `--yes` and aborts if no admin would survive. Destructive and
+irreversible — never point it at production.
+
 ## Local container run
 
 For a production-like local stack (Postgres + backend + frontend):

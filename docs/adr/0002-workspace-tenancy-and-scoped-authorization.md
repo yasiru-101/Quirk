@@ -39,9 +39,17 @@ Authorization is enforced by dedicated middleware:
 - `requirePlatformAdmin` protects SaaS-wide user administration under `/users`
   and platform support APIs under `/platform`.
 
-Users join a workspace by accepting a tokenized invitation. Only the SHA-256 hash
-of an invitation token is stored, so the database alone cannot be used to accept
-an invitation.
+Users join a workspace by a tokenized invitation. Only the SHA-256 hash of an
+invitation token is stored, so the database alone cannot be used to accept an
+invitation. The invite branches on whether the email already has an account:
+
+- **Existing account:** the invitee signs in and accepts; they are added to the
+  workspace with the invited role.
+- **New account:** the invite provisions the account immediately with a temporary
+  password, adds the membership, and emails both the temporary password and a
+  tokenized set-password link. The new member can either sign in with the
+  temporary password (and is forced to change it on first login) or use the link
+  to set a password directly. This mirrors the platform-created onboarding flow.
 
 Legacy `WorkspaceMember.role = 'Owner'` rows are treated as Admin-equivalent so
 existing data remains usable, but new workspaces and invitations use the SRS

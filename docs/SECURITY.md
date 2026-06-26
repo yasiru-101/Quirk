@@ -37,7 +37,12 @@ No secret is stored in the repository.
 - Access (15 min) and refresh (7 days) tokens are issued as `httpOnly`,
   `sameSite=strict` cookies; refresh rotates both tokens.
 - Administrator-created accounts must reset their temporary password on first login
-  before any other route is reachable.
+  before any other route is reachable. Workspace invitations to a new email
+  provision an account the same way: the temporary password is bcrypt-hashed at
+  rest and the emailed set-password link carries only a high-entropy invitation
+  token (SHA-256–hashed in the database, single-use, 7-day expiry). The
+  set-password route only acts while the account still owes a reset and bumps the
+  session cutoff, so a leaked token cannot take over an already-activated account.
 - Users manage their own profile from Settings: updating the display name
   (`PATCH /auth/profile`) and changing their password (`POST /auth/reset-password`,
   which verifies the current password and rotates session tokens, evicting other

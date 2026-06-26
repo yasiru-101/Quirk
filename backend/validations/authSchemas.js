@@ -81,6 +81,27 @@ const registerInvitedSchema = z.object({
   path: ['confirmPassword'],
 });
 
+const setInvitedPasswordSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters long')
+    .max(50, 'Name cannot exceed 50 characters')
+    .optional(),
+  password: z
+    .string({ required_error: 'Password is required' })
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(
+      passwordRegex,
+      'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character'
+    ),
+  confirmPassword: z.string({ required_error: 'Please confirm your password' }),
+  token: z.string({ required_error: 'Invitation token is required' }).min(1, 'Invitation token is required'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
+
 const verifyEmailSchema = z.object({
   email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
   code: otpCodeSchema,
@@ -137,6 +158,7 @@ module.exports = {
   updateProfileSchema,
   registerSchema,
   registerInvitedSchema,
+  setInvitedPasswordSchema,
   verifyEmailSchema,
   resendVerificationSchema,
   verifyTwoFactorSchema,

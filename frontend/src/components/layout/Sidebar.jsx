@@ -7,8 +7,13 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useProject } from '../../context/ProjectContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useToast } from '../../context/ToastContext';
+import { normalizeError } from '../../services/api';
 import { getInitials, cn } from '../../utils/helpers';
 import { ROLES } from '../../utils/constants';
+import Modal from '../common/Modal';
+import Input from '../common/Input';
+import Button from '../common/Button';
 
 const NAV_ITEMS = [
   {
@@ -149,9 +154,36 @@ function ProjectsNav() {
 
 export default function Sidebar({ collapsed, onToggle }) {
   const { user, role, isPlatformAdmin, logout } = useAuth();
-  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, canManageWorkspace, leaveWorkspace } = useProject();
+  const { workspaces, activeWorkspaceId, activeWorkspace, setActiveWorkspaceId, activeWorkspaceRole, canManageWorkspace, leaveWorkspace, updateWorkspace } = useProject();
   const confirm = useConfirm();
+  const { success, error: toastError } = useToast();
   const navigate = useNavigate();
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
+
+  const openRename = () => {
+    setRenameValue(activeWorkspace?.name || '');
+    setRenameOpen(true);
+  };
+
+  const submitRename = async (event) => {
+    event.preventDefault();
+    const name = renameValue.trim();
+    if (!name) return;
+    if (name === activeWorkspace?.name) { setRenameOpen(false); return; }
+    setRenaming(true);
+    try {
+      await updateWorkspace({ name });
+      success('Workspace name updated');
+      setRenameOpen(false);
+    } catch (err) {
+      toastError(normalizeError(err).message, 'Could not rename workspace');
+    } finally {
+      setRenaming(false);
+    }
+  };
   // Manager access: platform admins, workspace Owners/Admins, or users whose global
   // role manages work. Plain collaborators are excluded.
   const canManage = isPlatformAdmin || canManageWorkspace || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER;
@@ -216,9 +248,16 @@ export default function Sidebar({ collapsed, onToggle }) {
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
-            <button onClick={() => navigate('/onboarding')} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="New workspace">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
-            </button>
+            <div className="flex items-center gap-1">
+              {canManageWorkspace && activeWorkspaceId && (
+                <button onClick={openRename} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="Rename workspace" aria-label="Rename workspace">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" strokeLinecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              )}
+              <button onClick={() => navigate('/onboarding')} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="New workspace" aria-label="New workspace">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+              </button>
+            </div>
           </div>
           {workspaces.length > 1 ? (
             <div className="relative mt-2">
@@ -285,6 +324,34 @@ export default function Sidebar({ collapsed, onToggle }) {
           })}
         </div>
       </nav>
+
+      <Modal
+        open={renameOpen}
+        onClose={() => setRenameOpen(false)}
+        title="Rename workspace"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setRenameOpen(false)} disabled={renaming}>Cancel</Button>
+            <Button variant="primary" onClick={submitRename} loading={renaming} disabled={!renameValue.trim()}>Save changes</Button>
+          </div>
+        }
+      >
+        <form onSubmit={submitRename}>
+          <Input
+            id="workspace-rename"
+            label="Workspace name"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            maxLength={80}
+            placeholder="Workspace name"
+            autoFocus
+          />
+          <p className="mt-2 text-sm text-[var(--colors-body)]">
+            This changes the name for everyone in the workspace.
+          </p>
+        </form>
+      </Modal>
 
     </aside>
   );

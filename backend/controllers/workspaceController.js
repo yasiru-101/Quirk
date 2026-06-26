@@ -93,6 +93,30 @@ const getWorkspaceById = async (req, res) => {
   }
 };
 
+// ─── Update Workspace ───────────────────────────────────────────────────────
+// @route  PATCH /api/workspaces/:id
+// @access Workspace Admin (enforced by requireWorkspaceRole)
+const updateWorkspace = async (req, res) => {
+  const workspaceId = req.params.id;
+  const { name, description } = req.body;
+  try {
+    const existing = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!existing) return res.status(404).json({ message: 'Workspace not found' });
+
+    const data = { name: name.trim() };
+    if (description !== undefined) data.description = description.trim() || null;
+
+    const workspace = await prisma.workspace.update({
+      where: { id: workspaceId },
+      data,
+    });
+    return res.status(200).json({ workspace });
+  } catch (error) {
+    console.error(`Update workspace error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error updating workspace' });
+  }
+};
+
 // ─── List Members ───────────────────────────────────────────────────────────
 // @route  GET /api/workspaces/:id/members
 // @access Workspace member
@@ -347,6 +371,7 @@ module.exports = {
   createWorkspace,
   getMyWorkspaces,
   getWorkspaceById,
+  updateWorkspace,
   listMembers,
   updateMemberRole,
   removeMember,

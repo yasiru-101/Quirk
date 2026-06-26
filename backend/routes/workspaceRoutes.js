@@ -10,6 +10,7 @@ const {
   createWorkspace,
   getMyWorkspaces,
   getWorkspaceById,
+  updateWorkspace,
   listMembers,
   updateMemberRole,
   removeMember,
@@ -24,6 +25,7 @@ const { requireWorkspaceRole } = require('../middleware/membership');
 const validate = require('../middleware/validate');
 const {
   createWorkspaceSchema,
+  updateWorkspaceSchema,
   inviteMemberSchema,
   acceptInvitationSchema,
   updateMemberRoleSchema,
@@ -101,6 +103,39 @@ router.post('/invitations/accept', validate(acceptInvitationSchema), acceptInvit
  *       403: { description: Not a member }
  */
 router.get('/:id', requireWorkspaceRole(), getWorkspaceById);
+
+/**
+ * @openapi
+ * /workspaces/{id}:
+ *   patch:
+ *     summary: Update a workspace (name, description)
+ *     description: Renames or updates a workspace. Restricted to workspace Admins.
+ *     tags: [Workspaces]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - { name: id, in: path, required: true, schema: { type: string } }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string, minLength: 1, maxLength: 80 }
+ *               description: { type: string, maxLength: 300 }
+ *     responses:
+ *       200: { description: Workspace updated }
+ *       400: { description: Validation failed }
+ *       403: { description: Insufficient workspace role }
+ *       404: { description: Workspace not found }
+ */
+router.patch(
+  '/:id',
+  requireWorkspaceRole('Owner', 'Admin'),
+  validate(updateWorkspaceSchema),
+  updateWorkspace
+);
 
 /**
  * @openapi

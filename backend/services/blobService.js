@@ -95,7 +95,47 @@ const getDownloadUrl = async (blobUrl) => {
   return blobUrl;
 };
 
+/**
+ * Deletes a file from Azure Blob Storage or local storage.
+ * @param {string} blobUrl - The stored URL from the DB.
+ * @returns {Promise<void>}
+ */
+const deleteFile = async (blobUrl) => {
+  if (!blobUrl) return;
+
+  if (blobUrl.startsWith('/uploads/')) {
+    try {
+      const parsedUrl = new URL(blobUrl, 'http://localhost');
+      const filename = decodeURIComponent(parsedUrl.pathname.replace('/uploads/', ''));
+      const filePath = path.join(__dirname, '..', 'uploads', filename);
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+        console.log(`[BlobService] Deleted local file: ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[BlobService] Failed to delete local file: ${error.message}`);
+    }
+    return;
+  }
+
+  if (isAzureConfigured()) {
+    try {
+      const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
+      const parsedUrl = new URL(blobUrl);
+      const pathSegments = decodeURIComponent(parsedUrl.pathname).split('/');
+      const blobName = pathSegments.pop();
+
+      const blobClient = containerClient.getBlobClient(blobName);
+      await blobClient.deleteIfExists();
+      console.log(`[BlobService] Deleted Azure blob: ${blobName}`);
+    } catch (error) {
+      console.error(`[BlobService] Failed to delete Azure blob: ${error.message}`);
+    }
+  }
+};
+
 module.exports = {
   uploadFile,
-  getDownloadUrl
+  getDownloadUrl,
+  deleteFile
 };

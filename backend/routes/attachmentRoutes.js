@@ -15,6 +15,8 @@ const router = express.Router();
 const {
   uploadFile,
   getDownloadUrl,
+  getTaskAttachments,
+  deleteAttachment,
 } = require('../controllers/attachmentController');
 
 const { protect } = require('../middleware/auth');
@@ -114,6 +116,64 @@ router.post(
 router.get(
   '/:id/download',
   getDownloadUrl
+);
+
+/**
+ * @openapi
+ * /attachments/task/{taskId}:
+ *   get:
+ *     summary: List all attachments for a task
+ *     description: Returns a list of attachments for the specified task.
+ *     tags: [Attachments]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: taskId
+ *         in: path
+ *         required: true
+ *         description: The task ID.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of attachments returned.
+ *       403:
+ *         description: Access denied.
+ *       404:
+ *         description: Task not found.
+ */
+router.get(
+  '/task/:taskId',
+  getTaskAttachments
+);
+
+/**
+ * @openapi
+ * /attachments/{id}:
+ *   delete:
+ *     summary: Delete an attachment
+ *     description: Deletes an attachment record and its associated file blob.
+ *     tags: [Attachments]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The attachment record ID.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Attachment deleted successfully.
+ *       403:
+ *         description: Access denied.
+ *       404:
+ *         description: Attachment not found.
+ */
+router.delete(
+  '/:id',
+  deleteAttachment
 );
 
 module.exports = router;

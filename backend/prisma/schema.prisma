@@ -9,6 +9,47 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+// Closed value sets enforced at the database level. `role` is intentionally left
+// as a String for now: its "Project Manager" value contains a space and a legacy
+// "Owner" value still exists, so it needs a dedicated value-migration pass.
+enum OtpPurpose {
+  EMAIL_VERIFY
+  LOGIN_2FA
+  PASSWORD_RESET
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  revoked
+}
+
+enum TaskPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum ProjectStatus {
+  active
+  archived
+}
+
+enum NotificationType {
+  Assignment
+  ColumnChange
+  Comment
+  Deadline
+  Admin
+}
+
+enum ConversationType {
+  PROJECT
+  DIRECT
+}
+
 // ─── Workspace Model ──────────────────────────────────────────────────────────
 // Top-level organisation container. Created during PM/Admin onboarding.
 model Workspace {
@@ -57,7 +98,7 @@ model Invitation {
   role        String    @default("Collaborator") // workspace role granted on acceptance
   tokenHash   String    @unique
   invitedBy   String
-  status      String    @default("pending") // pending, accepted, revoked
+  status      InvitationStatus @default(pending)
   expiresAt   DateTime
   acceptedAt  DateTime?
   createdAt   DateTime  @default(now())
@@ -78,7 +119,7 @@ model OtpCode {
   id         String    @id @default(uuid())
   userId     String
   codeHash   String
-  purpose    String // EMAIL_VERIFY, LOGIN_2FA
+  purpose    OtpPurpose
   expiresAt  DateTime
   consumedAt DateTime?
   attempts   Int       @default(0)
@@ -147,7 +188,7 @@ model Project {
   description  String?
   workspaceId  String?
   createdBy    String
-  status       String    @default("active") // active, archived
+  status       ProjectStatus @default(active)
   templateType String? // Legacy: "Software Development", "Marketing Campaign", "Basic Kanban"
   templateId   String?
   createdAt    DateTime  @default(now())
@@ -253,7 +294,7 @@ model Task {
 
   // Task attributes (SRS)
   dueDate        DateTime?
-  priority       String    @default("Medium") // Low, Medium, High, Urgent
+  priority       TaskPriority @default(Medium)
   tags           String[]  @default([])
   epicId         String? // FK to Epic
   estimatedHours Float? // SRS §Time Tracking
@@ -394,7 +435,7 @@ model Attachment {
 model Notification {
   id            String   @id @default(uuid())
   recipientId   String
-  type          String // Assignment, ColumnChange, Comment, Deadline, Admin
+  type          NotificationType
   message       String
   relatedTaskId String?
   isRead        Boolean  @default(false)
@@ -414,7 +455,7 @@ model Notification {
 model Conversation {
   id          String   @id @default(uuid())
   // "PROJECT" – all project members; "DIRECT" – exactly two workspace members
-  type        String
+  type        ConversationType
   projectId   String?  @unique // set when type = PROJECT
   workspaceId String? // set for both types
   createdAt   DateTime @default(now())

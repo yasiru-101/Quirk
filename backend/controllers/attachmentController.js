@@ -17,6 +17,20 @@ const cleanupTempFile = async (file) => {
   }
 };
 
+const serializeAttachment = async (attachment) => ({
+  id: attachment.id,
+  _id: attachment.id,
+  taskId: attachment.taskId,
+  commentId: attachment.commentId,
+  uploadedBy: attachment.uploadedBy,
+  originalName: attachment.originalName,
+  blobUrl: attachment.blobUrl,
+  downloadUrl: await blobService.getDownloadUrl(attachment.blobUrl),
+  mimeType: attachment.mimeType,
+  sizeBytes: attachment.sizeBytes,
+  createdAt: attachment.createdAt,
+});
+
 // @desc    Upload a file attachment and create a database record
 // @route   POST /api/attachments/upload
 // @access  Private (PM or Collaborator)
@@ -77,14 +91,8 @@ const uploadFile = async (req, res) => {
       },
     });
 
-    // Provide _id alias for frontend compatibility
-    const responseAttachment = {
-      ...attachment,
-      _id: attachment.id,
-    };
-
     return res.status(201).json({
-      attachment: responseAttachment,
+      attachment: await serializeAttachment(attachment),
     });
   } catch (error) {
     console.error(`Upload attachment error: ${error.message}`);
@@ -144,4 +152,5 @@ const getDownloadUrl = async (req, res) => {
 module.exports = {
   uploadFile,
   getDownloadUrl,
+  serializeAttachment,
 };

@@ -89,7 +89,8 @@ No secret is stored in the repository.
   SQL, eliminating SQL injection.
 - Local development attachment URLs under `/uploads` are protected by the same
   task access guard before static files are served. In production, attachments
-  use Azure Blob Storage.
+  use Azure Blob Storage and clients receive short-lived read URLs from the
+  attachment API instead of relying on raw blob URLs.
 - JSON and URL-encoded bodies are size-limited (10 kb) to resist oversized-payload
   abuse.
 - Rate limiting is applied to the API (100 requests / 15 min per IP) with

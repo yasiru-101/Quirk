@@ -97,6 +97,17 @@ context being accessed. See
 [ADR 0008](./adr/0008-platform-admin-and-srs-tenant-roles.md), and
 [ADR 0009](./adr/0009-separate-platform-support-console.md).
 
+## Attachments
+
+Task comments can carry uploaded files. The browser sends multipart form data to
+`POST /api/attachments/upload` after the comment is created. The backend parses
+the file with Multer, checks task-level access before durable storage, writes to
+Azure Blob Storage when configured or `backend/uploads/` in development, and
+persists an `Attachment` row. Comment reads include attachment metadata so the UI
+survives reloads. Clients open the resolved `downloadUrl`; Azure deployments
+return a short-lived read URL and local development routes protect `/uploads`
+with the same task guard.
+
 ## Authentication and Sessions
 
 - Passwords are hashed with bcrypt.

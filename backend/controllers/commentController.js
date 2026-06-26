@@ -5,6 +5,7 @@
 
 const prisma = require('../config/db');
 const { isTaskManager } = require('../middleware/membership');
+const { serializeAttachment } = require('./attachmentController');
 
 // @desc    Add a comment to a task
 // @route   POST /api/tasks/:taskId/comments
@@ -121,12 +122,19 @@ const getComments = async (req, res) => {
             email: true,
           },
         },
+        attachments: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
 
     return res.status(200).json({
-      comments,
+      comments: await Promise.all(comments.map(async (comment) => ({
+        ...comment,
+        _id: comment.id,
+        attachments: await Promise.all(comment.attachments.map(serializeAttachment)),
+      }))),
     });
   } catch (error) {
     console.error(`Get comments error: ${error.message}`);

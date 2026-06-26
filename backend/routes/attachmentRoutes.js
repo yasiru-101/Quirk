@@ -20,6 +20,24 @@ const {
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
+const parseAttachmentUpload = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (!err) return next();
+
+    const isFileSizeError = err.code === 'LIMIT_FILE_SIZE';
+    const isValidationError = isFileSizeError || err.message?.startsWith('Unsupported file type');
+    const statusCode = isValidationError ? 400 : 500;
+
+    return res.status(statusCode).json({
+      errorCode: statusCode,
+      message: isValidationError ? 'Validation failed' : 'Internal server error during file upload',
+      errors: {
+        file: isFileSizeError ? 'File must be 10 MB or smaller.' : err.message,
+      },
+    });
+  });
+};
+
 // Require authentication for all attachment operations
 router.use(protect);
 
@@ -65,7 +83,7 @@ router.use(protect);
  */
 router.post(
   '/upload',
-  upload.single('file'),
+  parseAttachmentUpload,
   uploadFile
 );
 

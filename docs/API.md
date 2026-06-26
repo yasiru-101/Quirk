@@ -31,7 +31,7 @@ when the session is missing or expired.
 | `/api/auth` | Registration, email verification, login, 2FA, refresh, forgot/reset password, self-service profile (`PATCH /auth/profile`) | Login and account-code actions are rate-limited |
 | `/api/users` | Platform user management (create, list, update, deactivate) | Platform admins only |
 | `/api/tasks` | Tasks plus nested comments (`/:taskId/comments`), activity (`/:id/activity`), and time logs (`/:id/timelogs`) | Object-level task authorization |
-| `/api/attachments` | Task attachments | Access checked against owning task |
+| `/api/attachments` | Task/comment attachments | Uploads return attachment metadata plus a usable `downloadUrl`; access checked against owning task |
 | `/api/notifications` | User notifications | |
 | `/api/projects` | Projects, Kanban columns, epics, project members | |
 | `/api/workspaces` | Workspaces, members, invitations | Tenant boundary |
@@ -52,6 +52,10 @@ when the session is missing or expired.
 - **Role model** uses `User.isPlatformAdmin` for platform support and membership
   rows (`WorkspaceMember.role`, `ProjectMember.role`) for tenant/project access.
   There is no global product role on `User`.
+- **Attachments** are stored in Azure Blob Storage in production or local disk in
+  development. Clients should open the `downloadUrl` returned by upload,
+  comment-list, or `/api/attachments/:id/download`; raw `blobUrl` values are
+  storage references and may not be directly readable.
 
 ## Error format
 

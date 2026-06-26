@@ -11,6 +11,7 @@
  */
 
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
 
 // ─── Allowed MIME types ─────────────────────────────────────────────────────
@@ -41,7 +42,9 @@ const storage = useAzure
        * when used with `express.static`; we ensure the directory exists at startup in app.js).
        */
       destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '..', 'uploads'));
+        const uploadsDir = path.join(__dirname, '..', 'uploads');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        cb(null, uploadsDir);
       },
 
       /**

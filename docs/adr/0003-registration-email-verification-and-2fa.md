@@ -11,13 +11,17 @@ a registrant controls the email address and to offer a second authentication fac
 
 ## Decision
 
-Add three identity flows, all built on a single one-time-code primitive.
+Add registration, email verification, login 2FA, and forgot-password recovery,
+all built on a single one-time-code primitive.
 
 **One-time codes (`OtpCode`)**
 - Six numeric digits generated with a cryptographically secure RNG.
 - Stored only as a bcrypt hash; the plaintext exists only in the delivered email.
 - Single-use, expire after 10 minutes, and are rejected after 5 failed attempts.
 - Issuing a new code invalidates any earlier unconsumed code for the same purpose.
+- Supported purposes are `EMAIL_VERIFY`, `LOGIN_2FA`, and `PASSWORD_RESET`.
+- A scheduled purge deletes consumed codes and codes that expired beyond a short
+  grace window, keeping the table bounded without disrupting in-flight requests.
 
 **Registration + email verification**
 - `POST /auth/register` creates an account with `emailVerified = false` and emails an
@@ -37,9 +41,15 @@ Add three identity flows, all built on a single one-time-code primitive.
 - 2FA is enabled via `enable` (sends a code) then `confirm` (verifies it), and disabled
   with the current password.
 
+**Forgot password**
+- `POST /auth/forgot-password` issues a `PASSWORD_RESET` code without revealing
+  whether the email exists.
+- `POST /auth/reset-password-otp` consumes that code, updates the password, and
+  bumps the session cutoff so old tokens are invalidated.
+
 **Abuse resistance**
-- Registration, verification, resend, and 2FA endpoints are IP rate-limited in addition
-  to the per-code attempt cap.
+- Registration, verification, resend, 2FA, and password-recovery endpoints are
+  IP rate-limited in addition to the per-code attempt cap.
 - Resend responds identically whether or not the account exists, to avoid email
   enumeration.
 

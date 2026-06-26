@@ -4,7 +4,9 @@ Quirk is containerized and deployed to **Azure Kubernetes Service (AKS)** throug
 **GitHub Actions** pipeline. This document describes the images, manifests,
 pipeline, and configuration. It is the companion to the manifests in
 [`k8s/`](../k8s) and the workflow in
-[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml).
+[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml). The manual
+database reset workflow is
+[`.github/workflows/reset-db.yml`](../.github/workflows/reset-db.yml).
 
 ## Live demo
 
@@ -81,6 +83,25 @@ The workflow runs on push/PR to `main` (and manual dispatch) in three stages:
    - Sync AI provider keys into `quirk-secrets` (Gemini required, Groq optional).
    - `kubectl apply` the manifests, wait for rollout, print pods.
 
+## Manual database reset
+
+The separate **Reset Azure Database** workflow is intentionally manual-only. It
+runs only through `workflow_dispatch` and only when the operator enters `RESET`.
+It performs:
+
+```bash
+cd backend
+npm install
+npx prisma generate
+npx prisma db push --force-reset
+npm run seed:admin
+```
+
+This drops and recreates the Azure PostgreSQL schema, then seeds only the
+platform administrator account and a minimal workspace. It is for disposable
+data or explicit recovery from destructive schema changes; it must not be folded
+into the normal push-to-main deploy path.
+
 ## Configuration & secrets
 
 Non-secret config lives in `quirk-config` (ConfigMap). Secrets live in the
@@ -102,7 +123,10 @@ repository secret is empty, to avoid the assistant silently booting "not
 configured". See [AI_ASSISTANT.md](./AI_ASSISTANT.md) and [SECURITY.md](./SECURITY.md).
 
 GitHub Actions repository secrets used by the pipeline: `AZURE_CREDENTIALS`,
-`DATABASE_URL`, `VITE_API_URL`, `GEMINI_API_KEY`, `GROQ_API_KEY`.
+`DATABASE_URL`, `VITE_API_URL`, `GEMINI_API_KEY`, `GROQ_API_KEY`. The reset
+workflow uses `DATABASE_URL`; the minimal admin seed can also honor
+`SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, and `SEED_ADMIN_NAME` if those
+environment variables are supplied.
 
 ## Local container run
 

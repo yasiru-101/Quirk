@@ -48,16 +48,22 @@ No secret is stored in the repository.
   which verifies the current password and rotates session tokens, evicting other
   sessions). Email changes and role assignment remain administrator-controlled.
 - Self-service registrations must verify their email before they can sign in, and may
-  enable email-based login 2FA. One-time codes are bcrypt-hashed at rest, single-use,
-  expire in 10 minutes, and lock after 5 failed attempts; the 2FA step is bound to the
-  password step by a short-lived signed pending token. See
+  enable email-based login 2FA. Forgot-password uses the same one-time-code
+  primitive with the `PASSWORD_RESET` purpose. One-time codes are bcrypt-hashed
+  at rest, single-use, expire in 10 minutes, lock after 5 failed attempts, and
+  are purged after consumption or expiry; the 2FA step is bound to the password
+  step by a short-lived signed pending token. See
   [ADR 0003](./adr/0003-registration-email-verification-and-2fa.md).
 
 ## Authorization
 
-- Coarse role checks (`rbac`) plus object-level membership checks
-  (`requireWorkspaceRole` / `requireProjectRole`) ensure a user can only act on
-  workspaces and projects they belong to. See
+- Platform support access is represented by `User.isPlatformAdmin`; ordinary
+  tenant roles are scoped to `WorkspaceMember.role` and `ProjectMember.role`.
+  There is no global product role on `User`.
+- Object-level membership checks (`requireWorkspaceRole`, `requireProjectRole`,
+  and `requireTaskAccess`) ensure a user can only act on workspaces, projects,
+  tasks, attachments, comments, activity, and time logs they are allowed to see.
+  See
   [ADR 0002](./adr/0002-workspace-tenancy-and-scoped-authorization.md).
 
 ## AI assistant
@@ -81,11 +87,16 @@ No secret is stored in the repository.
 - Every request body is validated with a Zod schema before it reaches a controller.
 - All database access goes through Prisma's parameterized queries; no string-built
   SQL, eliminating SQL injection.
+- Local development attachment URLs under `/uploads` are protected by the same
+  task access guard before static files are served. In production, attachments
+  use Azure Blob Storage.
 - JSON and URL-encoded bodies are size-limited (10 kb) to resist oversized-payload
   abuse.
-- Rate limiting is applied to the API (100 requests / 15 min per IP) with a stricter
-  limit on the login route (10 / 15 min) to resist brute force. The health endpoint
-  is intentionally exempt so liveness probes are never throttled.
+- Rate limiting is applied to the API (100 requests / 15 min per IP) with
+  stricter limits on login (10 / 15 min) and account-code actions such as
+  registration, email verification, 2FA, forgot-password, and reset-password OTP
+  (12 / 15 min). The health endpoint is intentionally exempt so liveness probes
+  are never throttled.
 
 ## OWASP Top 10 alignment
 

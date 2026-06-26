@@ -29,6 +29,11 @@ explains it.
 - **Timestamps** — `createdAt` (`@default(now())`) and `updatedAt` (`@updatedAt`)
   are standard across mutable models.
 
+Closed value sets are enforced as PostgreSQL enums through Prisma for OTP
+purposes, invitation status, task priority, project status, notification type,
+and conversation type. Membership roles remain strings so the existing
+`Project Manager` value and legacy `Owner` rows stay compatible.
+
 A class-diagram view of the same domain is in
 [DIAGRAMS.md](./DIAGRAMS.md#1-domain-class-diagram).
 
@@ -77,17 +82,17 @@ erDiagram
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **User** | A person who can sign in | `email` (unique), `passwordHash`, `role`, `isPlatformAdmin`, `mustResetPassword`, `isActive`, `emailVerified`, `twoFactorEnabled`, `tokenValidFrom` (session cutoff), soft-delete `deletedAt` |
+| **User** | A person who can sign in | `email` (unique), `passwordHash`, `isPlatformAdmin`, `mustResetPassword`, `isActive`, `emailVerified`, `twoFactorEnabled`, `tokenValidFrom` (session cutoff), profile fields (`avatarUrl`, `jobTitle`, `timezone`, `onboardingComplete`), soft-delete `deletedAt` |
 | **Workspace** | Tenant boundary / organization | `ownerId` → User (Restrict); has members, projects, invitations, conversations |
 | **WorkspaceMember** | Join: user ↔ workspace with a role | Composite PK `(workspaceId, userId)`; `role` = `Admin` \| `Project Manager` \| `Collaborator` (legacy `Owner` treated as Admin) |
-| **Invitation** | Tokenized invite to a workspace | `tokenHash` (unique), `role`, `status` = `pending`/`accepted`/`revoked`, `expiresAt`; only the hash is stored |
-| **OtpCode** | One-time codes for email verify / 2FA | `codeHash`, `purpose` = `EMAIL_VERIFY`/`LOGIN_2FA`, `expiresAt`, `attempts`, `consumedAt`; single-use & attempt-limited |
+| **Invitation** | Tokenized invite to a workspace | `tokenHash` (unique), `role`, enum `status` = `pending`/`accepted`/`revoked`, `expiresAt`; only the hash is stored |
+| **OtpCode** | One-time codes for email verify, login 2FA, and password reset | `codeHash`, enum `purpose` = `EMAIL_VERIFY`/`LOGIN_2FA`/`PASSWORD_RESET`, `expiresAt`, `attempts`, `consumedAt`; single-use, attempt-limited, and purged after use/expiry |
 
 ### Projects & workflow
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Project** | Work container in a workspace | `workspaceId` (SetNull), `createdBy` (Restrict), `status` = `active`/`archived`, optional `templateId`, soft-delete |
+| **Project** | Work container in a workspace | `workspaceId` (SetNull), `createdBy` (Restrict), enum `status` = `active`/`archived`, optional `templateId`, soft-delete |
 | **ProjectMember** | Join: user ↔ project with a role | Composite PK `(projectId, userId)`; `role` = `Project Manager` \| `Collaborator` |
 | **KanbanColumn** | Dynamic workflow column | `projectId`, `order`; a task's column **is** its status |
 | **Epic** | Group of related tasks | `projectId`, `name`, `color` |
@@ -97,7 +102,7 @@ erDiagram
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Task** | Unit of work | `title` (required), `columnId` (status), `dueDate`, `priority` = `Low`/`Medium`/`High`/`Urgent`, `tags[]`, `epicId`, `estimatedHours`, `parentTaskId` (subtasks), soft-delete |
+| **Task** | Unit of work | `title` (required), `columnId` (status), `dueDate`, enum `priority` = `Low`/`Medium`/`High`/`Urgent`, `tags[]`, `epicId`, `estimatedHours`, `parentTaskId` (subtasks), soft-delete |
 | **TaskAssignment** | Join: task ↔ assignee | Composite PK `(taskId, userId)` |
 | **TaskDependency** | "Task A blocks Task B" | Unique `(blockingTaskId, blockedTaskId)` |
 | **Comment** | Discussion on a task | `content`, soft-delete; may carry attachments |
@@ -109,8 +114,8 @@ erDiagram
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Notification** | Per-user notification | `recipientId`, `type` = `Assignment`/`ColumnChange`/`Comment`/`Deadline`/`Admin`, `isRead`, `relatedTaskId` |
-| **Conversation** | Project group chat or DM thread | `type` = `PROJECT`/`DIRECT`, `projectId` (unique, for PROJECT), `workspaceId` |
+| **Notification** | Per-user notification | `recipientId`, enum `type` = `Assignment`/`ColumnChange`/`Comment`/`Deadline`/`Admin`, `isRead`, `relatedTaskId` |
+| **Conversation** | Project group chat or DM thread | enum `type` = `PROJECT`/`DIRECT`, `projectId` (unique, for PROJECT), `workspaceId` |
 | **ConversationParticipant** | Join: user ↔ conversation | Composite PK `(conversationId, userId)` |
 | **ChatMessage** | A message in a conversation | `content`, soft-delete (content shown as `[deleted]`) |
 
@@ -144,6 +149,13 @@ checked in). In CI/CD the same command runs against Azure PostgreSQL before the
 images deploy; `--accept-data-loss` is intentionally **not** used, so a
 destructive divergence fails the deploy loudly rather than dropping data. See
 [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+For disposable environments or intentional destructive recovery, the manual-only
+GitHub Actions workflow
+[`.github/workflows/reset-db.yml`](../.github/workflows/reset-db.yml) runs
+`npx prisma db push --force-reset` and then `npm run seed:admin`. That path wipes
+all data and recreates only the platform administrator account plus a minimal
+workspace; it is not part of normal deployment.
 
 ```bash
 cd backend

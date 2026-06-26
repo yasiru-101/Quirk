@@ -25,6 +25,9 @@ actual schema, routes, and manifests.
 The core domain model — entities, their key attributes, and associations with
 multiplicity. Full field lists are in [DATABASE.md](./DATABASE.md).
 
+Enum-typed attributes correspond to Prisma/PostgreSQL enums in
+`backend/prisma/schema.prisma`; membership roles remain strings.
+
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#e9fbee','primaryBorderColor':'#2fae54','primaryTextColor':'#10241a','lineColor':'#6b9a80','fontFamily':'Inter, Segoe UI, sans-serif','fontSize':'13px'}}}%%
 classDiagram
@@ -36,9 +39,13 @@ class User {
   +String email
   +String passwordHash
   +Boolean isPlatformAdmin
+  +Boolean mustResetPassword
   +Boolean emailVerified
   +Boolean twoFactorEnabled
   +Boolean isActive
+  +DateTime tokenValidFrom
+  +String timezone
+  +Boolean onboardingComplete
 }
 class Workspace {
   +UUID id
@@ -54,17 +61,17 @@ class Invitation {
   +UUID id
   +String email
   +String tokenHash
-  +String status
+  +InvitationStatus status
 }
 class OtpCode {
   +UUID id
   +String codeHash
-  +String purpose
+  +OtpPurpose purpose
 }
 class Project {
   +UUID id
   +String name
-  +String status
+  +ProjectStatus status
 }
 class ProjectMember {
   +UUID projectId
@@ -83,7 +90,7 @@ class Epic {
 class Task {
   +UUID id
   +String title
-  +String priority
+  +TaskPriority priority
   +DateTime dueDate
   +UUID columnId
   +UUID parentTaskId
@@ -111,12 +118,12 @@ class ActivityLog {
 }
 class Notification {
   +UUID id
-  +String type
+  +NotificationType type
   +Boolean isRead
 }
 class Conversation {
   +UUID id
-  +String type
+  +ConversationType type
 }
 class ConversationParticipant {
   +UUID conversationId

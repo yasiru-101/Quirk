@@ -24,10 +24,8 @@ separate `Owner` / `Member` vocabulary.
 
 ## Decision
 
-Add `User.isPlatformAdmin` as the platform administration capability.
-
-Tenant roles remain in `User.role` for ordinary product behavior and in
-`WorkspaceMember.role` for workspace membership:
+Add `User.isPlatformAdmin` as the platform administration capability and keep
+ordinary product roles scoped to membership rows, not the user account itself:
 
 - Workspace roles: `Admin`, `Project Manager`, `Collaborator`.
 - Project roles: `Project Manager`, `Collaborator`.
@@ -39,9 +37,11 @@ platform administrator exists yet, an active tenant Admin may access the route
 so existing databases can promote the first platform admin. Once a platform
 administrator exists, tenant Admins no longer satisfy platform-only access.
 
-Legacy `WorkspaceMember.role = 'Owner'` rows are treated as workspace-admin
-equivalent for compatibility, but new workspaces, invitations, and role updates
-use the SRS roles.
+The older global `User.role` field has been removed from the Prisma schema.
+Authorization now reads `WorkspaceMember.role`, `ProjectMember.role`, and
+`User.isPlatformAdmin`. Legacy `WorkspaceMember.role = 'Owner'` rows are treated
+as workspace-admin equivalent for compatibility, but new workspaces,
+invitations, and role updates use the SRS roles.
 
 ## Consequences
 

@@ -53,6 +53,11 @@ Pagination and other numeric query parameters may be parsed as numbers, but
 entity IDs must remain strings. See
 [ADR 0001](./adr/0001-use-uuid-identifiers-end-to-end.md).
 
+Closed value fields such as OTP purpose, invitation status, project status, task
+priority, notification type, and conversation type are database-backed Prisma
+enums. Workspace and project membership roles remain strings so the existing
+`Project Manager` value and legacy `Owner` compatibility can be preserved.
+
 ## Multi-Tenant Authorization
 
 Quirk has three authorization scopes:
@@ -167,6 +172,14 @@ feature is fully optional: with no provider API key set, the endpoint returns
 OpenAPI annotations on the route handlers are compiled by `swagger-jsdoc` and
 served as interactive Swagger UI at `/api-docs`. Every endpoint group is
 documented there. See [API.md](./API.md).
+
+## Operational Workflows
+
+Normal CI/CD uses `npx prisma db push` without `--accept-data-loss` before
+building and deploying images. A separate manual-only workflow,
+`Reset Azure Database`, can intentionally run `prisma db push --force-reset` and
+`npm run seed:admin` to recreate disposable Azure PostgreSQL data and restore the
+platform administrator login. See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Frontend Layout
 

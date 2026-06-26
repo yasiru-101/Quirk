@@ -14,6 +14,11 @@ submission can be checked at a glance.
 | 6 | **Hosted frontend & backend demo URLs** | See below and [docs/DEPLOYMENT.md](./DEPLOYMENT.md) | ✅ |
 | 7 | **README setup & usage instructions** | [README.md](../README.md) | ✅ |
 
+The deployment evidence also includes the manual database reset workflow
+[`.github/workflows/reset-db.yml`](../.github/workflows/reset-db.yml), used only
+for explicit destructive Azure PostgreSQL resets followed by the minimal
+platform-admin seed.
+
 ## Hosted demo URLs
 
 | Surface | URL |

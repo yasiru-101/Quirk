@@ -28,9 +28,9 @@ when the session is missing or expired.
 
 | Base path | Area | Notes |
 | --- | --- | --- |
-| `/api/auth` | Registration, email verification, login, 2FA, refresh, password reset, self-service profile (`PATCH /auth/profile`) | Rate-limited |
-| `/api/users` | Admin user management (create, list, update, deactivate) | Platform admins only |
-| `/api/tasks` | Tasks, comments, activity, time logs | Object-level authorization |
+| `/api/auth` | Registration, email verification, login, 2FA, refresh, forgot/reset password, self-service profile (`PATCH /auth/profile`) | Login and account-code actions are rate-limited |
+| `/api/users` | Platform user management (create, list, update, deactivate) | Platform admins only |
+| `/api/tasks` | Tasks plus nested comments (`/:taskId/comments`), activity (`/:id/activity`), and time logs (`/:id/timelogs`) | Object-level task authorization |
 | `/api/attachments` | Task attachments | Access checked against owning task |
 | `/api/notifications` | User notifications | |
 | `/api/projects` | Projects, Kanban columns, epics, project members | |
@@ -49,6 +49,9 @@ when the session is missing or expired.
   `backend/validations/` before it reaches a controller.
 - **Authorization** is enforced at the object level, not by role alone
   ([ADR 0002](./adr/0002-workspace-tenancy-and-scoped-authorization.md)).
+- **Role model** uses `User.isPlatformAdmin` for platform support and membership
+  rows (`WorkspaceMember.role`, `ProjectMember.role`) for tenant/project access.
+  There is no global product role on `User`.
 
 ## Error format
 

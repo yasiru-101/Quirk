@@ -15,15 +15,27 @@ const ORB_TONES = {
   accent3: "oklch(88% 0.14 140)",
 }
 
+// Theme-adaptive glass surfaces. color-mix keeps them translucent over whatever
+// the canvas colour is, so they work in both light and dark mode automatically.
+const GLASS_PANEL = {
+  background: "color-mix(in srgb, var(--colors-canvas) 78%, transparent)",
+  backdropFilter: "blur(22px) saturate(150%)",
+  WebkitBackdropFilter: "blur(22px) saturate(150%)",
+  border: "1px solid color-mix(in srgb, var(--colors-ink) 12%, transparent)",
+}
+const GLASS_FIELD = {
+  background: "color-mix(in srgb, var(--colors-canvas-soft) 72%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--colors-ink) 10%, transparent)",
+}
+const HAIRLINE = "color-mix(in srgb, var(--colors-ink) 10%, transparent)"
+
 const ColorOrb = ({
   dimension = "192px",
   className,
   tones,
   spinDuration = 20,
 }) => {
-  const fallbackTones = ORB_TONES
-
-  const palette = { ...fallbackTones, ...tones }
+  const palette = { ...ORB_TONES, ...tones }
   const dimValue = parseInt(dimension.replace("px", ""), 10)
 
   const blurStrength = dimValue < 50 ? Math.max(dimValue * 0.008, 1) : Math.max(dimValue * 0.015, 4)
@@ -57,7 +69,6 @@ const ColorOrb = ({
           inherits: false;
           initial-value: 0deg;
         }
-
         .color-orb {
           display: grid;
           grid-template-areas: "stack";
@@ -66,7 +77,6 @@ const ColorOrb = ({
           position: relative;
           transform: scale(1.1);
         }
-
         .color-orb::before,
         .color-orb::after {
           content: "";
@@ -77,80 +87,28 @@ const ColorOrb = ({
           border-radius: 50%;
           transform: translateZ(0);
         }
-
         .color-orb::before {
           background:
-            conic-gradient(
-              from calc(var(--angle) * 2) at 25% 70%,
-              var(--accent3),
-              transparent 20% 80%,
-              var(--accent3)
-            ),
-            conic-gradient(
-              from calc(var(--angle) * 2) at 45% 75%,
-              var(--accent2),
-              transparent 30% 60%,
-              var(--accent2)
-            ),
-            conic-gradient(
-              from calc(var(--angle) * -3) at 80% 20%,
-              var(--accent1),
-              transparent 40% 60%,
-              var(--accent1)
-            ),
-            conic-gradient(
-              from calc(var(--angle) * 2) at 15% 5%,
-              var(--accent2),
-              transparent 10% 90%,
-              var(--accent2)
-            ),
-            conic-gradient(
-              from calc(var(--angle) * 1) at 20% 80%,
-              var(--accent1),
-              transparent 10% 90%,
-              var(--accent1)
-            ),
-            conic-gradient(
-              from calc(var(--angle) * -2) at 85% 10%,
-              var(--accent3),
-              transparent 20% 80%,
-              var(--accent3)
-            );
+            conic-gradient(from calc(var(--angle) * 2) at 25% 70%, var(--accent3), transparent 20% 80%, var(--accent3)),
+            conic-gradient(from calc(var(--angle) * 2) at 45% 75%, var(--accent2), transparent 30% 60%, var(--accent2)),
+            conic-gradient(from calc(var(--angle) * -3) at 80% 20%, var(--accent1), transparent 40% 60%, var(--accent1)),
+            conic-gradient(from calc(var(--angle) * 2) at 15% 5%, var(--accent2), transparent 10% 90%, var(--accent2)),
+            conic-gradient(from calc(var(--angle) * 1) at 20% 80%, var(--accent1), transparent 10% 90%, var(--accent1)),
+            conic-gradient(from calc(var(--angle) * -2) at 85% 10%, var(--accent3), transparent 20% 80%, var(--accent3));
           box-shadow: inset var(--base) 0 0 var(--shadow) calc(var(--shadow) * 0.2);
           filter: blur(var(--blur)) contrast(var(--contrast));
           animation: spin var(--spin-duration) linear infinite;
         }
-
         .color-orb::after {
-          background-image: radial-gradient(
-            circle at center,
-            var(--base) var(--dot),
-            transparent var(--dot)
-          );
+          background-image: radial-gradient(circle at center, var(--base) var(--dot), transparent var(--dot));
           background-size: calc(var(--dot) * 2) calc(var(--dot) * 2);
           backdrop-filter: blur(calc(var(--blur) * 2)) contrast(calc(var(--contrast) * 2));
           mix-blend-mode: overlay;
         }
-
-        .color-orb[style*="--mask: 0%"]::after {
-          mask-image: none;
-        }
-
-        .color-orb:not([style*="--mask: 0%"])::after {
-          mask-image: radial-gradient(black var(--mask), transparent 75%);
-        }
-
-        @keyframes spin {
-          to {
-            --angle: 360deg;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .color-orb::before {
-            animation: none;
-          }
-        }
+        .color-orb[style*="--mask: 0%"]::after { mask-image: none; }
+        .color-orb:not([style*="--mask: 0%"])::after { mask-image: radial-gradient(black var(--mask), transparent 75%); }
+        @keyframes spin { to { --angle: 360deg; } }
+        @media (prefers-reduced-motion: reduce) { .color-orb::before { animation: none; } }
       `}</style>
     </div>
   )
@@ -167,29 +125,39 @@ export function MorphPanel({ workspaceId, projectId }) {
 
   const [showForm, setShowForm] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [responseMsg, setResponseMsg] = useState(null)
-  const [isError, setIsError] = useState(false)
+  const [messages, setMessages] = useState([])
+
+  // Keep a ref of the latest messages so sendMessage can read prior history
+  // without going stale inside its closure.
+  const messagesRef = useRef(messages)
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   const triggerClose = useCallback(() => {
     setShowForm(false)
     textareaRef.current?.blur()
-    setTimeout(() => {
-        setResponseMsg(null)
-        setIsError(false)
-    }, 500)
   }, [])
 
   const triggerOpen = useCallback(() => {
     setShowForm(true)
-    setTimeout(() => {
-      textareaRef.current?.focus()
-    })
+    setTimeout(() => textareaRef.current?.focus())
   }, [])
 
-  const handleResult = useCallback((resText, error = false) => {
-    setResponseMsg(resText)
-    setIsError(error)
-  }, [])
+  const sendMessage = useCallback(async (text) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const history = messagesRef.current.map((m) => ({ role: m.role, content: m.content }))
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }])
+    setIsProcessing(true)
+    try {
+      const { data } = await api.post("/ai/chat", { message: trimmed, workspaceId, projectId, history })
+      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
+    } catch (err) {
+      const { message } = normalizeError(err)
+      setMessages((prev) => [...prev, { role: "assistant", content: message || "Could not reach the AI service.", error: true }])
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [workspaceId, projectId])
 
   useEffect(() => {
     function clickOutsideHandler(e) {
@@ -202,35 +170,28 @@ export function MorphPanel({ workspaceId, projectId }) {
   }, [showForm, triggerClose])
 
   const ctx = useMemo(
-    () => ({ showForm, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg, isError }),
-    [showForm, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg, isError]
+    () => ({ showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages }),
+    [showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages]
   )
 
   return (
-    <div className="fixed bottom-8 right-8 z-50 flex items-center justify-center">
+    <div className="fixed bottom-8 right-8 z-50 flex items-center justify-center max-sm:bottom-5 max-sm:right-4">
       <motion.div
         ref={wrapperRef}
         data-panel
-        className={cn(
-          "relative z-[3] flex flex-col items-center overflow-hidden border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)] shadow-[var(--shadow-card)] max-sm:bottom-5"
-        )}
+        className="relative z-[3] flex flex-col items-center overflow-hidden text-[var(--colors-ink)] shadow-[var(--shadow-modal)]"
+        style={GLASS_PANEL}
         initial={false}
         animate={{
           width: showForm ? FORM_WIDTH : "auto",
-          height: showForm ? FORM_HEIGHT : 44,
-          borderRadius: showForm ? 16 : 9999,
+          height: showForm ? FORM_HEIGHT : 46,
+          borderRadius: showForm ? 20 : 9999,
         }}
-        transition={{
-          type: "spring",
-          stiffness: 550 / SPEED_FACTOR,
-          damping: 45,
-          mass: 0.7,
-          delay: showForm ? 0 : 0.08,
-        }}
+        transition={{ type: "spring", stiffness: 550 / SPEED_FACTOR, damping: 45, mass: 0.7, delay: showForm ? 0 : 0.08 }}
       >
         <FormContext.Provider value={ctx}>
           <DockBar />
-          <InputForm ref={textareaRef} onResult={handleResult} />
+          <ChatForm ref={textareaRef} />
         </FormContext.Provider>
       </motion.div>
     </div>
@@ -240,79 +201,53 @@ export function MorphPanel({ workspaceId, projectId }) {
 function DockBar() {
   const { showForm, triggerOpen } = useFormContext()
   return (
-    <footer className="mt-auto flex h-[44px] items-center justify-center whitespace-nowrap select-none">
+    <footer className="mt-auto flex h-[46px] items-center justify-center whitespace-nowrap select-none">
       <button
         type="button"
         onClick={triggerOpen}
-        className="flex h-full items-center gap-2 rounded-full px-4 text-sm font-semibold text-[var(--colors-ink)] transition hover:text-[var(--colors-primary-active)] focus-ring max-sm:px-3"
+        className="flex h-full items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--colors-ink)] transition hover:text-[var(--colors-primary-active)] focus-ring"
+        style={{ opacity: showForm ? 0 : 1, pointerEvents: showForm ? "none" : "all" }}
       >
-        <AnimatePresence mode="wait">
-          {showForm ? (
-            <motion.div
-              key="blank"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-5 w-5"
-            />
-          ) : (
-            <motion.div
-              key="orb"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ColorOrb dimension="22px" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <span className="truncate">Ask Quirk AI</span>
+        <ColorOrb dimension="22px" />
+        <span>Ask Quirk AI</span>
       </button>
     </footer>
   )
 }
 
-const FORM_WIDTH = 360
-const FORM_HEIGHT = 420
+const FORM_WIDTH = 372
+const FORM_HEIGHT = 460
 
-const InputForm = React.forwardRef(({ onResult }, ref) => {
-  const { triggerClose, showForm, isProcessing, setIsProcessing, workspaceId, projectId, responseMsg, isError } = useFormContext()
-  const btnRef = useRef(null)
+const ChatForm = React.forwardRef((_, ref) => {
+  const { triggerClose, showForm, isProcessing, sendMessage, messages } = useFormContext()
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (showForm && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages, isProcessing, showForm])
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!ref.current.value.trim() || isProcessing) return;
-
-    const message = ref.current.value;
-    setIsProcessing(true);
-
-    try {
-        // Use the shared API client so the request carries the HTTP-only auth
-        // cookie (withCredentials) and benefits from the 401 refresh interceptor.
-        const { data } = await api.post('/ai/chat', { message, workspaceId, projectId });
-        onResult(data.reply);
-        ref.current.value = ""; // clear input
-    } catch (error) {
-        const { message: msg } = normalizeError(error);
-        onResult(msg || "Could not reach the AI service. Please try again.", true);
-    } finally {
-        setIsProcessing(false);
-    }
+    const value = ref.current?.value || ""
+    if (!value.trim() || isProcessing) return
+    ref.current.value = ""
+    await sendMessage(value)
   }
 
   function handleKeys(e) {
     if (e.key === "Escape") triggerClose()
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      btnRef.current?.click()
+      handleSubmit(e)
     }
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="absolute bottom-0 bg-[var(--colors-canvas)]"
+      className="absolute bottom-0 left-0"
       style={{ width: FORM_WIDTH, height: FORM_HEIGHT, pointerEvents: showForm ? "all" : "none" }}
     >
       <AnimatePresence>
@@ -324,12 +259,11 @@ const InputForm = React.forwardRef(({ onResult }, ref) => {
             transition={{ type: "spring", stiffness: 550 / SPEED_FACTOR, damping: 45, mass: 0.7 }}
             className="flex h-full flex-col"
           >
-            <div className="flex items-center justify-between border-b border-[var(--colors-hairline)] px-4 py-3">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
               <div className="flex items-center gap-2">
                 <ColorOrb dimension="22px" />
-                <p className="select-none text-sm font-semibold text-[var(--colors-ink)]">
-                    Quirk AI
-                </p>
+                <p className="select-none text-sm font-semibold text-[var(--colors-ink)]">Quirk AI</p>
               </div>
               <button
                 type="button"
@@ -341,48 +275,43 @@ const InputForm = React.forwardRef(({ onResult }, ref) => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 text-sm whitespace-pre-wrap">
-                {responseMsg ? (
-                    <div
-                        className={cn(
-                            "rounded-[var(--radius-md)] border p-3 leading-relaxed",
-                            isError
-                                ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-                                : "border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-[var(--colors-ink-secondary)]"
-                        )}
-                    >
-                        {responseMsg}
-                    </div>
-                ) : (
-                    <div className="mt-10 flex flex-col items-center gap-3 text-center">
-                        <ColorOrb dimension="40px" />
-                        <p className="text-[var(--colors-ink-faint)]">
-                            How can I help you manage your tasks today?
-                        </p>
-                    </div>
-                )}
+            {/* Thread */}
+            <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+              {messages.length === 0 && !isProcessing ? (
+                <div className="m-auto flex flex-col items-center gap-3 text-center">
+                  <ColorOrb dimension="40px" />
+                  <p className="text-sm text-[var(--colors-ink-faint)]">
+                    Hi! Ask me about your tasks, or tell me to create one.
+                  </p>
+                </div>
+              ) : (
+                messages.map((m, i) => <Bubble key={i} message={m} />)
+              )}
+              {isProcessing && <TypingBubble />}
             </div>
 
-            <div className="relative border-t border-[var(--colors-hairline)] p-2">
+            {/* Composer */}
+            <div className="p-3" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+              <div className="flex items-end gap-2 rounded-[var(--radius-lg)] p-1.5" style={GLASS_FIELD}>
                 <textarea
-                ref={ref}
-                placeholder="Ask me anything…  (Enter to send)"
-                name="message"
-                className="w-full resize-none rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-3 pr-11 text-sm text-[var(--colors-ink)] outline-none transition placeholder:text-[var(--colors-ink-faint)] focus:border-[var(--colors-primary)] focus-ring"
-                rows={2}
-                onKeyDown={handleKeys}
-                spellCheck={false}
-                disabled={isProcessing}
+                  ref={ref}
+                  placeholder="Ask me anything…"
+                  name="message"
+                  rows={1}
+                  spellCheck={false}
+                  disabled={isProcessing}
+                  onKeyDown={handleKeys}
+                  className="max-h-28 min-h-[36px] flex-1 resize-none bg-transparent px-2.5 py-2 text-sm text-[var(--colors-ink)] outline-none placeholder:text-[var(--colors-ink-faint)]"
                 />
                 <button
-                type="submit"
-                ref={btnRef}
-                disabled={isProcessing}
-                aria-label="Send message"
-                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--colors-primary)] text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring disabled:opacity-50"
+                  type="submit"
+                  disabled={isProcessing}
+                  aria-label="Send message"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--colors-primary)] text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring disabled:opacity-50"
                 >
-                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -390,5 +319,45 @@ const InputForm = React.forwardRef(({ onResult }, ref) => {
     </form>
   )
 })
+ChatForm.displayName = "ChatForm"
+
+function Bubble({ message }) {
+  const isUser = message.role === "user"
+  if (isUser) {
+    return (
+      <div className="max-w-[82%] self-end rounded-2xl rounded-br-md bg-[var(--colors-primary)] px-3.5 py-2 text-sm leading-relaxed text-[var(--colors-on-primary)]">
+        {message.content}
+      </div>
+    )
+  }
+  return (
+    <div
+      className={cn(
+        "max-w-[88%] self-start rounded-2xl rounded-bl-md px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap",
+        message.error
+          ? "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+          : "text-[var(--colors-ink-secondary)]"
+      )}
+      style={message.error ? undefined : GLASS_FIELD}
+    >
+      {message.content}
+    </div>
+  )
+}
+
+function TypingBubble() {
+  return (
+    <div className="flex max-w-[88%] self-start items-center gap-1.5 rounded-2xl rounded-bl-md px-3.5 py-3" style={GLASS_FIELD}>
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full bg-[var(--colors-ink-faint)]"
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default MorphPanel

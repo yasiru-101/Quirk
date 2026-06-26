@@ -122,14 +122,16 @@ jobs:
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/backend-deployment.yaml
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/frontend-deployment.yaml
 
-      # Sync the Gemini key from GitHub secrets into the existing AKS secret.
-      # The value is passed via env (never interpolated into the logged command),
-      # and the deploy fails loudly if the repository secret is missing — otherwise
-      # the assistant silently boots "not configured". A char count (not the value)
-      # is printed so a successful sync is verifiable in the run log.
-      - name: Sync GEMINI_API_KEY secret into AKS
+      # Sync AI provider keys from GitHub secrets into the existing AKS secret.
+      # Values are passed via env (never interpolated into the logged command).
+      # GEMINI_API_KEY is required and fails the deploy loudly if missing — otherwise
+      # the assistant silently boots "not configured". GROQ_API_KEY is the optional
+      # fallback provider and is synced only when present. A char count (not the
+      # value) is printed so a successful sync is verifiable in the run log.
+      - name: Sync AI provider secrets into AKS
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           if [ -z "$GEMINI_API_KEY" ]; then
             echo "::error::GEMINI_API_KEY repository secret is empty or unset — the AI assistant will not work."
@@ -137,6 +139,13 @@ jobs:
           fi
           kubectl patch secret quirk-secrets -n quirk --type merge \
             -p "{\"stringData\":{\"GEMINI_API_KEY\":\"$GEMINI_API_KEY\"}}"
+          if [ -n "$GROQ_API_KEY" ]; then
+            kubectl patch secret quirk-secrets -n quirk --type merge \
+              -p "{\"stringData\":{\"GROQ_API_KEY\":\"$GROQ_API_KEY\"}}"
+            echo "GROQ_API_KEY synced (fallback provider enabled)"
+          else
+            echo "GROQ_API_KEY not set — fallback provider disabled (Gemini only)"
+          fi
           echo "GEMINI_API_KEY synced ($(kubectl get secret quirk-secrets -n quirk -o jsonpath='{.data.GEMINI_API_KEY}' | base64 -d | wc -c) chars)"
 
       - name: Apply Kubernetes manifests

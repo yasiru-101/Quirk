@@ -14,12 +14,14 @@ export const TASK_PRIORITY = {
   LOW: 'Low',
   MEDIUM: 'Medium',
   HIGH: 'High',
+  URGENT: 'Urgent',
 };
 
 export const TASK_PRIORITY_LIST = [
-  TASK_PRIORITY.LOW,
-  TASK_PRIORITY.MEDIUM,
+  TASK_PRIORITY.URGENT,
   TASK_PRIORITY.HIGH,
+  TASK_PRIORITY.MEDIUM,
+  TASK_PRIORITY.LOW,
 ];
 
 // ─── Notification Types ───────────────────────────────────────────────────────

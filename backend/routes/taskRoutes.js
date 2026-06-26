@@ -59,7 +59,7 @@ router.use(protect);
  *                 example: 2026-06-15T00:00:00.000Z
  *               priority:
  *                 type: string
- *                 enum: [Low, Medium, High]
+ *                 enum: [Low, Medium, High, Urgent]
  *                 example: High
  *               columnId:
  *                 type: string

@@ -161,4 +161,5 @@ module.exports = {
   assignTaskSchema,
   updateColumnSchema,
   createCommentSchema,
+  createTimeLogSchema,
 };

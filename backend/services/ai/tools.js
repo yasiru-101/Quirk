@@ -9,6 +9,7 @@
 
 const prisma = require('../../config/db');
 const { resolveProjectAccess } = require('../../middleware/membership');
+const { isPlatformAdmin } = require('../../utils/roles');
 const { logActivity } = require('../../utils/activityLogger');
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
@@ -83,6 +84,19 @@ async function getTasks(args, ctx) {
   else return { error: 'no_context', message: 'No project or workspace is open, so there are no tasks to read.' };
 
   if (args.priority) where.priority = normalizePriority(args.priority);
+
+  // Row-level scoping identical to the REST GET /tasks endpoint: a caller only
+  // sees tasks they created, are assigned to, belong to the project of, or
+  // administer the workspace of. This prevents a workspace member from reading
+  // tasks in projects they are not part of when querying at workspace scope.
+  if (!isPlatformAdmin(ctx.user)) {
+    where.OR = [
+      { createdBy: ctx.user.id },
+      { assignments: { some: { userId: ctx.user.id } } },
+      { project: { members: { some: { userId: ctx.user.id } } } },
+      { project: { workspace: { members: { some: { userId: ctx.user.id, role: { in: ['Owner', 'Admin'] } } } } } },
+    ];
+  }
 
   const rows = await prisma.task.findMany({
     where,

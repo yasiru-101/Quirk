@@ -13,6 +13,7 @@ recorded as ADRs under [`docs/adr`](./adr).
 | Realtime | Socket.IO |
 | Email | Azure Communication Services, Ethereal in development |
 | Storage | Azure Blob Storage, local disk in development |
+| AI assistant | Google Gemini with Groq fallback (optional) |
 | Delivery | Docker, Kubernetes, GitHub Actions |
 
 ## Backend Layout
@@ -139,6 +140,25 @@ Each conversation also has a room (`conv:<id>`). On connection the server joins
 the rooms for conversations the user participates in. See
 [ADR 0003](./adr/0003-realtime-chat-and-dm-module.md).
 
+## AI Assistant
+
+An optional in-app assistant answers questions about a user's work and can list
+or create tasks through tool calls. It is exposed at `POST /api/ai/chat` and
+implemented in `backend/services/ai/`. Providers run in priority order — Gemini
+first, then Groq — with automatic fallback when one is rate-limited or
+unavailable. Tool execution re-applies the same object-level authorization as the
+REST API, so the assistant can never exceed the caller's own permissions. The
+feature is fully optional: with no provider API key set, the endpoint returns
+`503` and nothing else is affected. See
+[ADR 0010](./adr/0010-ai-assistant-provider-fallback-and-tools.md) and
+[AI_ASSISTANT.md](./AI_ASSISTANT.md).
+
+## API Documentation
+
+OpenAPI annotations on the route handlers are compiled by `swagger-jsdoc` and
+served as interactive Swagger UI at `/api-docs`. Every endpoint group is
+documented there. See [API.md](./API.md).
+
 ## Frontend Layout
 
 The frontend is a React + Vite single-page application:
@@ -192,3 +212,4 @@ Notable routes:
 - [x] Task-level object authorization.
 - [x] Calendar and Timeline views consuming the task query API.
 - [x] Kanban columns as task workflow state.
+- [x] AI assistant with provider fallback and RBAC-safe tools (ADR 0010).

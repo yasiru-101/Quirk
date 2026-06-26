@@ -250,6 +250,33 @@ const me = async (req, res) => {
   }
 };
 
+// @desc    Update the authenticated user's own profile (display name)
+// @route   PATCH /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  const { name } = req.body;
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { name: name.trim() },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isPlatformAdmin: true,
+        mustResetPassword: true,
+        isActive: true,
+        twoFactorEnabled: true,
+      },
+    });
+    return res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error(`Update profile error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error updating profile' });
+  }
+};
+
 // @desc    Log out user / Clear cookies
 // @route   POST /api/auth/logout
 // @access  Public
@@ -655,6 +682,7 @@ const disableTwoFactor = async (req, res) => {
 module.exports = {
   login,
   me,
+  updateProfile,
   logout,
   refresh,
   resetPassword,

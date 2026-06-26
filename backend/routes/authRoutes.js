@@ -7,6 +7,7 @@ const {
   logout,
   refresh,
   resetPassword,
+  updateProfile,
   register,
   registerInvited,
   verifyEmail,
@@ -24,6 +25,7 @@ const validate = require('../middleware/validate');
 const {
   loginSchema,
   resetPasswordSchema,
+  updateProfileSchema,
   registerSchema,
   registerInvitedSchema,
   verifyEmailSchema,
@@ -297,6 +299,38 @@ router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
  *     tags: [Authentication]
  */
 router.post('/reset-password-otp', validate(resetPasswordWithOtpSchema), resetPasswordWithOtp);
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   patch:
+ *     summary: Update your own profile
+ *     description: Updates the authenticated user's display name. Self-service; does not require admin access.
+ *     tags: [Authentication]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: Alex Developer
+ *     responses:
+ *       200:
+ *         description: Profile updated; returns the updated user.
+ *       400:
+ *         description: Validation failed.
+ *       401:
+ *         description: Not authorized.
+ */
+router.patch('/profile', protect, validate(updateProfileSchema), updateProfile);
 
 /**
  * @openapi

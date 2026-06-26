@@ -45,7 +45,7 @@ Start with [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the ADRs in
 # Backend
 cd backend && npm install
 cp .env.example .env        # set DATABASE_URL + JWT secrets
-npx prisma migrate dev      # apply migrations
+npx prisma db push          # apply the schema to your database
 npm run dev                 # http://localhost:5000
 
 # Frontend
@@ -72,6 +72,8 @@ around them:
 - [x] Self-service registration, email verification, login 2FA (ADR 0003)
 - [x] Task-level object authorization (ADR 0004)
 - [x] Kanban column as the single source of task status (ADR 0006)
+- [x] Separate platform support console (ADR 0009)
+- [x] AI assistant with provider fallback and RBAC-safe tools (ADR 0010)
 
 Feature work that sits cleanly on the current foundation: workspace/project UI,
 the realtime chat/DM module (reuse the Socket.IO room pattern in

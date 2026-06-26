@@ -310,7 +310,6 @@ const inviteMember = async (req, res) => {
           name: email.split('@')[0],
           email,
           passwordHash,
-          role: 'Collaborator', // tenant role; workspace role is on the membership
           mustResetPassword: true,
           emailVerified: true, // admin-provisioned account is trusted
           isActive: true,

@@ -432,7 +432,6 @@ const register = async (req, res) => {
         name,
         email,
         passwordHash,
-        role: 'Collaborator',
         mustResetPassword: false, // the user chose their own password
         emailVerified: false,     // must confirm via an emailed code
       },
@@ -483,7 +482,6 @@ const registerInvited = async (req, res) => {
           name,
           email: invitation.email,
           passwordHash,
-          role: 'Collaborator',
           mustResetPassword: false,
           emailVerified: true, // Bypass verification!
         },

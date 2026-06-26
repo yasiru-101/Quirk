@@ -10,6 +10,7 @@ const {
   updateProfile,
   register,
   registerInvited,
+  setInvitedPassword,
   verifyEmail,
   resendVerification,
   verifyTwoFactor,
@@ -28,6 +29,7 @@ const {
   updateProfileSchema,
   registerSchema,
   registerInvitedSchema,
+  setInvitedPasswordSchema,
   verifyEmailSchema,
   resendVerificationSchema,
   verifyTwoFactorSchema,
@@ -124,6 +126,34 @@ router.post('/register', validate(registerSchema), register);
  *     tags: [Authentication]
  */
 router.post('/register-invited', validate(registerInvitedSchema), registerInvited);
+
+/**
+ * @openapi
+ * /auth/set-invited-password:
+ *   post:
+ *     summary: Set a password for an invitation-provisioned account and sign in
+ *     description: >-
+ *       For a brand-new account created by a workspace invitation (with a temporary
+ *       password). Lets the recipient choose a password via the emailed link without
+ *       typing the temporary one, then signs them in. The membership already exists.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password, confirmPassword, token]
+ *             properties:
+ *               name: { type: string }
+ *               password: { type: string }
+ *               confirmPassword: { type: string }
+ *               token: { type: string }
+ *     responses:
+ *       200: { description: Password set; cookies set }
+ *       400: { description: Invalid/expired invitation or account already set up }
+ */
+router.post('/set-invited-password', validate(setInvitedPasswordSchema), setInvitedPassword);
 
 /**
  * @openapi

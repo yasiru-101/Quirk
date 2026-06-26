@@ -75,8 +75,11 @@ export default function AcceptInvitePage() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    // For a "pending setup" account the user (and name) already exist, so a name is
+    // optional here; for a brand-new self-registration it is required.
+    const isSetup = !!inviteDetails?.pendingSetup;
     const nextErrors = {};
-    if (!form.name) nextErrors.name = 'Name is required';
+    if (!isSetup && !form.name) nextErrors.name = 'Name is required';
     if (!form.password) nextErrors.password = 'Password is required';
     else {
       const passwordErrors = validatePassword(form.password);
@@ -93,9 +96,12 @@ export default function AcceptInvitePage() {
 
     setSubmitting(true);
     try {
-      const { data } = await authService.registerInvited(form.name, form.password, form.confirmPassword, token);
+      const { data } = isSetup
+        ? await authService.setInvitedPassword(form.name, form.password, form.confirmPassword, token)
+        : await authService.registerInvited(form.name, form.password, form.confirmPassword, token);
       setSession(data.user);
       await refreshWorkspaces();
+      if (data?.workspaceId) setActiveWorkspaceId(data.workspaceId);
       navigate('/projects', { replace: true });
     } catch (err) {
       const { message: errMsg, fieldErrors } = normalizeError(err);
@@ -133,7 +139,80 @@ export default function AcceptInvitePage() {
           </>
         )}
 
-        {status === 'unauthenticated' && inviteDetails?.existingUser && (
+        {status === 'unauthenticated' && inviteDetails?.pendingSetup && (
+          <div className="text-left">
+            <h1 className="text-center text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">Set your password</h1>
+            <p className="mb-6 mt-2 text-center text-sm text-[var(--colors-body)]">
+              An account was created for you in <strong>{inviteDetails.workspaceName}</strong>. Choose a
+              password to finish setting up and sign in.
+            </p>
+
+            {errors.form && (
+              <div className="mb-4 rounded border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
+                {errors.form}
+              </div>
+            )}
+
+            <form onSubmit={handleRegister} className="flex flex-col gap-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--colors-ink)]">Email Address</label>
+                <div className="rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-surface)] px-3 py-2 text-sm text-[var(--colors-body)] opacity-70">
+                  {inviteDetails.email}
+                </div>
+              </div>
+
+              <Input
+                id="setup-name"
+                label="Full Name (optional)"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                error={errors.name}
+                placeholder="Jane Doe"
+              />
+
+              <Input
+                id="setup-password"
+                label="Password"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                error={errors.password}
+                placeholder="Create a strong password"
+              />
+              <p className="text-xs text-[var(--colors-body)] -mt-2">{PASSWORD_POLICY.HINT}</p>
+
+              <Input
+                id="setup-confirm-password"
+                label="Confirm Password"
+                type="password"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                error={errors.confirmPassword}
+                placeholder="Confirm your password"
+              />
+
+              <Button type="submit" variant="primary" loading={submitting} className="mt-2 w-full">
+                Set Password & Continue
+              </Button>
+            </form>
+
+            <p className="mt-4 text-center text-xs text-[var(--colors-body)]">
+              Prefer the temporary password from your email?{' '}
+              <button
+                type="button"
+                className="font-medium text-[var(--colors-primary)] underline"
+                onClick={() => navigate('/login')}
+              >
+                Sign in instead
+              </button>
+            </p>
+          </div>
+        )}
+
+        {status === 'unauthenticated' && inviteDetails?.existingUser && !inviteDetails?.pendingSetup && (
           <>
             <h1 className="text-[length:var(--typography-title)] font-semibold text-[var(--colors-ink)]">Welcome back!</h1>
             <p className="mt-2 text-sm text-[var(--colors-body)]">

@@ -84,6 +84,56 @@ const getInvitationTemplate = (workspaceName, inviterName, acceptUrl) => `
 `;
 
 /**
+ * Returns the HTML template for a new workspace member who has no Quirk account yet.
+ * Combines the invitation context with the temporary-credentials onboarding flow:
+ * the recipient can either sign in with the temp password (and is forced to change
+ * it on first login) or click the button to set a password directly.
+ */
+const getWorkspaceWelcomeTemplate = (to, workspaceName, inviterName, tempPassword, setupUrl) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f1f5f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+    .header { font-size: 24px; font-weight: bold; color: #1e3a8a; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+    .content { font-size: 16px; color: #475569; }
+    .credentials { background-color: #eff6ff; padding: 20px; border-left: 4px solid #2563eb; margin: 25px 0; border-radius: 0 8px 8px 0; }
+    .credentials-title { font-weight: bold; color: #1e40af; margin-bottom: 10px; }
+    .btn-container { text-align: center; margin: 30px 0; }
+    .btn { background-color: #2563eb; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; transition: background-color 0.2s; }
+    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">You've been added to Quirk</div>
+    <div class="content">
+      <p><strong>${inviterName}</strong> has added you to the <strong>${workspaceName}</strong> workspace on
+      <strong>Quirk Task Management</strong> and created an account for you.</p>
+      <p>You can get started in one of two ways:</p>
+      <p><strong>1.</strong> Click the button below to set your own password and sign in straight away.</p>
+      <div class="btn-container">
+        <a href="${setupUrl}" class="btn" target="_blank">Set Your Password</a>
+      </div>
+      <p><strong>2.</strong> Or sign in with the temporary credentials below — you'll be asked to choose
+      a new password on your first login.</p>
+      <div class="credentials">
+        <div class="credentials-title">Your Temporary Login Credentials</div>
+        <strong>Email:</strong> ${to}<br/>
+        <strong>Temporary Password:</strong> <code style="font-size: 16px; color: #0f172a; font-weight: bold;">${tempPassword}</code>
+      </div>
+      <p style="font-size: 14px; color: #94a3b8;">This invitation link expires in 7 days.</p>
+    </div>
+    <div class="footer">
+      This is an automated system email. Please do not reply directly to this address.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+/**
  * Sends email using Ethereal SMTP test account (development fallback).
  */
 const sendEtherealEmail = async ({ to, subject, html }) => {
@@ -173,6 +223,22 @@ const sendOnboardingEmail = async ({ to, name, tempPassword, loginUrl }) => {
 const sendInvitationEmail = async ({ to, workspaceName, inviterName, acceptUrl }) => {
   const subject = `${inviterName} invited you to the ${workspaceName} workspace on Quirk`;
   const html = getInvitationTemplate(workspaceName, inviterName, acceptUrl);
+
+  if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
+    return await sendAzureEmail({ to, name: to, subject, html });
+  }
+  console.log('[EmailService] Azure ACS not configured. Falling back to Ethereal SMTP...');
+  return await sendEtherealEmail({ to, subject, html });
+};
+
+/**
+ * Sends the combined welcome + temporary-credentials email used when a workspace
+ * invitation creates a brand-new Quirk account. Uses Azure ACS if available,
+ * otherwise Ethereal.
+ */
+const sendWorkspaceWelcomeEmail = async ({ to, workspaceName, inviterName, tempPassword, setupUrl }) => {
+  const subject = `${inviterName} added you to the ${workspaceName} workspace on Quirk`;
+  const html = getWorkspaceWelcomeTemplate(to, workspaceName, inviterName, tempPassword, setupUrl);
 
   if (emailClient && process.env.AZURE_ACS_SENDER_ADDRESS) {
     return await sendAzureEmail({ to, name: to, subject, html });
@@ -290,5 +356,6 @@ module.exports = {
   sendOnboardingEmail,
   sendTaskNotificationEmail,
   sendInvitationEmail,
+  sendWorkspaceWelcomeEmail,
   sendOtpEmail,
 };

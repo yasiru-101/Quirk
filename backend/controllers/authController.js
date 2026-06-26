@@ -523,6 +523,75 @@ const registerInvited = async (req, res) => {
   }
 };
 
+// @desc    Set the password for an invitation-provisioned account and sign in
+// @route   POST /api/auth/set-invited-password
+// @access  Public (requires a valid invitation token)
+//
+// Used when a workspace invitation created a brand-new account with a temporary
+// password. The recipient clicks the emailed link and chooses a password here
+// without having to type the temporary one. The membership already exists, so this
+// only finalizes the credentials and signs the user in.
+const setInvitedPassword = async (req, res) => {
+  const { name, password, token } = req.body;
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { tokenHash: hashToken(token) },
+    });
+    if (!invitation || invitation.status !== 'pending') {
+      return res.status(400).json({ message: 'This invitation is invalid or has already been used.' });
+    }
+    if (invitation.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'This invitation has expired.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: invitation.email } });
+    if (!user || !user.mustResetPassword) {
+      // No provisioned account awaiting setup — fall back to the normal sign-in path.
+      return res.status(400).json({ message: 'This account is already set up. Please sign in instead.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, await bcrypt.genSalt(12));
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          mustResetPassword: false,
+          // Invalidate any sessions issued before this credential change.
+          tokenValidFrom: new Date(),
+          ...(name ? { name: name.trim() } : {}),
+        },
+      });
+      // Membership was created with the invitation; upsert keeps this idempotent.
+      await tx.workspaceMember.upsert({
+        where: { workspaceId_userId: { workspaceId: invitation.workspaceId, userId: user.id } },
+        create: { workspaceId: invitation.workspaceId, userId: user.id, role: invitation.role },
+        update: {},
+      });
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted', acceptedAt: new Date() },
+      });
+      return u;
+    });
+
+    const accessToken = generateAccessToken(updated);
+    const refreshToken = generateRefreshToken(updated);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const userResponse = { ...updated };
+    delete userResponse.passwordHash;
+    return res.status(200).json({
+      message: 'Password set and workspace joined.',
+      user: userResponse,
+      workspaceId: invitation.workspaceId,
+    });
+  } catch (error) {
+    console.error(`Set invited password error: ${error.message}`);
+    return res.status(500).json({ message: 'Internal server error setting password' });
+  }
+};
+
 // @desc    Verify email with a one-time code and complete sign-in
 // @route   POST /api/auth/verify-email
 // @access  Public
@@ -688,6 +757,7 @@ module.exports = {
   resetPassword,
   register,
   registerInvited,
+  setInvitedPassword,
   verifyEmail,
   resendVerification,
   verifyTwoFactor,

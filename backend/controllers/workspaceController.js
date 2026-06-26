@@ -9,8 +9,10 @@
  */
 
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const prisma = require('../config/db');
 const emailService = require('../services/emailService');
+const { generateTempPassword } = require('../utils/userHelpers');
 const { WORKSPACE_ADMIN_ROLES, isWorkspaceAdmin } = require('../utils/roles');
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -274,21 +276,69 @@ const inviteMember = async (req, res) => {
       },
     });
 
-    const acceptUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/invite/accept?token=${rawToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const response = { invitation: { id: invitation.id, email, role: invitation.role, status: invitation.status } };
+
+    if (existingUser) {
+      // The recipient already has a Quirk account — they only need to sign in and
+      // accept to join this workspace (no new account, no temporary password).
+      const acceptUrl = `${frontendUrl}/invite/accept?token=${rawToken}`;
+      try {
+        await emailService.sendInvitationEmail({
+          to: email,
+          workspaceName: workspace.name,
+          inviterName: req.user.name,
+          acceptUrl,
+        });
+      } catch (emailError) {
+        console.error(`[EmailService] Invitation email delivery failed: ${emailError.message}`);
+      }
+      // The raw token is returned only outside production to ease testing.
+      if (process.env.NODE_ENV !== 'production') response.acceptToken = rawToken;
+      return res.status(201).json(response);
+    }
+
+    // Brand-new user: provision an account with a temporary password and add them to
+    // the workspace now (SRS onboarding flow). They can either sign in with the temp
+    // password — and are forced to change it on first login — or use the emailed link
+    // to set a password directly.
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, await bcrypt.genSalt(12));
+    await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: email.split('@')[0],
+          email,
+          passwordHash,
+          role: 'Collaborator', // tenant role; workspace role is on the membership
+          mustResetPassword: true,
+          emailVerified: true, // admin-provisioned account is trusted
+          isActive: true,
+        },
+      });
+      await tx.workspaceMember.create({
+        data: { workspaceId, userId: newUser.id, role: invitation.role },
+      });
+    });
+
+    const setupUrl = `${frontendUrl}/invite/accept?token=${rawToken}`;
     try {
-      await emailService.sendInvitationEmail({
+      await emailService.sendWorkspaceWelcomeEmail({
         to: email,
         workspaceName: workspace.name,
         inviterName: req.user.name,
-        acceptUrl,
+        tempPassword,
+        setupUrl,
       });
     } catch (emailError) {
-      console.error(`[EmailService] Invitation email delivery failed: ${emailError.message}`);
+      console.error(`[EmailService] Workspace welcome email delivery failed: ${emailError.message}`);
     }
 
-    // The raw token is returned only outside production to ease testing.
-    const response = { invitation: { id: invitation.id, email, role: invitation.role, status: invitation.status } };
-    if (process.env.NODE_ENV !== 'production') response.acceptToken = rawToken;
+    // Raw token and temp password are returned only outside production to ease testing.
+    if (process.env.NODE_ENV !== 'production') {
+      response.acceptToken = rawToken;
+      response.tempPassword = tempPassword;
+    }
     return res.status(201).json(response);
   } catch (error) {
     console.error(`Invite member error: ${error.message}`);
@@ -317,11 +367,23 @@ const verifyInvitation = async (req, res) => {
 
     const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } });
 
+    // A "pending setup" account is one we provisioned for this invitation: it exists,
+    // still owes a password change, and is already a member of this workspace. Such a
+    // user should set a password (not register, and not just "sign in to accept").
+    let pendingSetup = false;
+    if (existingUser && existingUser.mustResetPassword) {
+      const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: invitation.workspaceId, userId: existingUser.id } },
+      });
+      pendingSetup = !!membership;
+    }
+
     return res.status(200).json({
       valid: true,
       email: invitation.email,
       workspaceName: invitation.workspace.name,
       existingUser: !!existingUser,
+      pendingSetup,
     });
   } catch (error) {
     console.error(`Verify invitation error: ${error.message}`);

@@ -100,6 +100,11 @@ context being accessed. See
 - `POST /auth/refresh` rotates both tokens.
 - Platform-created users receive a temporary password and must reset it on first
   login.
+- Workspace invitations to a new email provision an account the same way: a
+  temporary password plus a tokenized set-password link are emailed, and the
+  member either signs in with the temporary password (reset forced on first
+  login) or sets a password directly via the link. Invitations to an existing
+  account just sign in and accept.
 - Self-service registration creates an unverified account and emails a one-time
   code.
 - Users may enable email-based login 2FA.
@@ -113,8 +118,11 @@ A workspace is the tenant boundary. Users can belong to multiple workspaces with
 different workspace roles.
 
 Workspace Admins can invite members, change member roles, remove members, and
-manage projects. Workspace Project Managers can create projects in workspaces
-they belong to. Collaborators participate in accessible projects and tasks.
+manage projects. Inviting a new email provisions the account with a temporary
+password and adds the membership immediately; inviting an existing account sends
+a sign-in-and-accept link. Workspace Project Managers can create projects in
+workspaces they belong to. Collaborators participate in accessible projects and
+tasks.
 
 Users can leave workspaces themselves. The last workspace Admin cannot leave or
 be removed until another Admin exists.

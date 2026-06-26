@@ -40,124 +40,308 @@ class User {
   +String passwordHash
   +Boolean isPlatformAdmin
   +Boolean mustResetPassword
+  +Boolean isActive
   +Boolean emailVerified
   +Boolean twoFactorEnabled
-  +Boolean isActive
   +DateTime tokenValidFrom
+  +String avatarUrl
+  +String jobTitle
   +String timezone
   +Boolean onboardingComplete
+  +DateTime createdAt
+  +DateTime updatedAt
+  +DateTime deletedAt
 }
+
 class Workspace {
   +UUID id
   +String name
+  +String description
   +UUID ownerId
+  +DateTime createdAt
+  +DateTime updatedAt
 }
+
 class WorkspaceMember {
   +UUID workspaceId
   +UUID userId
   +String role
+  +DateTime joinedAt
 }
+
 class Invitation {
   +UUID id
+  +UUID workspaceId
   +String email
+  +String role
   +String tokenHash
+  +UUID invitedBy
   +InvitationStatus status
+  +DateTime expiresAt
+  +DateTime acceptedAt
+  +DateTime createdAt
 }
+
 class OtpCode {
   +UUID id
+  +UUID userId
   +String codeHash
   +OtpPurpose purpose
+  +DateTime expiresAt
+  +DateTime consumedAt
+  +Int attempts
+  +DateTime createdAt
 }
+
+class ProjectTemplate {
+  +UUID id
+  +String name
+  +String description
+  +DateTime createdAt
+  +DateTime updatedAt
+}
+
+class ProjectTemplateColumn {
+  +UUID id
+  +UUID templateId
+  +String name
+  +Int order
+}
+
 class Project {
   +UUID id
   +String name
+  +String description
+  +UUID workspaceId
+  +UUID createdBy
   +ProjectStatus status
+  +String templateType
+  +UUID templateId
+  +DateTime createdAt
+  +DateTime updatedAt
+  +DateTime deletedAt
 }
+
 class ProjectMember {
   +UUID projectId
   +UUID userId
   +String role
+  +DateTime addedAt
 }
+
 class KanbanColumn {
   +UUID id
+  +UUID projectId
   +String name
   +Int order
+  +DateTime createdAt
+  +DateTime updatedAt
 }
+
 class Epic {
   +UUID id
+  +UUID projectId
   +String name
+  +String color
+  +DateTime createdAt
 }
+
 class Task {
   +UUID id
   +String title
-  +TaskPriority priority
-  +DateTime dueDate
+  +String description
+  +UUID projectId
+  +UUID createdBy
   +UUID columnId
+  +DateTime dueDate
+  +TaskPriority priority
+  +String[] tags
+  +UUID epicId
+  +Float estimatedHours
   +UUID parentTaskId
+  +DateTime createdAt
+  +DateTime updatedAt
+  +DateTime deletedAt
 }
+
+class TaskDependency {
+  +UUID id
+  +UUID blockingTaskId
+  +UUID blockedTaskId
+  +DateTime createdAt
+}
+
 class TaskAssignment {
   +UUID taskId
   +UUID userId
+  +DateTime assignedAt
 }
-class Comment {
-  +UUID id
-  +String content
-}
-class Attachment {
-  +UUID id
-  +String blobUrl
-  +Int sizeBytes
-}
+
 class TimeLog {
   +UUID id
+  +UUID taskId
+  +UUID userId
   +Float hours
+  +DateTime date
+  +String note
+  +DateTime createdAt
 }
+
 class ActivityLog {
   +UUID id
+  +UUID taskId
+  +UUID userId
   +String action
+  +Json metadata
+  +DateTime createdAt
 }
+
+class Comment {
+  +UUID id
+  +UUID taskId
+  +UUID userId
+  +String content
+  +DateTime createdAt
+  +DateTime updatedAt
+  +DateTime deletedAt
+}
+
+class Attachment {
+  +UUID id
+  +UUID taskId
+  +UUID commentId
+  +UUID uploadedBy
+  +String originalName
+  +String blobUrl
+  +String mimeType
+  +Int sizeBytes
+  +DateTime createdAt
+}
+
 class Notification {
   +UUID id
+  +UUID recipientId
   +NotificationType type
+  +String message
+  +UUID relatedTaskId
   +Boolean isRead
+  +DateTime createdAt
 }
+
 class Conversation {
   +UUID id
   +ConversationType type
+  +UUID projectId
+  +UUID workspaceId
+  +DateTime createdAt
+  +DateTime updatedAt
 }
+
 class ConversationParticipant {
   +UUID conversationId
   +UUID userId
-}
-class ChatMessage {
-  +UUID id
-  +String content
+  +DateTime joinedAt
 }
 
+class ChatMessage {
+  +UUID id
+  +UUID conversationId
+  +UUID senderId
+  +String content
+  +DateTime createdAt
+  +DateTime updatedAt
+  +DateTime deletedAt
+}
+
+%% Enums (shown as notes)
+class OtpPurpose {
+  <<enumeration>>
+  EMAIL_VERIFY
+  LOGIN_2FA
+  PASSWORD_RESET
+}
+
+class InvitationStatus {
+  <<enumeration>>
+  pending
+  accepted
+  revoked
+}
+
+class TaskPriority {
+  <<enumeration>>
+  Low
+  Medium
+  High
+  Urgent
+}
+
+class ProjectStatus {
+  <<enumeration>>
+  active
+  archived
+}
+
+class NotificationType {
+  <<enumeration>>
+  Assignment
+  ColumnChange
+  Comment
+  Deadline
+  Admin
+}
+
+class ConversationType {
+  <<enumeration>>
+  PROJECT
+  DIRECT
+}
+
+%% Identity & tenancy
+User "1" --> "*" Workspace : "owns (WorkspaceOwner)"
 User "1" --> "*" WorkspaceMember : membership
 Workspace "1" --> "*" WorkspaceMember
-User "1" --> "*" Workspace : owns
+User "1" --> "*" Invitation : "invites (InvitationInviter)"
 Workspace "1" --> "*" Invitation
 User "1" --> "*" OtpCode
+
+%% Projects & workflow
 Workspace "1" --> "*" Project
+User "1" --> "*" Project : "creates (ProjectCreator)"
+ProjectTemplate "1" --> "*" Project
+ProjectTemplate "1" --> "*" ProjectTemplateColumn
 Project "1" --> "*" ProjectMember
 User "1" --> "*" ProjectMember
 Project "1" --> "*" KanbanColumn
 Project "1" --> "*" Epic
+
+%% Tasks & sub-resources
 Project "1" --> "*" Task
-KanbanColumn "1" --> "*" Task : status
-Epic "0..1" --> "*" Task
-Task "0..1" --> "*" Task : subtasks
+KanbanColumn "0..1" --> "*" Task : "status (columnId)"
+Epic "0..1" --> "*" Task : epicId
+User "1" --> "*" Task : "creates (TaskCreator)"
+Task "0..1" --> "*" Task : "subtasks (parentTaskId)"
+Task "1" --> "*" TaskDependency : "blocking (blockingTaskId)"
+Task "1" --> "*" TaskDependency : "blocked by (blockedTaskId)"
 Task "1" --> "*" TaskAssignment
-User "1" --> "*" TaskAssignment
+User "1" --> "*" TaskAssignment : assignee
 Task "1" --> "*" Comment
+User "1" --> "*" Comment : authors
 Task "1" --> "*" Attachment
+Comment "0..1" --> "*" Attachment
+User "1" --> "*" Attachment : uploads
 Task "1" --> "*" TimeLog
+User "1" --> "*" TimeLog
 Task "1" --> "*" ActivityLog
-User "1" --> "*" Notification
+User "1" --> "*" ActivityLog
+
+%% Notifications & chat
+User "1" --> "*" Notification : receives
+Task "0..1" --> "*" Notification : "related to"
 Workspace "1" --> "*" Conversation
-Project "0..1" --> "0..1" Conversation
+Project "0..1" --> "0..1" Conversation : "project chat"
 Conversation "1" --> "*" ConversationParticipant
+User "1" --> "*" ConversationParticipant
 Conversation "1" --> "*" ChatMessage
 User "1" --> "*" ChatMessage : sends
 ```

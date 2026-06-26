@@ -199,9 +199,8 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
             value={form.priority}
             onChange={handleChange}
             disabled={readOnly}
-          >
-            {TASK_PRIORITY_LIST.map((p) => <option key={p}>{p}</option>)}
-          </SelectField>
+            options={TASK_PRIORITY_LIST.map((p) => ({ value: p, label: p }))}
+          />
 
           <SelectField
             label="Project"
@@ -210,10 +209,9 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
             onChange={handleChange}
             disabled={readOnly || isEdit}
             error={errors.projectId}
-          >
-            <option value="">Select project</option>
-            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-          </SelectField>
+            placeholder="Select project"
+            options={projects.map((p) => ({ value: p.id, label: p.name }))}
+          />
         </div>
 
         <SelectField
@@ -223,12 +221,11 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
           onChange={handleChange}
           disabled={readOnly || !form.projectId}
           error={errors.columnId}
-        >
-          <option value="">Select column</option>
-          {columns
-            .filter((column) => column.projectId === form.projectId)
-            .map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
-        </SelectField>
+          placeholder="Select column"
+          options={columns
+            .filter((c) => c.projectId === form.projectId)
+            .map((c) => ({ value: c.id, label: c.name }))}
+        />
 
         <Input
           id="task-duedate"

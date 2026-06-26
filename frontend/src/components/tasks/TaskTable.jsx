@@ -3,6 +3,7 @@
  * @description Table listing tasks, workflow columns, assignees, and actions.
  */
 import React from 'react';
+import SelectField from '../common/SelectField';
 import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
 import EmptyState from '../common/EmptyState';
 import Button from '../common/Button';
@@ -72,25 +73,15 @@ export default function TaskTable({ tasks, columns, canManageTasks = false, onOp
                   {task.projectName || task.project?.name || 'No project'}
                 </td>
 
-                <td className="px-4 py-3">
-                  <div className="relative w-fit">
-                    <select
-                      value={task.columnId || ''}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onColumnChange?.(task._id, e.target.value)}
-                      className={cn(
-                        'cursor-pointer appearance-none rounded-full px-3 py-1 pr-9 text-center text-[12px] font-semibold outline-none transition-colors focus-ring',
-                        getStatusColor(columnName)
-                      )}
-                    >
-                      {taskColumns.map((column) => (
-                        <option key={column.id} value={column.id}>{column.name}</option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 opacity-50">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6"/></svg>
-                    </div>
-                  </div>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <SelectField
+                    variant="pill"
+                    value={task.columnId || ''}
+                    onChange={(e) => onColumnChange?.(task._id, e.target.value)}
+                    options={taskColumns.map((c) => ({ value: c.id, label: c.name }))}
+                    triggerClassName={getStatusColor(columnName)}
+                    className="w-fit min-w-[110px]"
+                  />
                 </td>
 
                 <td className="px-4 py-3">

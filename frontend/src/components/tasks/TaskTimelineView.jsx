@@ -13,6 +13,7 @@ import {
   isToday, 
   isSameDay 
 } from 'date-fns';
+import SelectField from '../common/SelectField';
 import { getStatusColor, getTaskColumnName, isTerminalColumn, cn } from '../../utils/helpers';
 
 const DAY_WIDTH = 40; // width of day column in px
@@ -141,21 +142,15 @@ export default function TaskTimelineView({ tasks, columns = [], onTaskClick, onM
         {/* Group By selector */}
         <div className="flex items-center gap-2">
           <span className="text-[12px] font-medium text-[var(--colors-ink-muted)]">Group By:</span>
-          <div className="relative">
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-              className="pl-3 pr-8 py-1.5 text-[12px] font-bold rounded-[var(--radius-md)] bg-[var(--colors-canvas-soft)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] outline-none focus-ring appearance-none cursor-pointer"
-            >
-              <option value="column">Column</option>
-              <option value="priority">Priority</option>
-            </select>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path d="m6 9 6 6 6-6"/>
-              </svg>
-            </div>
-          </div>
+          <SelectField
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value)}
+            options={[
+              { value: 'column', label: 'Column' },
+              { value: 'priority', label: 'Priority' },
+            ]}
+            className="w-[130px]"
+          />
         </div>
       </div>
 

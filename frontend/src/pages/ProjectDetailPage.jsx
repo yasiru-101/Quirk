@@ -283,22 +283,20 @@ export default function ProjectDetailPage() {
           >
             <SelectField
               value={memberForm.userId}
-              onChange={(event) => setMemberForm((current) => ({ ...current, userId: event.target.value }))}
-              selectClassName="bg-[var(--colors-canvas)]"
-            >
-              <option value="">Select workspace member</option>
-              {assignableMembers.map((member) => (
-                <option key={member.userId} value={member.userId}>{member.user?.name} ({member.user?.email})</option>
-              ))}
-            </SelectField>
+              onChange={(e) => setMemberForm((current) => ({ ...current, userId: e.target.value }))}
+              placeholder="Select workspace member"
+              options={[
+                ...assignableMembers.map((m) => ({ value: m.userId, label: `${m.user?.name} (${m.user?.email})` })),
+              ]}
+            />
             <SelectField
               value={memberForm.role}
-              onChange={(event) => setMemberForm((current) => ({ ...current, role: event.target.value }))}
-              selectClassName="bg-[var(--colors-canvas)]"
-            >
-              <option>Collaborator</option>
-              <option>Project Manager</option>
-            </SelectField>
+              onChange={(e) => setMemberForm((current) => ({ ...current, role: e.target.value }))}
+              options={[
+                { value: 'Collaborator', label: 'Collaborator' },
+                { value: 'Project Manager', label: 'Project Manager' },
+              ]}
+            />
             <Button type="submit" variant="primary" disabled={!memberForm.userId}>Add member</Button>
           </form>
         )}

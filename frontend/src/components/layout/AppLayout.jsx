@@ -3,7 +3,7 @@
  * @description Structure template displaying the floating sidebar and top navigation.
  */
 import React, { useState, useEffect } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import ErrorBoundary from '../common/ErrorBoundary';
@@ -16,6 +16,10 @@ export default function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { workspaces, workspaceLoading, activeWorkspaceId, activeProject } = useProject();
   const { pathname, search } = useLocation();
+  const [searchParams] = useSearchParams();
+  // Prefer the URL ?projectId param (task board scoped view) over the context
+  // activeProject, which is only set when explicitly navigating to a project page.
+  const aiProjectId = searchParams.get('projectId') || activeProject?.id || null;
 
   // Close the mobile drawer whenever the route changes so navigating from it
   // returns the user straight to content.
@@ -71,7 +75,7 @@ export default function AppLayout() {
       </div>
       
       {/* AI Assistant Floating Bubble */}
-      <MorphPanel workspaceId={activeWorkspaceId} projectId={activeProject?.id} />
+      <MorphPanel workspaceId={activeWorkspaceId} projectId={aiProjectId} />
     </div>
   );
 }

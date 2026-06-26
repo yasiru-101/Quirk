@@ -3,6 +3,7 @@
  * @description Compact task card for Kanban columns.
  */
 import React from 'react';
+import SelectField from '../common/SelectField';
 import { getPriorityColor, getStatusColor, getTaskColumnName, formatDate, getInitials, isOverdue, cn } from '../../utils/helpers';
 
 export default function TaskCard({ task, columns = [], canManage = false, onColumnChange, onClick, onDelete }) {
@@ -73,26 +74,14 @@ export default function TaskCard({ task, columns = [], canManage = false, onColu
       </div>
 
       <div onClick={(e) => e.stopPropagation()} className="mt-3">
-        <div className="relative">
-          <select
-            value={task.columnId || ''}
-            onChange={(e) => onColumnChange?.(task._id, e.target.value)}
-            className={cn(
-              'w-full cursor-pointer appearance-none rounded-full border px-3 py-2 pr-10 text-xs font-bold outline-none transition-all focus-ring',
-              getStatusColor(columnName)
-            )}
-            aria-label="Change task column"
-          >
-            {columns.map((column) => (
-              <option key={column.id} value={column.id}>{column.name}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 opacity-50">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <path d="m6 9 6 6 6-6"/>
-            </svg>
-          </div>
-        </div>
+        <SelectField
+          variant="pill"
+          value={task.columnId || ''}
+          onChange={(e) => onColumnChange?.(task._id, e.target.value)}
+          options={columns.map((c) => ({ value: c.id, label: c.name }))}
+          triggerClassName={getStatusColor(columnName)}
+          aria-label="Change task column"
+        />
       </div>
     </div>
   );

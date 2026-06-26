@@ -48,6 +48,14 @@ async function chat({ system, message, history = [], toolSpecs, executeTool, ctx
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     tools: toGeminiTools(toolSpecs),
     systemInstruction: system,
+    // Disable thinking budget — gemini-2.5-flash is a thinking model that by
+    // default allocates thinking tokens before each response. For a tool-calling
+    // chat assistant this adds latency with no benefit; setting thinkingBudget:0
+    // keeps function-calling and text generation intact while eliminating the
+    // thinking overhead that can exhaust per-request token limits.
+    generationConfig: {
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   });
 
   const chatSession = model.startChat({

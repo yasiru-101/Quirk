@@ -4,6 +4,7 @@
  */
 
 const prisma = require('../config/db');
+const { isTaskManager } = require('../middleware/membership');
 
 // @desc    Add a comment to a task
 // @route   POST /api/tasks/:taskId/comments
@@ -22,8 +23,10 @@ const addComment = async (req, res) => {
       });
     }
 
-    // 2. Safeguard: Collaborators can only comment if they are assigned to the task
-    if (req.user.role === 'Collaborator') {
+    // 2. Safeguard: non-managers (Collaborators on this project) can only comment if
+    // they are assigned to the task. Project Managers / workspace admins may comment
+    // on any task in their project.
+    if (!(await isTaskManager(req.user, task))) {
       const isAssigned = await prisma.taskAssignment.findUnique({
         where: {
           taskId_userId: {
@@ -90,8 +93,9 @@ const getComments = async (req, res) => {
       });
     }
 
-    // 2. Safeguard: Collaborators can only view comments if they are assigned to the task
-    if (req.user.role === 'Collaborator') {
+    // 2. Safeguard: non-managers (Collaborators on this project) can only view comments
+    // if they are assigned to the task. Project Managers / workspace admins may view any.
+    if (!(await isTaskManager(req.user, task))) {
       const isAssigned = await prisma.taskAssignment.findUnique({
         where: {
           taskId_userId: {

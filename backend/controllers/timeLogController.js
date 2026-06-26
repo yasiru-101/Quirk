@@ -5,6 +5,7 @@
 
 const prisma = require('../config/db');
 const { logActivity } = require('../utils/activityLogger');
+const { isTaskManager } = require('../middleware/membership');
 
 // @desc   Log time against a task
 // @route  POST /api/tasks/:id/timelogs
@@ -17,8 +18,9 @@ const createTimeLog = async (req, res) => {
     const task = await prisma.task.findUnique({ where: { id } });
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
-    // Collaborators can only log time on tasks assigned to them
-    if (req.user.role === 'Collaborator') {
+    // Non-managers (Collaborators on this project) can only log time on tasks assigned
+    // to them; Project Managers / workspace admins may log against any task.
+    if (!(await isTaskManager(req.user, task))) {
       const isAssigned = await prisma.taskAssignment.findUnique({
         where: { taskId_userId: { taskId: id, userId: req.user.id } },
       });

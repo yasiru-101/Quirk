@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
     "seed:demo": "node scripts/ensureDemoData.js",
+    "db:reset-keep-admin": "node scripts/resetExceptSuperAdmin.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -31,14 +31,14 @@ export default function TopBar({ onOpenMobileNav }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { user, logout, role, isPlatformAdmin } = useAuth();
-  const { activeWorkspace, canManageWorkspace } = useProject();
+  const { user, logout, isPlatformAdmin } = useAuth();
+  const { activeWorkspace, canManageWorkspace, activeWorkspaceRole } = useProject();
   const confirm = useConfirm();
   const profileRef = useRef(null);
 
   // Only task creators (platform admins, workspace Owners/Admins, project managers)
   // see the quick "New task" action. Collaborators cannot create tasks.
-  const canCreateTasks = isPlatformAdmin || canManageWorkspace || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER;
+  const canCreateTasks = isPlatformAdmin || canManageWorkspace || activeWorkspaceRole === ROLES.PROJECT_MANAGER;
 
   // Close the profile menu on outside click or Escape so it always minimizes.
   useEffect(() => {

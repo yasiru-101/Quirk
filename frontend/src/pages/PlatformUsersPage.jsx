@@ -8,8 +8,7 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { getInitials, getRoleBadgeStyle } from '../utils/helpers';
 
-const ROLES = ['Admin', 'Project Manager', 'Collaborator'];
-const EMPTY_FORM = { name: '', email: '', role: 'Collaborator', isPlatformAdmin: false };
+const EMPTY_FORM = { name: '', email: '', isPlatformAdmin: false };
 
 export default function PlatformUsersPage() {
   const { success, error: toastError } = useToast();
@@ -132,7 +131,7 @@ export default function PlatformUsersPage() {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)]">
-                {['User', 'Tenant role', 'Platform admin', 'Status', ''].map((heading) => (
+                {['User', 'Platform admin', 'Status', ''].map((heading) => (
                   <th key={heading} className="px-5 py-3 text-[length:var(--typography-body-sm)] font-semibold uppercase tracking-wider text-[var(--colors-ink-muted)]">{heading}</th>
                 ))}
               </tr>
@@ -150,15 +149,6 @@ export default function PlatformUsersPage() {
                         <p className="text-sm text-[var(--colors-body)]">{user.email}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <select
-                      value={user.role}
-                      onChange={(event) => updateUser(user, { role: event.target.value })}
-                      className="h-9 rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm font-semibold text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
-                    >
-                      {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
-                    </select>
                   </td>
                   <td className="px-5 py-4">
                     <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--colors-ink)]">
@@ -201,17 +191,6 @@ export default function PlatformUsersPage() {
         <form onSubmit={createUser} className="space-y-5" noValidate>
           <Input label="Name" name="name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} error={errors.name} />
           <Input label="Email" name="email" type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} error={errors.email} />
-          <div className="space-y-2">
-            <label className="text-[length:var(--typography-body-sm)] font-semibold text-[var(--colors-ink)]">Tenant role</label>
-            <select
-              value={form.role}
-              onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-              className="h-11 w-full rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-softer)] px-3 text-sm font-semibold text-[var(--colors-ink)] outline-none focus:border-[var(--colors-primary)]"
-            >
-              {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
-            </select>
-            {errors.role && <p className="text-sm text-[var(--colors-priority-urgent)]">{errors.role}</p>}
-          </div>
           <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--colors-ink)]">
             <input
               type="checkbox"

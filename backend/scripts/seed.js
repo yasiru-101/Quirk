@@ -78,7 +78,6 @@ const seedDatabase = async () => {
           name: def.name,
           email: def.email,
           passwordHash: await hash(def.password),
-          role: def.tenantRole,
           isPlatformAdmin: def.isPlatformAdmin,
           jobTitle: def.jobTitle,
           timezone: def.timezone,

@@ -34,7 +34,7 @@ const STARTER_TEMPLATES = [
 const DEFAULT_TEMPLATE = STARTER_TEMPLATES[0];
 
 export default function ProjectsPage() {
-  const { role, isPlatformAdmin } = useAuth();
+  const { isPlatformAdmin } = useAuth();
   const {
     workspaces,
     activeWorkspaceId,
@@ -51,7 +51,7 @@ export default function ProjectsPage() {
   const confirm = useConfirm();
   const navigate = useNavigate();
   const location = useLocation();
-  const canCreate = isPlatformAdmin || role === ROLES.ADMIN || role === ROLES.PROJECT_MANAGER || canManageWorkspace;
+  const canCreate = isPlatformAdmin || canManageWorkspace || activeWorkspaceRole === ROLES.PROJECT_MANAGER;
   const [modal, setModal] = useState({ open: false, project: null });
   const [form, setForm] = useState(EMPTY_PROJECT);
   const [errors, setErrors] = useState({});
@@ -125,8 +125,8 @@ export default function ProjectsPage() {
       return;
     }
     
-    if ((isPlatformAdmin || role === ROLES.ADMIN) && !activeWorkspaceId && !form.workspaceId) {
-      setErrors({ workspaceId: 'Workspace is required for Admins without an active workspace.' });
+    if (isPlatformAdmin && !activeWorkspaceId && !form.workspaceId) {
+      setErrors({ workspaceId: 'Workspace is required for platform admins without an active workspace.' });
       return;
     }
 
@@ -343,7 +343,7 @@ export default function ProjectsPage() {
           />
           {!modal.project && (
             <>
-              {(isPlatformAdmin || role === ROLES.ADMIN) && !activeWorkspaceId && workspaces.length > 0 && (
+              {isPlatformAdmin && !activeWorkspaceId && workspaces.length > 0 && (
                 <SelectField
                   label="Workspace"
                     name="workspaceId"

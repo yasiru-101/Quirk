@@ -27,7 +27,7 @@ const EMPTY_FORM = {
 };
 
 export default function TaskModal({ open, onClose, task = null, projects = [], columns = [], onSaved }) {
-  const { role, user, isPlatformAdmin } = useAuth();
+  const { user, isPlatformAdmin } = useAuth();
   const { canManageWorkspace } = useProject();
   const { success, error: toastError } = useToast();
   const isEdit = !!task;
@@ -38,7 +38,6 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
 
   const canManageProject = (project) =>
     isPlatformAdmin ||
-    role === ROLES.ADMIN ||
     canManageWorkspace ||
     project?.members?.some((member) => (member.userId === user?.id || member.user?.id === user?.id) && member.role === ROLES.PROJECT_MANAGER);
 
@@ -77,7 +76,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
     [selectedProject, user?.id]
   );
 
-  const canManageTask = isPlatformAdmin || role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
+  const canManageTask = isPlatformAdmin || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
 
   const availableUsers = useMemo(() => {
     const members = selectedProject?.members || [];
@@ -275,7 +274,7 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
                     <p className="text-sm font-bold text-[var(--colors-ink)] leading-tight">
                       {u.name} {u._id === user?.id || u.id === user?.id ? '(Me)' : ''}
                     </p>
-                    <p className="text-[11px] font-medium text-[var(--colors-mute)] mt-0.5 uppercase tracking-wide">{u.role}</p>
+                    <p className="text-[11px] font-medium text-[var(--colors-mute)] mt-0.5 lowercase tracking-wide">{u.email}</p>
                   </div>
                 </label>
               );

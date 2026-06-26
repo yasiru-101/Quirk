@@ -12,7 +12,7 @@ const { generateTempPassword, checkLastPlatformAdmin } = require('../utils/userH
 // @route   POST /api/users
 // @access  Private (Admin only)
 const createUser = async (req, res) => {
-  const { name, email, role, isPlatformAdmin = false } = req.body;
+  const { name, email, isPlatformAdmin = false } = req.body;
 
   try {
     // 1. Check if user already exists
@@ -36,7 +36,6 @@ const createUser = async (req, res) => {
       data: {
         name,
         email,
-        role,
         isPlatformAdmin,
         passwordHash,
         mustResetPassword: true, // Force reset on initial login
@@ -79,7 +78,7 @@ const createUser = async (req, res) => {
 // @route   GET /api/users
 // @access  Private (Admin only)
 const getUsers = async (req, res) => {
-  const { search, role, isActive, isPlatformAdmin } = req.query;
+  const { search, isActive, isPlatformAdmin } = req.query;
   const where = {};
 
   try {
@@ -91,12 +90,7 @@ const getUsers = async (req, res) => {
       ];
     }
 
-    // 2. Apply role filter
-    if (role) {
-      where.role = role;
-    }
-
-    // 3. Apply active status filter
+    // 2. Apply active status filter
     if (isActive !== undefined) {
       where.isActive = isActive === 'true';
     }
@@ -112,7 +106,6 @@ const getUsers = async (req, res) => {
         id: true,
         name: true,
         email: true,
-        role: true,
         isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
@@ -145,7 +138,6 @@ const getUserById = async (req, res) => {
         id: true,
         name: true,
         email: true,
-        role: true,
         isPlatformAdmin: true,
         mustResetPassword: true,
         isActive: true,
@@ -176,7 +168,7 @@ const getUserById = async (req, res) => {
 // @access  Private (Admin only)
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role, isActive, isPlatformAdmin } = req.body;
+  const { name, email, isActive, isPlatformAdmin } = req.body;
   const targetId = id;
 
   try {
@@ -209,7 +201,6 @@ const updateUser = async (req, res) => {
       data: {
         name: name || undefined,
         email: email || undefined,
-        role: role || undefined,
         isPlatformAdmin: isPlatformAdmin !== undefined ? isPlatformAdmin : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
       },

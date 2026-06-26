@@ -27,7 +27,7 @@ export default function ProjectDetailPage() {
     addProjectMember,
     removeProjectMember,
   } = useProject();
-  const { role, user, isPlatformAdmin } = useAuth();
+  const { user, isPlatformAdmin } = useAuth();
   const { success, error: toastError } = useToast();
   const confirm = useConfirm();
   const [memberForm, setMemberForm] = useState({ userId: '', role: 'Collaborator' });
@@ -36,7 +36,7 @@ export default function ProjectDetailPage() {
   const [savingColumn, setSavingColumn] = useState(null);
   const project = useMemo(() => projects.find((item) => item.id === id), [id, projects]);
   const projectMembership = project?.members?.find((member) => member.userId === user?.id || member.user?.id === user?.id);
-  const isPM = isPlatformAdmin || role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
+  const isPM = isPlatformAdmin || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
   const assignableMembers = workspaceMembers.filter(
     (member) => !project?.members?.some((projectMember) => projectMember.userId === member.userId)
   );

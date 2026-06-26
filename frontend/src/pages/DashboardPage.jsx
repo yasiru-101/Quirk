@@ -42,8 +42,11 @@ function getGreeting() {
 }
 
 export default function DashboardPage() {
-  const { user, role } = useAuth();
-  const { projects } = useProject();
+  const { user, isPlatformAdmin } = useAuth();
+  const { projects, activeWorkspaceRole, canManageWorkspace } = useProject();
+  // "Manager" view (workspace Owner/Admin, project-leading PM, or platform admin)
+  // unlocks the team-wide analytics; collaborators see their own task view.
+  const canManage = isPlatformAdmin || canManageWorkspace || activeWorkspaceRole === ROLES.PROJECT_MANAGER;
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
@@ -78,7 +81,7 @@ export default function DashboardPage() {
     [tasks]
   );
 
-  const isCollaborator = role === ROLES.COLLABORATOR;
+  const isCollaborator = !canManage;
   const statCards = [
     { label: isCollaborator ? 'My Tasks' : 'Total Tasks', value: metrics.total },
     { label: 'Completion', value: `${metrics.completionRate}%` },
@@ -108,7 +111,7 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center gap-4 border-b border-[var(--colors-hairline)] py-2">
         <p className="text-sm font-medium text-[color:var(--colors-ink-muted)]">Quick actions:</p>
         <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>Open projects</button>
-        {role !== ROLES.COLLABORATOR && (
+        {canManage && (
           <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects', { state: { createProject: Date.now() } })}>+ New project</button>
         )}
         <button className="text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/members')}>Members</button>
@@ -149,7 +152,7 @@ export default function DashboardPage() {
           ) : recentTasks.length === 0 ? (
             <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--colors-hairline)] py-12 text-center">
               <p className="text-[length:var(--typography-body-md)] text-[var(--colors-body)]">No tasks yet.</p>
-              {role !== ROLES.COLLABORATOR && (
+              {canManage && (
                 <button className="mt-2 text-sm font-medium text-[var(--colors-primary)] hover:underline" onClick={() => navigate('/projects')}>
                   Open a project to add tasks
                 </button>

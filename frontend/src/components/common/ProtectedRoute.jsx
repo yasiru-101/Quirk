@@ -7,17 +7,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Wrap routes that require authentication and optionally a specific role.
- * @param {string[]} roles - allowed roles (empty = any authenticated user)
- */
-/**
- * Route checker checking authentication status, redirecting unauthorized users, and policing user roles.
+ * Wrap routes that require authentication. Authorization is enforced per-workspace
+ * and per-project at the page and API layers (and via isPlatformAdmin for platform
+ * routes), so route entry only requires an authenticated, reset-complete session.
  *
  * @param {React.ReactNode} props.children - Target private screen route element
- * @param {string[]} props.roles - Preselected user roles allowed to access this component
  */
-export default function ProtectedRoute({ children, roles = [] }) {
-  const { isAuthenticated, loading, role, mustResetPassword } = useAuth();
+export default function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading, mustResetPassword } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -35,11 +32,6 @@ export default function ProtectedRoute({ children, roles = [] }) {
   // Force password reset if mustResetPassword flag is set
   if (mustResetPassword && location.pathname !== '/reset-password') {
     return <Navigate to="/reset-password" replace />;
-  }
-
-  // Role-based access check
-  if (roles.length > 0 && !roles.includes(role)) {
-    return <Navigate to="/403" replace />;
   }
 
   return children;

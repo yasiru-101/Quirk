@@ -154,6 +154,25 @@ const resolveTaskAccess = async (user, taskId, allowedProjectRoles = []) => {
 };
 
 /**
+ * Whether a user is a "manager" of a given task — i.e. may act on it without being
+ * personally assigned. True for a platform admin, a Project Manager of the task's
+ * project, or a workspace Owner/Admin over it (all resolved via resolveProjectAccess).
+ * For a task with no project, only its creator qualifies. Callers use this to decide
+ * whether a non-manager must additionally be an assignee (e.g. to comment or log time).
+ *
+ * @param {{ id: string }} user
+ * @param {{ projectId: string|null, createdBy: string }} task already-loaded task row
+ * @returns {Promise<boolean>}
+ */
+const isTaskManager = async (user, task) => {
+  if (task.projectId) {
+    const result = await resolveProjectAccess(user, task.projectId, ['Project Manager']);
+    return result.ok;
+  }
+  return task.createdBy === user.id;
+};
+
+/**
  * Guard a route that operates on a task. The task id is read from `req.params.id`
  * then `req.params.taskId`.
  *
@@ -184,4 +203,5 @@ module.exports = {
   requireTaskAccess,
   resolveProjectAccess,
   resolveTaskAccess,
+  isTaskManager,
 };

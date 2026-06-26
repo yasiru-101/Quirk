@@ -18,7 +18,7 @@ import { ROLES } from '../utils/constants';
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role, user: currentUser, isPlatformAdmin } = useAuth();
+  const { user: currentUser, isPlatformAdmin } = useAuth();
   const { success, error: toastError } = useToast();
   const confirm = useConfirm();
   const { projects, canManageWorkspace } = useProject();
@@ -107,7 +107,7 @@ export default function TaskDetailPage() {
   const columnName = getTaskColumnName(task);
   const taskProject = projects.find((project) => project.id === task.projectId);
   const projectMembership = taskProject?.members?.find((member) => member.userId === currentUser?.id || member.user?.id === currentUser?.id);
-  const canManageTask = isPlatformAdmin || role === ROLES.ADMIN || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
+  const canManageTask = isPlatformAdmin || canManageWorkspace || projectMembership?.role === ROLES.PROJECT_MANAGER;
 
   return (
     <aside id="detail-panel" className="shadow-[-18px_0_45px_rgba(10,11,13,0.08)]">

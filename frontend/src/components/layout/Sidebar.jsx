@@ -86,11 +86,11 @@ function ProjectsNav() {
 
   return (
     <div className="pt-2">
-      <div className="group flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider text-white/45">
+      <div className="group flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider text-[var(--colors-mute)] dark:text-white/45">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 transition hover:text-white/70 focus-ring"
+          className="flex items-center gap-1 transition hover:text-[var(--colors-ink)] dark:hover:text-white/70 focus-ring"
           aria-expanded={open}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
@@ -99,14 +99,14 @@ function ProjectsNav() {
           </svg>
           <span>Projects</span>
         </button>
-        <NavLink to="/projects" className="ml-1 text-white/35 transition hover:text-white/70 focus-ring" title="All projects">
+        <NavLink to="/projects" className="ml-1 text-[var(--colors-mute)]/70 dark:text-white/35 transition hover:text-[var(--colors-ink)] dark:hover:text-white/70 focus-ring" title="All projects">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17 17 7M7 7h10v10" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </NavLink>
         {canCreate && (
           <button
             type="button"
             onClick={() => navigate('/projects', { state: { createProject: Date.now() } })}
-            className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-white/45 transition hover:bg-white/10 hover:text-white focus-ring"
+            className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-[var(--colors-mute)] dark:text-white/45 transition hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-white/10 hover:text-[var(--colors-ink)] dark:hover:text-white focus-ring"
             title="New project"
             aria-label="New project"
           >
@@ -118,9 +118,9 @@ function ProjectsNav() {
       {open && (
         <div className="mt-1 space-y-0.5">
           {loading ? (
-            [1, 2].map((i) => <div key={i} className="mx-3 my-1 h-7 animate-pulse rounded-md bg-white/5" />)
+            [1, 2].map((i) => <div key={i} className="mx-3 my-1 h-7 animate-pulse rounded-md bg-[var(--colors-surface-pressed)] dark:bg-white/5" />)
           ) : projects.length === 0 ? (
-            <p className="px-3 py-1.5 text-xs text-white/35">No projects yet.</p>
+            <p className="px-3 py-1.5 text-xs text-[var(--colors-mute)] dark:text-white/35">No projects yet.</p>
           ) : (
             projects.map((project) => {
               const isActive = activeProjectId === project.id;
@@ -132,12 +132,12 @@ function ProjectsNav() {
                     'group flex h-10 items-center gap-2.5 rounded-full px-3 text-[15px] font-medium transition focus-ring',
                     isActive
                       ? 'bg-[rgba(114,230,149,0.16)] text-[var(--colors-primary)]'
-                      : 'text-white/55 hover:bg-[rgba(255,255,255,0.08)] hover:text-white'
+                      : 'text-[var(--colors-ink-muted)] dark:text-white/55 hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--colors-ink)] dark:hover:text-white'
                   )}
                 >
                   <span className={cn(
                     'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold',
-                    isActive ? 'bg-[var(--colors-primary)] text-black' : 'bg-white/10 text-white/70'
+                    isActive ? 'bg-[var(--colors-primary)] text-black' : 'bg-[var(--colors-surface-pressed)] dark:bg-white/10 text-[var(--colors-ink-muted)] dark:text-white/70'
                   )}>
                     {(project.name || 'P').slice(0, 1).toUpperCase()}
                   </span>
@@ -210,7 +210,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <aside
       className={cn(
-        'relative flex h-full flex-col flex-shrink-0 overflow-hidden bg-[var(--colors-surface-dark)] text-white transition-all duration-300',
+        'relative flex h-full flex-col flex-shrink-0 overflow-hidden transition-all duration-300',
+        'bg-white dark:bg-[var(--colors-surface-dark)] border-r border-[var(--colors-hairline)] dark:border-r-0',
         collapsed ? 'w-[76px]' : 'w-[268px]'
       )}
     >
@@ -220,7 +221,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             <img src="/logo icon.webp" alt="Quirk" className="h-9 w-9 rounded-xl object-contain" draggable={false} />
             <button
               onClick={onToggle}
-              className="rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
+              className="rounded-full border border-[var(--colors-hairline)] dark:border-white/10 p-2 text-[var(--colors-mute)] dark:text-white/60 transition hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-white/10 hover:text-[var(--colors-ink)] dark:hover:text-white focus-ring"
               aria-label="Expand sidebar"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -229,12 +230,25 @@ export default function Sidebar({ collapsed, onToggle }) {
             </button>
           </>
         ) : (
-          <img src="/full logo  - white.webp" alt="Quirk" className="h-14 w-auto object-contain" draggable={false} />
+          <>
+            <img
+              src="/full logo - black.webp"
+              alt="Quirk"
+              className="block dark:hidden h-14 w-auto object-contain"
+              draggable={false}
+            />
+            <img
+              src="/full logo  - white.webp"
+              alt="Quirk"
+              className="hidden dark:block h-14 w-auto object-contain"
+              draggable={false}
+            />
+          </>
         )}
         {!collapsed && (
           <button
             onClick={onToggle}
-            className="ml-auto rounded-full border border-white/10 p-2 text-white/60 transition hover:bg-white/10 hover:text-white focus-ring"
+            className="ml-auto rounded-full border border-[var(--colors-hairline)] dark:border-white/10 p-2 text-[var(--colors-mute)] dark:text-white/60 transition hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-white/10 hover:text-[var(--colors-ink)] dark:hover:text-white focus-ring"
             aria-label="Collapse sidebar"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -245,16 +259,16 @@ export default function Sidebar({ collapsed, onToggle }) {
       </div>
 
       {!collapsed && (
-        <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/10 bg-[var(--colors-surface-dark-elevated)] p-4">
+        <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-[var(--colors-hairline)] dark:border-white/10 bg-[var(--colors-canvas-soft)] dark:bg-[var(--colors-surface-dark-elevated)] p-4">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Workspace</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--colors-mute)] dark:text-white/45">Workspace</p>
             <div className="flex items-center gap-1">
               {canManageWorkspace && activeWorkspaceId && (
-                <button onClick={openRename} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="Rename workspace" aria-label="Rename workspace">
+                <button onClick={openRename} className="text-[var(--colors-mute)] dark:text-white/45 hover:text-[var(--colors-ink)] dark:hover:text-white transition focus-ring rounded-full p-0.5" title="Rename workspace" aria-label="Rename workspace">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" strokeLinecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
               )}
-              <button onClick={() => navigate('/onboarding')} className="text-white/45 hover:text-white transition focus-ring rounded-full p-0.5" title="New workspace" aria-label="New workspace">
+              <button onClick={() => navigate('/onboarding')} className="text-[var(--colors-mute)] dark:text-white/45 hover:text-[var(--colors-ink)] dark:hover:text-white transition focus-ring rounded-full p-0.5" title="New workspace" aria-label="New workspace">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
               </button>
             </div>
@@ -264,27 +278,27 @@ export default function Sidebar({ collapsed, onToggle }) {
               <select
                 value={activeWorkspaceId}
                 onChange={(event) => setActiveWorkspaceId(event.target.value)}
-                className="h-10 w-full appearance-none rounded-[var(--radius-md)] border border-white/10 bg-black/20 px-3 pr-8 text-sm font-semibold text-white outline-none transition focus:border-[var(--colors-primary)]"
+                className="h-10 w-full appearance-none rounded-[var(--radius-md)] border border-[var(--colors-hairline)] dark:border-white/10 bg-[var(--colors-canvas)] dark:bg-black/20 px-3 pr-8 text-sm font-semibold text-[var(--colors-ink)] dark:text-white outline-none transition focus:border-[var(--colors-primary)]"
               >
                 {workspaces.map((workspace) => (
                   <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/45">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--colors-mute)] dark:text-white/45">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
             </div>
           ) : (
-            <p className="mt-2 truncate text-sm font-semibold text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
+            <p className="mt-2 truncate text-sm font-semibold text-[var(--colors-ink)] dark:text-white">{activeWorkspace?.name || 'No workspace yet'}</p>
           )}
-          <p className="mt-2 text-xs text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
+          <p className="mt-2 text-xs text-[var(--colors-mute)] dark:text-white/50">{activeWorkspaceRole || 'Set up a workspace to begin.'}</p>
           {activeWorkspaceId && activeWorkspaceRole && !['Owner', 'Admin'].includes(activeWorkspaceRole) && (
             <button
               type="button"
               onClick={handleLeaveWorkspace}
-              className="mt-3 text-xs font-semibold text-white/45 transition hover:text-white focus-ring"
+              className="mt-3 text-xs font-semibold text-[var(--colors-mute)] dark:text-white/45 transition hover:text-[var(--colors-ink)] dark:hover:text-white focus-ring"
             >
               Leave workspace
             </button>
@@ -309,7 +323,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                     collapsed && 'justify-center px-0',
                     isActive
                       ? 'bg-[rgba(114,230,149,0.16)] text-[var(--colors-primary)]'
-                      : 'text-white/60 hover:bg-[rgba(255,255,255,0.08)] hover:text-white'
+                      : 'text-[var(--colors-ink-muted)] dark:text-white/60 hover:bg-[var(--colors-surface-pressed)] dark:hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--colors-ink)] dark:hover:text-white'
                   )
                 }
               >

@@ -12,7 +12,7 @@ import Button from '../common/Button';
 
 export default function CommentsPanel({ taskId }) {
   const { user } = useAuth();
-  const { error: toastError } = useToast();
+  const { error: toastError, success } = useToast();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
@@ -33,7 +33,25 @@ export default function CommentsPanel({ taskId }) {
     setPosting(true);
     try {
       const { data } = await taskService.addComment(taskId, { content: text.trim() });
-      setComments((prev) => [...prev, data.comment]);
+      let newComment = data.comment;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('taskId', taskId);
+        formData.append('commentId', newComment._id);
+        try {
+          const { data: uploadData } = await taskService.uploadAttachment(formData);
+          newComment = { ...newComment, attachments: [uploadData.attachment] };
+          success('Comment posted with attachment');
+        } catch {
+          toastError('Comment posted, but file upload failed.');
+        }
+      } else {
+        success('Comment posted');
+      }
+
+      setComments((prev) => [...prev, newComment]);
       setText('');
       setFile(null);
     } catch (err) {

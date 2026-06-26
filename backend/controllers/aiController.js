@@ -174,6 +174,9 @@ exports.handleChat = async (req, res, next) => {
     res.json({ reply: responseText });
   } catch (err) {
     console.error('AI Chat Error:', err);
-    res.status(500).json({ errorCode: 500, message: 'An error occurred while processing your request.' });
+    // Surface the underlying reason (e.g. Gemini auth/model errors) so failures are
+    // diagnosable from the client instead of being hidden behind a generic 500.
+    const detail = err && err.message ? String(err.message).replace(/\s+/g, ' ').slice(0, 300) : 'Unknown error';
+    res.status(500).json({ errorCode: 500, message: `AI request failed: ${detail}` });
   }
 };

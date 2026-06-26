@@ -41,6 +41,9 @@ export const authService = {
   resetPassword: (currentPassword, newPassword, confirmPassword) =>
     api.post('/auth/reset-password', { currentPassword, newPassword, confirmPassword }),
 
+  updateProfile: (name) =>
+    api.patch('/auth/profile', { name }),
+
   /** Called on app boot to get the current user from the valid cookie */
   me: () =>
     api.get('/auth/me'),

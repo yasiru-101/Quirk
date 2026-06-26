@@ -68,6 +68,13 @@ spec:
                 secretKeyRef:
                   name: quirk-secrets
                   key: GEMINI_API_KEY
+            # Optional fallback provider, used automatically when Gemini is rate-limited.
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quirk-secrets
+                  key: GROQ_API_KEY
+                  optional: true
           # Readiness probe — traffic only routed when healthy
           readinessProbe:
             httpGet:

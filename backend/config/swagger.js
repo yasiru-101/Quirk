@@ -9,10 +9,13 @@ const options = {
       version: '1.0.0',
       description: 'API documentation for the Quirk Task Management System',
     },
+    // Relative server URL so "Try it out" targets whatever host is serving this
+    // page — http://localhost:5000/api in development and
+    // https://quirk-app.ddns.net/api in production — instead of a hardcoded host.
     servers: [
       {
-        url: 'http://localhost:5000/api',
-        description: 'Development Server',
+        url: '/api',
+        description: 'Current host',
       },
     ],
     components: {
@@ -32,8 +35,22 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 
 const serveSwagger = (app) => {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log('Swagger documentation loaded at http://localhost:5000/api-docs');
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      swaggerOptions: {
+        // Send the httpOnly auth cookie with "Try it out" requests so protected
+        // endpoints work when the operator is logged into Quirk on the same origin.
+        withCredentials: true,
+        requestInterceptor: (req) => {
+          req.credentials = 'include';
+          return req;
+        },
+      },
+    })
+  );
+  console.log('Swagger documentation loaded at /api-docs');
 };
 
 module.exports = serveSwagger;

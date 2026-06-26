@@ -41,39 +41,52 @@ A class-diagram view of the same domain is in
 
 ```mermaid
 erDiagram
+    User ||--o{ Workspace : "owns (ownerId)"
     User ||--o{ WorkspaceMember : "is member"
-    User ||--o{ ProjectMember : "is member"
+    User ||--o{ Invitation : "invites (invitedBy)"
     User ||--o{ OtpCode : "has codes"
-    User ||--o{ Notification : receives
-    Workspace ||--o{ WorkspaceMember : has
-    Workspace ||--o{ Invitation : has
-    Workspace ||--o{ Project : contains
-    Workspace ||--o{ Conversation : scopes
-    User ||--o{ Workspace : owns
+    User ||--o{ ProjectMember : "is member"
+    User ||--o{ Task : "creates (createdBy)"
+    User ||--o{ TaskAssignment : "assignee"
+    User ||--o{ Comment : "authors"
+    User ||--o{ Attachment : "uploads"
+    User ||--o{ Notification : "receives"
+    User ||--o{ TimeLog : "logs"
+    User ||--o{ ActivityLog : "generates"
+    User ||--o{ ConversationParticipant : "participates"
+    User ||--o{ ChatMessage : "sends"
 
-    Project ||--o{ ProjectMember : has
-    Project ||--o{ KanbanColumn : has
-    Project ||--o{ Epic : has
-    Project ||--o{ Task : contains
+    Workspace ||--o{ WorkspaceMember : "has"
+    Workspace ||--o{ Invitation : "has"
+    Workspace ||--o{ Project : "contains"
+    Workspace ||--o{ Conversation : "scopes"
+
+    ProjectTemplate ||--o{ ProjectTemplateColumn : "defines"
+    ProjectTemplate ||--o{ Project : "seeds"
+
+    Project ||--o{ ProjectMember : "has"
+    Project ||--o{ KanbanColumn : "has"
+    Project ||--o{ Epic : "has"
+    Project ||--o{ Task : "contains"
     Project |o--o| Conversation : "project chat"
-    ProjectTemplate ||--o{ ProjectTemplateColumn : defines
-    ProjectTemplate ||--o{ Project : seeds
 
     KanbanColumn ||--o{ Task : "holds (status)"
-    Epic ||--o{ Task : groups
-    Task ||--o{ Task : subtasks
-    Task ||--o{ TaskAssignment : "assigned to"
-    Task ||--o{ Comment : has
-    Task ||--o{ Attachment : has
-    Task ||--o{ TimeLog : tracks
-    Task ||--o{ ActivityLog : audits
-    Task ||--o{ TaskDependency : "blocks/blocked"
-    User ||--o{ TaskAssignment : assignee
-    Comment ||--o{ Attachment : has
+    Epic ||--o{ Task : "groups"
 
-    Conversation ||--o{ ConversationParticipant : has
-    Conversation ||--o{ ChatMessage : contains
-    User ||--o{ ChatMessage : sends
+    Task ||--o{ Task : "subtasks (parentTaskId)"
+    Task ||--o{ TaskAssignment : "assigned to"
+    Task ||--o{ TaskDependency : "blocking (blockingTaskId)"
+    Task ||--o{ TaskDependency : "blocked by (blockedTaskId)"
+    Task ||--o{ Comment : "has"
+    Task ||--o{ Attachment : "has"
+    Task ||--o{ TimeLog : "tracks"
+    Task ||--o{ ActivityLog : "audits"
+    Task ||--o{ Notification : "related to"
+
+    Comment ||--o{ Attachment : "has"
+
+    Conversation ||--o{ ConversationParticipant : "has"
+    Conversation ||--o{ ChatMessage : "contains"
 ```
 
 ## Models
@@ -84,40 +97,41 @@ erDiagram
 | --- | --- | --- |
 | **User** | A person who can sign in | `email` (unique), `passwordHash`, `isPlatformAdmin`, `mustResetPassword`, `isActive`, `emailVerified`, `twoFactorEnabled`, `tokenValidFrom` (session cutoff), profile fields (`avatarUrl`, `jobTitle`, `timezone`, `onboardingComplete`), soft-delete `deletedAt` |
 | **Workspace** | Tenant boundary / organization | `ownerId` → User (Restrict); has members, projects, invitations, conversations |
-| **WorkspaceMember** | Join: user ↔ workspace with a role | Composite PK `(workspaceId, userId)`; `role` = `Admin` \| `Project Manager` \| `Collaborator` (legacy `Owner` treated as Admin) |
-| **Invitation** | Tokenized invite to a workspace | `tokenHash` (unique), `role`, enum `status` = `pending`/`accepted`/`revoked`, `expiresAt`; only the hash is stored |
+| **WorkspaceMember** | Join: user ↔ workspace with a role | Composite PK `(workspaceId, userId)`; `role` = `Admin` \| `Project Manager` \| `Collaborator` (legacy `Owner` treated as Admin); both FKs Cascade on delete |
+| **Invitation** | Tokenized invite to a workspace | `tokenHash` (unique), `role`, enum `status` = `pending`/`accepted`/`revoked`, `expiresAt`, `invitedBy` → User (Cascade); only the hash is stored |
 | **OtpCode** | One-time codes for email verify, login 2FA, and password reset | `codeHash`, enum `purpose` = `EMAIL_VERIFY`/`LOGIN_2FA`/`PASSWORD_RESET`, `expiresAt`, `attempts`, `consumedAt`; single-use, attempt-limited, and purged after use/expiry |
 
 ### Projects & workflow
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Project** | Work container in a workspace | `workspaceId` (SetNull), `createdBy` (Restrict), enum `status` = `active`/`archived`, optional `templateId`, soft-delete |
-| **ProjectMember** | Join: user ↔ project with a role | Composite PK `(projectId, userId)`; `role` = `Project Manager` \| `Collaborator` |
-| **KanbanColumn** | Dynamic workflow column | `projectId`, `order`; a task's column **is** its status |
-| **Epic** | Group of related tasks | `projectId`, `name`, `color` |
-| **ProjectTemplate** / **ProjectTemplateColumn** | Reusable starting column sets | Seed columns for new projects |
+| **Project** | Work container in a workspace | `workspaceId` (SetNull), `createdBy` → User (Restrict), enum `status` = `active`/`archived`, optional `templateId` → ProjectTemplate (SetNull), soft-delete `deletedAt` |
+| **ProjectMember** | Join: user ↔ project with a role | Composite PK `(projectId, userId)`; `role` = `Project Manager` \| `Collaborator`; both FKs Cascade on delete |
+| **KanbanColumn** | Dynamic workflow column | `projectId` (Cascade), `name`, `order`; a task's column **is** its status |
+| **Epic** | Group of related tasks | `projectId` (Cascade), `name`, optional `color` (hex accent) |
+| **ProjectTemplate** | Reusable named column set | `name` (unique), `description`; seeds new projects |
+| **ProjectTemplateColumn** | A column definition within a template | `templateId` (Cascade), `name`, `order` |
 
 ### Tasks & sub-resources
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Task** | Unit of work | `title` (required), `columnId` (status), `dueDate`, enum `priority` = `Low`/`Medium`/`High`/`Urgent`, `tags[]`, `epicId`, `estimatedHours`, `parentTaskId` (subtasks), soft-delete |
-| **TaskAssignment** | Join: task ↔ assignee | Composite PK `(taskId, userId)` |
-| **TaskDependency** | "Task A blocks Task B" | Unique `(blockingTaskId, blockedTaskId)` |
-| **Comment** | Discussion on a task | `content`, soft-delete; may carry attachments |
-| **Attachment** | Uploaded file on a task/comment | `blobUrl`, `originalName`, `mimeType`, `sizeBytes`; storage in Azure Blob (prod) or local disk (dev) |
-| **TimeLog** | Logged hours on a task | `hours`, `date`, `note` |
-| **ActivityLog** | Automated per-task audit trail | `action`, `metadata` (JSON) |
+| **Task** | Unit of work | `title`, optional `description`, `columnId` → KanbanColumn (SetNull, status), `dueDate`, enum `priority` = `Low`/`Medium`/`High`/`Urgent`, `tags[]` (String array), `epicId` → Epic (SetNull), `estimatedHours`, `parentTaskId` → Task (Cascade, subtask self-relation), `createdBy` → User (Restrict), soft-delete `deletedAt` |
+| **TaskDependency** | "Task A blocks Task B" | `id` (UUID PK), `blockingTaskId` → Task (Cascade), `blockedTaskId` → Task (Cascade); unique `(blockingTaskId, blockedTaskId)` |
+| **TaskAssignment** | Join: task ↔ assignee | Composite PK `(taskId, userId)`; both FKs Cascade on delete |
+| **TimeLog** | Logged hours on a task | `taskId` (Cascade), `userId` (Cascade), `hours`, `date`, optional `note` |
+| **ActivityLog** | Automated per-task audit trail | `taskId` (Cascade), `userId` (Cascade), `action` (string), `metadata` (JSON) |
+| **Comment** | Discussion thread on a task | `taskId` (Cascade), `userId` → User (Restrict), `content`, soft-delete `deletedAt`; may carry attachments |
+| **Attachment** | Uploaded file on a task or comment | `taskId` (Cascade), optional `commentId` (Cascade), `uploadedBy` → User (Restrict), `originalName`, `blobUrl`, `mimeType`, `sizeBytes` |
 
 ### Notifications & chat
 
 | Model | Purpose | Key fields / notes |
 | --- | --- | --- |
-| **Notification** | Per-user notification | `recipientId`, enum `type` = `Assignment`/`ColumnChange`/`Comment`/`Deadline`/`Admin`, `isRead`, `relatedTaskId` |
-| **Conversation** | Project group chat or DM thread | enum `type` = `PROJECT`/`DIRECT`, `projectId` (unique, for PROJECT), `workspaceId` |
-| **ConversationParticipant** | Join: user ↔ conversation | Composite PK `(conversationId, userId)` |
-| **ChatMessage** | A message in a conversation | `content`, soft-delete (content shown as `[deleted]`) |
+| **Notification** | Per-user in-app notification | `recipientId` → User (Cascade), enum `type` = `Assignment`/`ColumnChange`/`Comment`/`Deadline`/`Admin`, `message`, optional `relatedTaskId` → Task (SetNull), `isRead` |
+| **Conversation** | Project group chat or DM thread | enum `type` = `PROJECT`/`DIRECT`, optional `projectId` (unique, Cascade — set when type = PROJECT), optional `workspaceId` (Cascade — set for both types) |
+| **ConversationParticipant** | Join: user ↔ conversation | Composite PK `(conversationId, userId)`; both FKs Cascade on delete |
+| **ChatMessage** | A single message in a conversation | `conversationId` (Cascade), `senderId` → User (Restrict), `content`, soft-delete `deletedAt` (content shown as `[deleted]`) |
 
 ## Referential integrity
 
@@ -125,7 +139,8 @@ Foreign-key delete behavior is chosen deliberately:
 
 - **Cascade** — child rows that have no meaning without their parent (memberships,
   assignments, comments, attachments, time logs, activity logs, chat
-  participants/messages, invitations).
+  participants/messages, invitations, OTP codes, kanban columns, epics, task
+  dependencies, template columns, conversations).
 - **Restrict** — authorship that must not be silently orphaned (`Workspace.owner`,
   `Project.creator`, `Task.creator`, `Comment.user`, `Attachment.uploader`,
   `ChatMessage.sender`). Deleting such a user is blocked; deactivation (soft) is
@@ -137,8 +152,9 @@ Foreign-key delete behavior is chosen deliberately:
 ## Indexing
 
 Hot query paths are indexed: foreign keys (`userId`, `projectId`, `taskId`,
-`workspaceId`), tenant/status filters (`Invitation(workspaceId, status)`,
-`Notification(recipientId, isRead)`), ordering (`KanbanColumn(projectId, order)`),
+`workspaceId`, `columnId`, `epicId`, `parentTaskId`), tenant/status filters
+(`Invitation(workspaceId, status)`, `Notification(recipientId, isRead)`), ordering
+(`KanbanColumn(projectId, order)`, `ProjectTemplateColumn(templateId, order)`),
 and time-ordered reads (`ActivityLog(taskId, createdAt)`,
 `ChatMessage(conversationId, createdAt)`).
 

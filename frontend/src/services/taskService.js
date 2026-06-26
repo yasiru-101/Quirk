@@ -48,4 +48,10 @@ export const taskService = {
 
   getDownloadUrl: (attachmentId) =>
     api.get(`/attachments/${attachmentId}/download`),
+
+  getTaskAttachments: (taskId) =>
+    api.get(`/attachments/task/${taskId}`),
+
+  deleteAttachment: (attachmentId) =>
+    api.delete(`/attachments/${attachmentId}`),
 };

@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import CommentsPanel from '../components/tasks/CommentsPanel';
+import AttachmentsPanel from '../components/tasks/AttachmentsPanel';
 import Button from '../components/common/Button';
 import TaskModal from '../components/tasks/TaskModal';
 import { useProject } from '../context/ProjectContext';
@@ -201,6 +202,10 @@ export default function TaskDetailPage() {
             </div>
           </section>
         )}
+
+        <section className="space-y-2 border-t border-[var(--colors-hairline)] pt-5">
+          <AttachmentsPanel taskId={task._id} initialAttachments={task.attachments} canManageTask={canManageTask} />
+        </section>
 
         <section className="space-y-2 border-t border-[var(--colors-hairline)] pt-5">
           <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--colors-ink-muted)]">Activity</h3>

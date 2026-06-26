@@ -149,8 +149,93 @@ const getDownloadUrl = async (req, res) => {
   }
 };
 
+// @desc    List all attachments for a specific task
+// @route   GET /api/attachments/task/:taskId
+// @access  Private (PM or Collaborator)
+const getTaskAttachments = async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const access = await resolveTaskAccess(req.user, taskId);
+    if (!access.ok) {
+      return res.status(access.status === 404 ? 404 : 403).json({
+        message: access.status === 404
+          ? 'Task not found'
+          : 'Access denied. You do not have access to this task.',
+      });
+    }
+
+    const attachments = await prisma.attachment.findMany({
+      where: { taskId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        uploader: { select: { id: true, name: true } },
+      },
+    });
+
+    const serialized = await Promise.all(attachments.map(async (att) => ({
+      ...att,
+      downloadUrl: await blobService.getDownloadUrl(att.blobUrl),
+    })));
+
+    return res.status(200).json({ attachments: serialized });
+  } catch (error) {
+    console.error(`Get task attachments error: ${error.message}`);
+    return res.status(500).json({
+      message: 'Internal server error fetching task attachments',
+    });
+  }
+};
+
+// @desc    Delete an attachment
+// @route   DELETE /api/attachments/:id
+// @access  Private (Uploader or PM)
+const deleteAttachment = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const attachment = await prisma.attachment.findUnique({
+      where: { id },
+    });
+    if (!attachment) {
+      return res.status(404).json({ message: 'Attachment not found' });
+    }
+
+    const access = await resolveTaskAccess(req.user, attachment.taskId);
+    if (!access.ok) {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const isUploader = attachment.uploadedBy === req.user.id;
+    let canDelete = isUploader;
+    
+    if (!isUploader) {
+       const pmAccess = await resolveTaskAccess(req.user, attachment.taskId, ['Project Manager']);
+       canDelete = pmAccess.ok;
+    }
+
+    if (!canDelete) {
+      return res.status(403).json({
+        message: 'Access denied. You can only delete your own attachments unless you are a Project Manager.',
+      });
+    }
+
+    await blobService.deleteFile(attachment.blobUrl);
+    await prisma.attachment.delete({ where: { id } });
+
+    return res.status(200).json({ message: 'Attachment deleted successfully' });
+  } catch (error) {
+    console.error(`Delete attachment error: ${error.message}`);
+    return res.status(500).json({
+      message: 'Internal server error during attachment deletion',
+    });
+  }
+};
+
 module.exports = {
   uploadFile,
   getDownloadUrl,
+  getTaskAttachments,
+  deleteAttachment,
   serializeAttachment,
 };

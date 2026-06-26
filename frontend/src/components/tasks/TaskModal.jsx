@@ -8,6 +8,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import SelectField from '../common/SelectField';
 import CommentsPanel from './CommentsPanel';
+import AttachmentsPanel from './AttachmentsPanel';
 import { TASK_PRIORITY_LIST, ROLES } from '../../utils/constants';
 import { normalizeError } from '../../services/api';
 import { taskService } from '../../services/taskService';
@@ -280,9 +281,14 @@ export default function TaskModal({ open, onClose, task = null, projects = [], c
         </div>
 
         {isEdit && (
-          <div className="border-t border-[var(--colors-hairline)] pt-6">
-            <CommentsPanel taskId={task._id} />
-          </div>
+          <>
+            <div className="border-t border-[var(--colors-hairline)] pt-6">
+              <AttachmentsPanel taskId={task._id} initialAttachments={task.attachments} canManageTask={canManageTask} />
+            </div>
+            <div className="border-t border-[var(--colors-hairline)] pt-6">
+              <CommentsPanel taskId={task._id} />
+            </div>
+          </>
         )}
       </form>
     </Modal>

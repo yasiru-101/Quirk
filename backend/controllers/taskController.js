@@ -5,6 +5,7 @@
  */
 
 const prisma = require('../config/db');
+const blobService = require('../services/blobService');
 const { logActivity } = require('../utils/activityLogger');
 const { resolveProjectAccess, resolveTaskAccess } = require('../middleware/membership');
 const { isPlatformAdmin } = require('../utils/roles');
@@ -247,6 +248,12 @@ const getTaskById = async (req, res) => {
           },
           orderBy: { createdAt: 'asc' },
         },
+        attachments: {
+          include: {
+            uploader: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -261,6 +268,15 @@ const getTaskById = async (req, res) => {
     
     // Convert comment list fields if necessary (already contains .user populated by Prisma relation)
     taskObject.comments = task.comments;
+    
+    if (task.attachments) {
+      taskObject.attachments = await Promise.all(task.attachments.map(async (att) => ({
+        ...att,
+        downloadUrl: await blobService.getDownloadUrl(att.blobUrl),
+      })));
+    } else {
+      taskObject.attachments = [];
+    }
 
     return res.status(200).json({
       task: taskObject,

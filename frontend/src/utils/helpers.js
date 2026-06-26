@@ -2,7 +2,7 @@
  * @file helpers.js
  * @description Helper utilities (formatting, styling, validators, arrays merge).
  */
-import { NOTIFICATION_TYPE } from './constants';
+import { NOTIFICATION_TYPE, API_BASE_URL } from './constants';
 import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from 'date-fns';
 
 // ─── Date Helpers ─────────────────────────────────────────────────────────────
@@ -117,4 +117,21 @@ export const aliasIds = (value) => {
     Object.values(value).forEach(aliasIds);
   }
   return value;
+};
+
+export const formatFileSize = (bytes = 0) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+export const resolveAttachmentHref = (url) => {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+
+  const apiOrigin = /^https?:\/\//i.test(API_BASE_URL)
+    ? new URL(API_BASE_URL).origin
+    : window.location.origin;
+
+  return `${apiOrigin}${url.startsWith('/') ? url : `/${url}`}`;
 };

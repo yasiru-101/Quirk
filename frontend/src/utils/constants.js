@@ -24,6 +24,9 @@ export const TASK_PRIORITY_LIST = [
   TASK_PRIORITY.LOW,
 ];
 
+export const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+export const ALLOWED_ATTACHMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip'];
+
 // ─── Notification Types ───────────────────────────────────────────────────────
 export const NOTIFICATION_TYPE = {
   ASSIGNMENT: 'Assignment',

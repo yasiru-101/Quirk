@@ -9,7 +9,7 @@ submission can be checked at a glance.
 | 1 | **Source code** | [`backend/`](../backend), [`frontend/`](../frontend) | ✅ |
 | 2 | **API documentation (Swagger/OpenAPI)** | Live Swagger UI at `/api-docs`; generated from `@openapi` route annotations ([`backend/config/swagger.js`](../backend/config/swagger.js)); overview in [docs/API.md](./API.md) | ✅ |
 | 3 | **Database schema / design** | Prisma schema [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma); design doc + ERD in [docs/DATABASE.md](./DATABASE.md) | ✅ |
-| 4 | **Architecture documentation & ADRs** | [docs/ARCHITECTURE.md](./ARCHITECTURE.md); ADRs in [docs/adr/](./adr/README.md) | ✅ |
+| 4 | **Architecture documentation & ADRs** | [docs/ARCHITECTURE.md](./ARCHITECTURE.md); diagrams in [docs/DIAGRAMS.md](./DIAGRAMS.md); ADRs in [docs/adr/](./adr/README.md) | ✅ |
 | 5 | **Deployment manifests** | [`k8s/`](../k8s), [`backend/Dockerfile`](../backend/Dockerfile), [`frontend/Dockerfile`](../frontend/Dockerfile), [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml); guide in [docs/DEPLOYMENT.md](./DEPLOYMENT.md) | ✅ |
 | 6 | **Hosted frontend & backend demo URLs** | See below and [docs/DEPLOYMENT.md](./DEPLOYMENT.md) | ✅ |
 | 7 | **README setup & usage instructions** | [README.md](../README.md) | ✅ |

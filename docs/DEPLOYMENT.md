@@ -19,6 +19,9 @@ pipeline, and configuration. It is the companion to the manifests in
 
 ## Topology
 
+A styled deployment diagram is in [DIAGRAMS.md](./DIAGRAMS.md#2-deployment-diagram);
+the ASCII view below is the quick reference.
+
 ```
 Internet
   │  HTTPS (TLS via cert-manager + Let's Encrypt)

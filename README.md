@@ -120,6 +120,7 @@ For an overview of endpoint groups, auth, and the error format, see
 | --- | --- |
 | [docs/DELIVERABLES.md](docs/DELIVERABLES.md) | Index of SRS deliverables and where each lives |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and request lifecycle |
+| [docs/DIAGRAMS.md](docs/DIAGRAMS.md) | Class, deployment, architecture, sequence & use-case diagrams |
 | [docs/adr/](docs/adr/README.md) | Architecture Decision Records |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, ERD, and data-model design |
 | [docs/API.md](docs/API.md) | API reference and Swagger entry point |

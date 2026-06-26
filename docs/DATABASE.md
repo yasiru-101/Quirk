@@ -29,6 +29,9 @@ explains it.
 - **Timestamps** — `createdAt` (`@default(now())`) and `updatedAt` (`@updatedAt`)
   are standard across mutable models.
 
+A class-diagram view of the same domain is in
+[DIAGRAMS.md](./DIAGRAMS.md#1-domain-class-diagram).
+
 ## Entity-relationship diagram
 
 ```mermaid

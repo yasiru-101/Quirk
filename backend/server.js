@@ -44,6 +44,14 @@ cron.schedule('0 * * * *', async () => {
   await checkApproachingDeadlines();
 });
 
+// Purge spent one-time codes daily (03:00) so the OtpCode table does not grow
+// unbounded with consumed and long-expired rows.
+const { purgeExpired } = require('./services/otpService');
+cron.schedule('0 3 * * *', async () => {
+  const removed = await purgeExpired();
+  console.log(`[Cron] Purged ${removed} expired/consumed OTP codes.`);
+});
+
 // Start Server
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);

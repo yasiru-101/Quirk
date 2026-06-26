@@ -17,6 +17,7 @@ const BCRYPT_ROUNDS = 10;
 const PURPOSES = Object.freeze({
   EMAIL_VERIFY: 'EMAIL_VERIFY',
   LOGIN_2FA: 'LOGIN_2FA',
+  PASSWORD_RESET: 'PASSWORD_RESET',
 });
 
 // Generate a zero-padded numeric code using a uniform, non-biased RNG.
@@ -93,4 +94,23 @@ const verifyCode = async (userId, purpose, code) => {
   return { ok: true };
 };
 
-module.exports = { issueCode, verifyCode, PURPOSES };
+/**
+ * Delete spent codes: any that have been consumed, or that expired some time ago.
+ * OTP rows are ephemeral — once a code is consumed or expired it serves no purpose,
+ * so purging keeps the table from growing without bound. A short grace period past
+ * expiry is kept so an in-flight verify request still finds its (expired) row and
+ * can return a clean "expired" message rather than "no active code".
+ *
+ * @returns {Promise<number>} number of rows removed.
+ */
+const purgeExpired = async () => {
+  const graceCutoff = new Date(Date.now() - TTL_MS); // expired at least one TTL ago
+  const { count } = await prisma.otpCode.deleteMany({
+    where: {
+      OR: [{ consumedAt: { not: null } }, { expiresAt: { lt: graceCutoff } }],
+    },
+  });
+  return count;
+};
+
+module.exports = { issueCode, verifyCode, purgeExpired, PURPOSES };

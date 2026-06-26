@@ -256,8 +256,10 @@ export default function TaskBoardPage() {
     return columns;
   }, [columns, filters.columnId]);
 
+  const isKanban = view === 'kanban';
+
   return (
-    <div className="flex h-full flex-col overflow-hidden animate-in">
+    <div className={`flex flex-col animate-in${isKanban ? ' h-full overflow-hidden' : ' min-h-full'}`}>
       <ViewHeader
         title="Task Board"
         subtitle={scopedProject ? `Project-specific tasks for ${scopedProject.name}.` : 'Manage work across board, list, calendar, and timeline views.'}
@@ -271,11 +273,10 @@ export default function TaskBoardPage() {
         onTabChange={setView}
       />
 
-
-      <div className="flex flex-1 overflow-hidden bg-[var(--colors-canvas-soft)]">
-        <div className="flex flex-1 flex-col overflow-hidden p-6">
+      <div className={`flex bg-[var(--colors-canvas-soft)]${isKanban ? ' flex-1 overflow-hidden' : ' flex-1'}`}>
+        <div className={`flex flex-1 flex-col p-6${isKanban ? ' overflow-hidden' : ''}`}>
           <TaskFilters filters={filters} columns={columns} assignees={assignees} onChange={handleFilterChange} />
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className={isKanban ? 'min-h-0 flex-1 overflow-hidden' : 'mt-4'}>
           {loading || projectsLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {[1, 2, 3].map((i) => (

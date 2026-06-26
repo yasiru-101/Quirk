@@ -122,9 +122,22 @@ jobs:
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/backend-deployment.yaml
           sed -i "s|:latest|:${{ github.sha }}|g" k8s/frontend-deployment.yaml
 
-      - name: Update GEMINI_API_KEY Secret in AKS
+      # Sync the Gemini key from GitHub secrets into the existing AKS secret.
+      # The value is passed via env (never interpolated into the logged command),
+      # and the deploy fails loudly if the repository secret is missing — otherwise
+      # the assistant silently boots "not configured". A char count (not the value)
+      # is printed so a successful sync is verifiable in the run log.
+      - name: Sync GEMINI_API_KEY secret into AKS
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          kubectl patch secret quirk-secrets -n quirk -p="{\"stringData\":{\"GEMINI_API_KEY\":\"${{ secrets.GEMINI_API_KEY }}\"}}"
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY repository secret is empty or unset — the AI assistant will not work."
+            exit 1
+          fi
+          kubectl patch secret quirk-secrets -n quirk --type merge \
+            -p "{\"stringData\":{\"GEMINI_API_KEY\":\"$GEMINI_API_KEY\"}}"
+          echo "GEMINI_API_KEY synced ($(kubectl get secret quirk-secrets -n quirk -o jsonpath='{.data.GEMINI_API_KEY}' | base64 -d | wc -c) chars)"
 
       - name: Apply Kubernetes manifests
         run: |

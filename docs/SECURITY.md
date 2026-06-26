@@ -38,6 +38,10 @@ No secret is stored in the repository.
   `sameSite=strict` cookies; refresh rotates both tokens.
 - Administrator-created accounts must reset their temporary password on first login
   before any other route is reachable.
+- Users manage their own profile from Settings: updating the display name
+  (`PATCH /auth/profile`) and changing their password (`POST /auth/reset-password`,
+  which verifies the current password and rotates session tokens, evicting other
+  sessions). Email changes and role assignment remain administrator-controlled.
 - Self-service registrations must verify their email before they can sign in, and may
   enable email-based login 2FA. One-time codes are bcrypt-hashed at rest, single-use,
   expire in 10 minutes, and lock after 5 failed attempts; the 2FA step is bound to the
@@ -50,6 +54,22 @@ No secret is stored in the repository.
   (`requireWorkspaceRole` / `requireProjectRole`) ensure a user can only act on
   workspaces and projects they belong to. See
   [ADR 0002](./adr/0002-workspace-tenancy-and-scoped-authorization.md).
+
+## AI assistant
+
+- The AI assistant (`POST /api/ai/chat`) cannot exceed the caller's own
+  permissions. The controller verifies workspace/project membership before any
+  model call, and every tool re-applies the same object-level authorization as the
+  REST API: `get_tasks` uses the same row-level scoping as `GET /api/tasks`, and
+  `create_task` re-checks Project Manager access. A model "deciding" to act has no
+  more power than the user it acts for.
+- Tools return structured errors and permission denials rather than throwing, and
+  the system prompt forbids claiming success when a tool reported an error.
+- Conversation history is sanitized and truncated, and message content is
+  length-capped, to bound token usage.
+- Provider API keys (`GEMINI_API_KEY`, `GROQ_API_KEY`) are optional environment
+  variables and are never committed. See
+  [ADR 0010](./adr/0010-ai-assistant-provider-fallback-and-tools.md).
 
 ## Input handling
 
@@ -72,3 +92,4 @@ No secret is stored in the repository.
 | Security misconfiguration | Helmet headers, HSTS, fail-fast on missing secrets |
 | Identification & auth failures | Short-lived rotated JWTs, login rate limiting |
 | Vulnerable components | Dependencies pinned via lockfiles |
+| SSRF / excessive agency (AI) | AI tools re-apply REST object-level authorization; no cross-tenant access |

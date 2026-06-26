@@ -1,6 +1,32 @@
 # Quirk — Task Management System
 
-Quirk is a Jira-inspired SaaS application built for modern software teams, providing robust project management, issue tracking, and advanced real-time collaboration.
+Quirk is a multi-tenant, Jira-inspired task-management SaaS for teams that need to
+plan, assign, discuss, and track work across multiple organizations. Each
+workspace is an isolated tenant; users can belong to several workspaces with
+different roles. It provides dynamic Kanban workflows, multiple task views,
+real-time notifications and chat, a SaaS platform console, and an optional in-app
+AI assistant.
+
+## ✨ Features
+
+- **Authentication** — self-service registration, email verification, login,
+  password reset, and optional email-based two-factor authentication. Passwords
+  are bcrypt-hashed; sessions use rotating JWTs in HTTP-only cookies.
+- **Multi-tenant workspaces** — create workspaces, invite members by email,
+  assign roles (`Admin`, `Project Manager`, `Collaborator`), and leave
+  workspaces. Invitation tokens are stored only as hashes.
+- **Projects** — dynamic Kanban columns, project members, epics, and per-project
+  role management.
+- **Tasks** — Kanban, list, calendar, and timeline views over one scoped query
+  API; assignees, due dates, priorities, tags, subtasks, comments, attachments,
+  activity logs, and time logs.
+- **Real-time** — Socket.IO notifications (assignments, column changes, comments,
+  mentions, deadlines) with offline replay, plus project chat and direct messages.
+- **Platform console** — a separate `/platform` control plane for SaaS operators:
+  overview metrics, tenant support, user administration, and audit review.
+- **AI assistant** — an optional in-app assistant that lists and creates tasks
+  through RBAC-safe tools, with automatic provider fallback. See
+  [docs/AI_ASSISTANT.md](docs/AI_ASSISTANT.md).
 
 ## 🚀 Architecture overview
 
@@ -8,82 +34,105 @@ Quirk is a Jira-inspired SaaS application built for modern software teams, provi
 - **Backend**: Node.js, Express 5, Prisma ORM.
 - **Database**: PostgreSQL (via Prisma).
 - **Real-time**: Socket.io for live updates.
+- **AI assistant**: Google Gemini with Groq fallback (optional).
 - **CI/CD**: Docker, Kubernetes (AKS), GitHub Actions.
 
-## 📁 Repository Structure
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the decision records in
+[docs/adr/](docs/adr/README.md) for the design rationale.
+
+## 📁 Repository structure
 
 ```
 .
 ├── backend/                  # Express server & APIs
-│   ├── config/               # Database and environment configurations
-│   ├── controllers/          # Business logic handlers
-│   ├── middleware/           # Auth, RBAC, Validation logic
-│   ├── prisma/               # Schema definitions and migrations
-│   ├── routes/               # API route definitions
-│   ├── services/             # Background tasks, Socket emission, etc.
-│   └── validations/          # Zod input validation schemas
+│   ├── config/               # DB, Socket.IO, Swagger, Azure clients
+│   ├── controllers/          # Request handling and business logic
+│   ├── middleware/           # Auth, RBAC, validation, uploads, errors
+│   ├── prisma/               # Prisma schema
+│   ├── routes/               # API routes + OpenAPI annotations
+│   ├── services/             # Email, storage, notifications, sockets, AI
+│   └── validations/          # Zod request schemas
 │
 ├── frontend/                 # React UI
-│   ├── src/
-│   │   ├── components/       # Reusable components (common, tasks, layout)
-│   │   ├── context/          # React Contexts (Auth, Project, Socket, Theme)
-│   │   ├── pages/            # View shells (Dashboard, Projects, Tasks, etc.)
-│   │   ├── services/         # Axios API clients
-│   │   └── utils/            # Shared helpers & constants
-│   ├── index.css             # Main stylesheet & Design Tokens
-│   └── tailwind.config.js    # Tailwind customizations
+│   └── src/
+│       ├── components/        # tasks, chat, layout, common, notifications
+│       ├── context/           # Auth, Project, Socket, Chat, Theme, Toast
+│       ├── pages/             # Route views (dashboard, projects, tasks, platform)
+│       └── services/          # Axios API clients
 │
-├── k8s/                      # Kubernetes Deployment Configs
+├── docs/                     # Architecture, ADRs, security, API, AI assistant
+├── k8s/                      # Kubernetes deployment configs
 └── .github/workflows/        # CI/CD pipelines
 ```
 
-## 🎨 Design System
-
-Quirk utilizes a strictly defined UI design system:
-- **Canvas Colors**: Soft off-white base (`#f6f5f4`) with premium dark mode.
-- **Typography**: Inter with specific negative letter-spacing for headers.
-- **Primary Brand Color**: Quirk Green (`#75EE8F`) used exclusively for CTAs and interactive focus.
-- **Core Components**:
-  - `Button.jsx`: Modular buttons (primary, secondary, utility, icon-circular)
-  - `ErrorBoundary.jsx`: Graceful fallback wrappers.
-  - `index.css`: Houses all CSS custom properties and semantic utilities (`.feature-card`, `.btn-primary`).
-
-## 🛠️ Local Development
+## 🛠️ Local development
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL instance running locally (or Dockerized)
+- A PostgreSQL instance (local or Dockerized — see `docker-compose.yml`)
 
-### Backend Setup
-1. `cd backend`
-2. `npm install`
-3. Create `.env` from `.env.example` and set `DATABASE_URL` + JWT secrets.
-4. `npx prisma migrate dev` (Apply DB schemas)
-5. `npm run dev` (Runs on port 5000)
+### Backend setup
+```bash
+cd backend
+npm install
+cp .env.example .env        # set DATABASE_URL + JWT secrets (and optional keys)
+npx prisma db push          # apply the schema to your database
+npm run seed                # optional: seed demo data
+npm run dev                 # http://localhost:5000
+```
 
-### Frontend Setup
-1. `cd frontend`
-2. `npm install`
-3. Create `.env` (optional, for custom API URL)
-4. `npm run dev` (Runs Vite server, usually on 5173)
+### Frontend setup
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173 (Vite)
+```
 
-## 🤝 For Contributors / Teammates
+### Environment variables
+All backend configuration is documented in [`backend/.env.example`](backend/.env.example).
+`JWT_SECRET` and `JWT_REFRESH_SECRET` are required (the server refuses to start
+without them). Azure email/storage and the AI provider keys are optional — the app
+runs without them, falling back to local/development behavior.
 
-### Branching Strategy
-We use **Feature Branching**:
-- Base your work off the main branch (or the current core feature branch, e.g., `feature/ui-overhaul-and-base-arch`).
-- Run `git checkout -b feature/your-feature-name`.
-- Use **Conventional Commits**: `feat(scope): message` or `refactor(scope): message`.
+## 📚 API documentation
 
-### Building New Features
-If you are assigned to a specific module (e.g., Projects, Analytics, Onboarding):
-1. **Find your Shell Page**: Placeholder pages exist in `frontend/src/pages/` (e.g., `AnalyticsPage.jsx`).
-2. **Build Components**: Add your feature components under `frontend/src/components/feature-name/`.
-3. **Use the Design System**: DO NOT write custom hex colors inline. Use the CSS variables defined in `index.css` (e.g., `var(--colors-ink-muted)` or utility classes like `feature-card`).
-4. **Follow API Patterns**: Extend API calls via the existing `axios` wrapper in `frontend/src/services/`.
+With the backend running, interactive Swagger UI is served at:
+
+```
+http://localhost:5000/api-docs
+```
+
+The OpenAPI spec is generated from `@openapi` annotations on the route handlers.
+For an overview of endpoint groups, auth, and the error format, see
+[docs/API.md](docs/API.md).
+
+## 📖 Documentation map
+
+| Document | What it covers |
+| --- | --- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and request lifecycle |
+| [docs/adr/](docs/adr/README.md) | Architecture Decision Records |
+| [docs/API.md](docs/API.md) | API reference and Swagger entry point |
+| [docs/SECURITY.md](docs/SECURITY.md) | Security posture and OWASP alignment |
+| [docs/AI_ASSISTANT.md](docs/AI_ASSISTANT.md) | AI assistant design, tools, and config |
+| [AGENTS.md](AGENTS.md) | Contributor working agreement |
+| [Task_Management_SRS.md](Task_Management_SRS.md) | Software Requirements Specification |
+
+## 🤝 Contributing
+
+We use **feature branching** and **Conventional Commits**. Before opening a PR
+against `main`:
+
+- `node --check` passes on changed backend files; `npx prisma validate` passes.
+- The backend starts and `GET /api/health` returns `200`.
+- New or changed endpoints have a Zod schema **and** an OpenAPI annotation.
+- Behavior changes are reflected in `docs/` (and an ADR where significant).
+
+See [AGENTS.md](AGENTS.md) for the full working agreement, including the hard
+rules (UUID identifiers, object-level authorization, Zod validation).
 
 ## 🚢 Deployment
 
-Committing to `main` triggers the GitHub Actions CI/CD pipeline which builds Docker images, runs Prisma migrations via init containers, and deploys to Azure Kubernetes Service (AKS).
-
-Ensure your branch passes local validation (`npm test`, if any, and starts successfully) before opening a PR.
+Merging to `main` triggers the GitHub Actions pipeline, which builds Docker
+images, runs Prisma schema sync via init containers, and deploys to Azure
+Kubernetes Service (AKS). Manifests live in [`k8s/`](k8s/).

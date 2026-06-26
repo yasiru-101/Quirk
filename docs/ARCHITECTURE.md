@@ -1,7 +1,8 @@
 # Architecture
 
 This document describes how Quirk is put together. Significant decisions are
-recorded as ADRs under [`docs/adr`](./adr).
+recorded as ADRs under [`docs/adr`](./adr). Visual models (class, deployment,
+architecture, sequence, and use-case diagrams) are in [DIAGRAMS.md](./DIAGRAMS.md).
 
 ## Stack
 

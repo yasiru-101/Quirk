@@ -1,12 +1,19 @@
 "use client"
 
 import React, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from "react"
-import { cx } from "class-variance-authority"
 import { AnimatePresence, motion } from "motion/react"
-import { Send, Loader2 } from "lucide-react"
+import { Send, Loader2, X } from "lucide-react"
 
-import { Button } from "./button"
+import api, { normalizeError } from "../../services/api"
 import { cn } from "../../lib/utils"
+
+// Brand-aligned orb tones (mint/teal greens that read against the Quirk palette).
+const ORB_TONES = {
+  base: "oklch(97% 0.01 150)",
+  accent1: "oklch(84% 0.16 152)",
+  accent2: "oklch(82% 0.11 178)",
+  accent3: "oklch(88% 0.14 140)",
+}
 
 const ColorOrb = ({
   dimension = "192px",
@@ -14,12 +21,7 @@ const ColorOrb = ({
   tones,
   spinDuration = 20,
 }) => {
-  const fallbackTones = {
-    base: "oklch(95% 0.02 264.695)",
-    accent1: "oklch(75% 0.15 350)",
-    accent2: "oklch(80% 0.12 200)",
-    accent3: "oklch(78% 0.14 280)",
-  }
+  const fallbackTones = ORB_TONES
 
   const palette = { ...fallbackTones, ...tones }
   const dimValue = parseInt(dimension.replace("px", ""), 10)
@@ -164,15 +166,16 @@ export function MorphPanel({ workspaceId, projectId }) {
   const textareaRef = useRef(null)
 
   const [showForm, setShowForm] = useState(false)
-  const [successFlag, setSuccessFlag] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [responseMsg, setResponseMsg] = useState(null)
+  const [isError, setIsError] = useState(false)
 
   const triggerClose = useCallback(() => {
     setShowForm(false)
     textareaRef.current?.blur()
     setTimeout(() => {
-        setResponseMsg(null) 
+        setResponseMsg(null)
+        setIsError(false)
     }, 500)
   }, [])
 
@@ -183,9 +186,9 @@ export function MorphPanel({ workspaceId, projectId }) {
     })
   }, [])
 
-  const handleSuccess = useCallback((resText) => {
-    setSuccessFlag(true)
+  const handleResult = useCallback((resText, error = false) => {
     setResponseMsg(resText)
+    setIsError(error)
   }, [])
 
   useEffect(() => {
@@ -199,8 +202,8 @@ export function MorphPanel({ workspaceId, projectId }) {
   }, [showForm, triggerClose])
 
   const ctx = useMemo(
-    () => ({ showForm, successFlag, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg }),
-    [showForm, successFlag, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg]
+    () => ({ showForm, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg, isError }),
+    [showForm, isProcessing, setIsProcessing, triggerOpen, triggerClose, workspaceId, projectId, responseMsg, isError]
   )
 
   return (
@@ -208,14 +211,14 @@ export function MorphPanel({ workspaceId, projectId }) {
       <motion.div
         ref={wrapperRef}
         data-panel
-        className={cx(
-          "bg-white dark:bg-gray-900 shadow-2xl relative z-3 flex flex-col items-center overflow-hidden border max-sm:bottom-5"
+        className={cn(
+          "relative z-[3] flex flex-col items-center overflow-hidden border border-[var(--colors-hairline)] bg-[var(--colors-canvas)] text-[var(--colors-ink)] shadow-[var(--shadow-card)] max-sm:bottom-5"
         )}
         initial={false}
         animate={{
           width: showForm ? FORM_WIDTH : "auto",
           height: showForm ? FORM_HEIGHT : 44,
-          borderRadius: showForm ? 14 : 20,
+          borderRadius: showForm ? 16 : 9999,
         }}
         transition={{
           type: "spring",
@@ -227,7 +230,7 @@ export function MorphPanel({ workspaceId, projectId }) {
       >
         <FormContext.Provider value={ctx}>
           <DockBar />
-          <InputForm ref={textareaRef} onSuccess={handleSuccess} />
+          <InputForm ref={textareaRef} onResult={handleResult} />
         </FormContext.Provider>
       </motion.div>
     </div>
@@ -238,49 +241,43 @@ function DockBar() {
   const { showForm, triggerOpen } = useFormContext()
   return (
     <footer className="mt-auto flex h-[44px] items-center justify-center whitespace-nowrap select-none">
-      <div className="flex items-center justify-center gap-2 px-3 max-sm:h-10 max-sm:px-2">
-        <div className="flex w-fit items-center gap-2">
-          <AnimatePresence mode="wait">
-            {showForm ? (
-              <motion.div
-                key="blank"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0 }}
-                exit={{ opacity: 0 }}
-                className="h-5 w-5"
-              />
-            ) : (
-              <motion.div
-                key="orb"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ColorOrb dimension="24px" tones={{ base: "oklch(22.64% 0 0)" }} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <Button
-          type="button"
-          className="flex h-fit flex-1 justify-end rounded-full px-2 !py-0.5"
-          variant="ghost"
-          onClick={triggerOpen}
-        >
-          <span className="truncate">Ask AI</span>
-        </Button>
-      </div>
+      <button
+        type="button"
+        onClick={triggerOpen}
+        className="flex h-full items-center gap-2 rounded-full px-4 text-sm font-semibold text-[var(--colors-ink)] transition hover:text-[var(--colors-primary-active)] focus-ring max-sm:px-3"
+      >
+        <AnimatePresence mode="wait">
+          {showForm ? (
+            <motion.div
+              key="blank"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-5 w-5"
+            />
+          ) : (
+            <motion.div
+              key="orb"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ColorOrb dimension="22px" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <span className="truncate">Ask Quirk AI</span>
+      </button>
     </footer>
   )
 }
 
 const FORM_WIDTH = 360
-const FORM_HEIGHT = 400 
+const FORM_HEIGHT = 420
 
-const InputForm = React.forwardRef(({ onSuccess }, ref) => {
-  const { triggerClose, showForm, isProcessing, setIsProcessing, workspaceId, projectId, responseMsg } = useFormContext()
+const InputForm = React.forwardRef(({ onResult }, ref) => {
+  const { triggerClose, showForm, isProcessing, setIsProcessing, workspaceId, projectId, responseMsg, isError } = useFormContext()
   const btnRef = useRef(null)
 
   async function handleSubmit(e) {
@@ -291,25 +288,14 @@ const InputForm = React.forwardRef(({ onSuccess }, ref) => {
     setIsProcessing(true);
 
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/ai/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ message, workspaceId, projectId })
-        });
-        const data = await res.json();
-        
-        if (res.ok) {
-            onSuccess(data.reply);
-            ref.current.value = ""; // clear input
-        } else {
-            onSuccess("Error: " + (data.message || "Failed to process request."));
-        }
+        // Use the shared API client so the request carries the HTTP-only auth
+        // cookie (withCredentials) and benefits from the 401 refresh interceptor.
+        const { data } = await api.post('/ai/chat', { message, workspaceId, projectId });
+        onResult(data.reply);
+        ref.current.value = ""; // clear input
     } catch (error) {
-        onSuccess("Network error: Could not reach AI service.");
+        const { message: msg } = normalizeError(error);
+        onResult(msg || "Could not reach the AI service. Please try again.", true);
     } finally {
         setIsProcessing(false);
     }
@@ -326,7 +312,7 @@ const InputForm = React.forwardRef(({ onSuccess }, ref) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="absolute bottom-0 bg-white dark:bg-gray-900"
+      className="absolute bottom-0 bg-[var(--colors-canvas)]"
       style={{ width: FORM_WIDTH, height: FORM_HEIGHT, pointerEvents: showForm ? "all" : "none" }}
     >
       <AnimatePresence>
@@ -336,42 +322,53 @@ const InputForm = React.forwardRef(({ onSuccess }, ref) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ type: "spring", stiffness: 550 / SPEED_FACTOR, damping: 45, mass: 0.7 }}
-            className="flex h-full flex-col p-1"
+            className="flex h-full flex-col"
           >
-            <div className="flex justify-between items-center py-2 px-2 border-b">
+            <div className="flex items-center justify-between border-b border-[var(--colors-hairline)] px-4 py-3">
               <div className="flex items-center gap-2">
-                <ColorOrb dimension="24px" tones={{ base: "oklch(22.64% 0 0)" }} />
-                <p className="text-foreground text-sm font-medium select-none">
+                <ColorOrb dimension="22px" />
+                <p className="select-none text-sm font-semibold text-[var(--colors-ink)]">
                     Quirk AI
                 </p>
               </div>
               <button
                 type="button"
                 onClick={triggerClose}
-                className="text-gray-500 hover:text-gray-700 w-6 h-6 flex justify-center items-center rounded-full bg-gray-100"
+                aria-label="Close AI assistant"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--colors-ink-muted)] transition hover:bg-[var(--colors-surface-pressed)] hover:text-[var(--colors-ink)] focus-ring"
               >
-                &times;
+                <X className="h-4 w-4" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 text-sm whitespace-pre-wrap">
                 {responseMsg ? (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-gray-800 dark:text-gray-200">
+                    <div
+                        className={cn(
+                            "rounded-[var(--radius-md)] border p-3 leading-relaxed",
+                            isError
+                                ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                                : "border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] text-[var(--colors-ink-secondary)]"
+                        )}
+                    >
                         {responseMsg}
                     </div>
                 ) : (
-                    <div className="text-gray-400 italic text-center mt-10">
-                        How can I help you today?
+                    <div className="mt-10 flex flex-col items-center gap-3 text-center">
+                        <ColorOrb dimension="40px" />
+                        <p className="text-[var(--colors-ink-faint)]">
+                            How can I help you manage your tasks today?
+                        </p>
                     </div>
                 )}
             </div>
 
-            <div className="relative border-t p-2">
+            <div className="relative border-t border-[var(--colors-hairline)] p-2">
                 <textarea
                 ref={ref}
-                placeholder="Ask me anything... (Press Enter to send)"
+                placeholder="Ask me anything…  (Enter to send)"
                 name="message"
-                className="w-full resize-none rounded-md p-3 pr-10 outline-none bg-gray-50 dark:bg-gray-800 text-sm focus:ring-1 focus:ring-blue-500"
+                className="w-full resize-none rounded-[var(--radius-md)] border border-[var(--colors-hairline)] bg-[var(--colors-canvas-soft)] p-3 pr-11 text-sm text-[var(--colors-ink)] outline-none transition placeholder:text-[var(--colors-ink-faint)] focus:border-[var(--colors-primary)] focus-ring"
                 rows={2}
                 onKeyDown={handleKeys}
                 spellCheck={false}
@@ -381,9 +378,10 @@ const InputForm = React.forwardRef(({ onSuccess }, ref) => {
                 type="submit"
                 ref={btnRef}
                 disabled={isProcessing}
-                className="absolute right-4 bottom-5 text-blue-500 hover:text-blue-700 disabled:opacity-50 cursor-pointer"
+                aria-label="Send message"
+                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--colors-primary)] text-[var(--colors-on-primary)] transition hover:bg-[var(--colors-primary-hover)] focus-ring disabled:opacity-50"
                 >
-                    {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
             </div>
           </motion.div>

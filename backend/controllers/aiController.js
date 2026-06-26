@@ -84,7 +84,9 @@ exports.handleChat = async (req, res, next) => {
     }
 
     const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        // gemini-1.5-flash is retired for API keys created in 2025+; gemini-2.0-flash
+        // is the current GA free-tier model that supports function calling.
+        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
         tools: tools,
         systemInstruction: `You are Quirk AI, a helpful, concise assistant for a task management SaaS. 
         You help users manage their tasks.

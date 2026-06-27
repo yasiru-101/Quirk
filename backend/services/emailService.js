@@ -1,6 +1,19 @@
 const nodemailer = require('nodemailer');
 const { emailClient } = require('../config/azure');
 
+const logEmailToConsole = ({ to, subject, html }) => {
+  try {
+    console.info('\n[Email Console Copy] ========================================');
+    console.info(`[Email Console Copy] To: ${to}`);
+    console.info(`[Email Console Copy] Subject: ${subject}`);
+    console.info('[Email Console Copy] HTML:');
+    console.info(html);
+    console.info('[Email Console Copy] ========================================\n');
+  } catch (error) {
+    console.error(`[Email Console Copy] Failed to write email to console: ${error.message}`);
+  }
+};
+
 /**
  * Returns the HTML template for user onboarding email.
  */
@@ -138,6 +151,7 @@ const getWorkspaceWelcomeTemplate = (to, workspaceName, inviterName, tempPasswor
  */
 const sendEtherealEmail = async ({ to, subject, html }) => {
   try {
+    logEmailToConsole({ to, subject, html });
     const testAccount = await nodemailer.createTestAccount();
     const transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -175,6 +189,7 @@ const sendAzureEmail = async ({ to, name, subject, html }) => {
   }
 
   try {
+    logEmailToConsole({ to, subject, html });
     const message = {
       senderAddress: senderAddress,
       content: {

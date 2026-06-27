@@ -174,8 +174,8 @@ export function MorphPanel({ workspaceId, projectId }) {
   }, [showForm, triggerClose])
 
   const ctx = useMemo(
-    () => ({ showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages }),
-    [showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages]
+    () => ({ showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages, workspaceId, projectId }),
+    [showForm, isProcessing, triggerOpen, triggerClose, sendMessage, messages, workspaceId, projectId]
   )
 
   return (
@@ -223,7 +223,7 @@ const FORM_WIDTH = 372
 const FORM_HEIGHT = 460
 
 const ChatForm = React.forwardRef((_, ref) => {
-  const { triggerClose, showForm, isProcessing, sendMessage, messages } = useFormContext()
+  const { triggerClose, showForm, isProcessing, sendMessage, messages, workspaceId, projectId } = useFormContext()
   const scrollRef = useRef(null)
 
   useEffect(() => {

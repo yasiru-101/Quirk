@@ -18,6 +18,7 @@ const { WORKSPACE_ADMIN_ROLES, isWorkspaceAdmin } = require('../utils/roles');
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const withEmailDebug = (payload, emailDebug) => (emailDebug ? { ...payload, emailDebug } : payload);
 
 // ─── Create Workspace ───────────────────────────────────────────────────────
 // @route  POST /api/workspaces
@@ -283,19 +284,22 @@ const inviteMember = async (req, res) => {
       // The recipient already has a Quirk account — they only need to sign in and
       // accept to join this workspace (no new account, no temporary password).
       const acceptUrl = `${frontendUrl}/invite/accept?token=${rawToken}`;
+      let emailDebug = null;
       try {
-        await emailService.sendInvitationEmail({
+        const emailResult = await emailService.sendInvitationEmail({
           to: email,
           workspaceName: workspace.name,
           inviterName: req.user.name,
           acceptUrl,
         });
+        emailDebug = emailResult.emailDebug;
       } catch (emailError) {
+        emailDebug = emailError.emailDebug || null;
         console.error(`[EmailService] Invitation email delivery failed: ${emailError.message}`);
       }
       // The raw token is returned only outside production to ease testing.
       if (process.env.NODE_ENV !== 'production') response.acceptToken = rawToken;
-      return res.status(201).json(response);
+      return res.status(201).json(withEmailDebug(response, emailDebug));
     }
 
     // Brand-new user: provision an account with a temporary password and add them to
@@ -321,15 +325,18 @@ const inviteMember = async (req, res) => {
     });
 
     const setupUrl = `${frontendUrl}/invite/accept?token=${rawToken}`;
+    let emailDebug = null;
     try {
-      await emailService.sendWorkspaceWelcomeEmail({
+      const emailResult = await emailService.sendWorkspaceWelcomeEmail({
         to: email,
         workspaceName: workspace.name,
         inviterName: req.user.name,
         tempPassword,
         setupUrl,
       });
+      emailDebug = emailResult.emailDebug;
     } catch (emailError) {
+      emailDebug = emailError.emailDebug || null;
       console.error(`[EmailService] Workspace welcome email delivery failed: ${emailError.message}`);
     }
 
@@ -338,7 +345,7 @@ const inviteMember = async (req, res) => {
       response.acceptToken = rawToken;
       response.tempPassword = tempPassword;
     }
-    return res.status(201).json(response);
+    return res.status(201).json(withEmailDebug(response, emailDebug));
   } catch (error) {
     console.error(`Invite member error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error sending invitation' });

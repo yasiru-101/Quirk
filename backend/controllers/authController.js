@@ -6,6 +6,7 @@ const otpService = require('../services/otpService');
 const emailService = require('../services/emailService');
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const withEmailDebug = (payload, emailDebug) => (emailDebug ? { ...payload, emailDebug } : payload);
 
 // A fixed bcrypt hash compared against when no user matches the supplied email. It
 // makes the failed-login path do the same work as the success path, so response
@@ -94,15 +95,18 @@ const forgotPassword = async (req, res) => {
     }
 
     const code = await otpService.issueCode(user.id, 'PASSWORD_RESET');
+    let emailDebug = null;
 
     // Send email using email service
     try {
-      await emailService.sendOtpEmail({
+      const emailResult = await emailService.sendOtpEmail({
         to: user.email,
         purpose: 'PASSWORD_RESET',
         code: code,
       });
+      emailDebug = emailResult.emailDebug;
     } catch (err) {
+      emailDebug = err.emailDebug || null;
       console.error(`Failed to send password reset email to ${user.email}:`, err.message);
     }
 
@@ -112,9 +116,9 @@ const forgotPassword = async (req, res) => {
       console.log(`[DEV] Password Reset OTP for ${user.email}: ${code}`);
     }
 
-    return res.status(200).json({
+    return res.status(200).json(withEmailDebug({
       message: 'If an account exists, an OTP will be sent.',
-    });
+    }, emailDebug));
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error processing request' });
@@ -189,27 +193,37 @@ const login = async (req, res) => {
     // Block sign-in until a self-registered user has confirmed their email.
     if (!user.emailVerified) {
       const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
-      emailService
-        .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
-        .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
-      return res.status(403).json({
+      let emailDebug = null;
+      try {
+        const emailResult = await emailService.sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code });
+        emailDebug = emailResult.emailDebug;
+      } catch (e) {
+        emailDebug = e.emailDebug || null;
+        console.error(`[Auth] verification email failed: ${e.message}`);
+      }
+      return res.status(403).json(withEmailDebug({
         message: 'Please verify your email address to continue. A new code has been sent.',
         code: 'EMAIL_NOT_VERIFIED',
         email: user.email,
-      });
+      }, emailDebug));
     }
 
     // If 2FA is enabled, defer sign-in until the second factor is verified.
     if (user.twoFactorEnabled) {
       const code = await otpService.issueCode(user.id, otpService.PURPOSES.LOGIN_2FA);
-      emailService
-        .sendOtpEmail({ to: user.email, purpose: 'LOGIN_2FA', code })
-        .catch((e) => console.error(`[Auth] 2FA email failed: ${e.message}`));
-      return res.status(200).json({
+      let emailDebug = null;
+      try {
+        const emailResult = await emailService.sendOtpEmail({ to: user.email, purpose: 'LOGIN_2FA', code });
+        emailDebug = emailResult.emailDebug;
+      } catch (e) {
+        emailDebug = e.emailDebug || null;
+        console.error(`[Auth] 2FA email failed: ${e.message}`);
+      }
+      return res.status(200).json(withEmailDebug({
         twoFactorRequired: true,
         pendingToken: generatePendingToken(user),
         email: user.email,
-      });
+      }, emailDebug));
     }
 
     // Generate tokens
@@ -438,14 +452,19 @@ const register = async (req, res) => {
     });
 
     const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
-    emailService
-      .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
-      .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
+    let emailDebug = null;
+    try {
+      const emailResult = await emailService.sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code });
+      emailDebug = emailResult.emailDebug;
+    } catch (e) {
+      emailDebug = e.emailDebug || null;
+      console.error(`[Auth] verification email failed: ${e.message}`);
+    }
 
-    return res.status(201).json({
+    return res.status(201).json(withEmailDebug({
       message: 'Account created. Check your email for a verification code.',
       email: user.email,
-    });
+    }, emailDebug));
   } catch (error) {
     console.error(`Register error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error during registration' });
@@ -635,15 +654,20 @@ const resendVerification = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     // Respond identically whether or not the account exists, to avoid revealing
     // which email addresses are registered.
+    let emailDebug = null;
     if (user && !user.emailVerified) {
       const code = await otpService.issueCode(user.id, otpService.PURPOSES.EMAIL_VERIFY);
-      emailService
-        .sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code })
-        .catch((e) => console.error(`[Auth] verification email failed: ${e.message}`));
+      try {
+        const emailResult = await emailService.sendOtpEmail({ to: user.email, purpose: 'EMAIL_VERIFY', code });
+        emailDebug = emailResult.emailDebug;
+      } catch (e) {
+        emailDebug = e.emailDebug || null;
+        console.error(`[Auth] verification email failed: ${e.message}`);
+      }
     }
-    return res.status(200).json({
+    return res.status(200).json(withEmailDebug({
       message: 'If the account exists and is unverified, a new code has been sent.',
-    });
+    }, emailDebug));
   } catch (error) {
     console.error(`Resend verification error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error' });
@@ -695,10 +719,15 @@ const verifyTwoFactor = async (req, res) => {
 const enableTwoFactor = async (req, res) => {
   try {
     const code = await otpService.issueCode(req.user.id, otpService.PURPOSES.LOGIN_2FA);
-    emailService
-      .sendOtpEmail({ to: req.user.email, purpose: 'LOGIN_2FA', code })
-      .catch((e) => console.error(`[Auth] 2FA email failed: ${e.message}`));
-    return res.status(200).json({ message: 'A verification code has been sent to your email.' });
+    let emailDebug = null;
+    try {
+      const emailResult = await emailService.sendOtpEmail({ to: req.user.email, purpose: 'LOGIN_2FA', code });
+      emailDebug = emailResult.emailDebug;
+    } catch (e) {
+      emailDebug = e.emailDebug || null;
+      console.error(`[Auth] 2FA email failed: ${e.message}`);
+    }
+    return res.status(200).json(withEmailDebug({ message: 'A verification code has been sent to your email.' }, emailDebug));
   } catch (error) {
     console.error(`Enable 2FA error: ${error.message}`);
     return res.status(500).json({ message: 'Internal server error' });

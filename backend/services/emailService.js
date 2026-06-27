@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const { emailClient } = require('../config/azure');
 
+const buildEmailDebug = ({ to, subject, html }) => ({ to, subject, html });
+
 const logEmailToConsole = ({ to, subject, html }) => {
   try {
     console.info('\n[Email Console Copy] ========================================');
@@ -150,8 +152,9 @@ const getWorkspaceWelcomeTemplate = (to, workspaceName, inviterName, tempPasswor
  * Sends email using Ethereal SMTP test account (development fallback).
  */
 const sendEtherealEmail = async ({ to, subject, html }) => {
+  const emailDebug = buildEmailDebug({ to, subject, html });
   try {
-    logEmailToConsole({ to, subject, html });
+    logEmailToConsole(emailDebug);
     const testAccount = await nodemailer.createTestAccount();
     const transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -172,9 +175,10 @@ const sendEtherealEmail = async ({ to, subject, html }) => {
 
     console.log(`[Email Fallback] Message successfully sent to ${to}. MessageId: ${info.messageId}`);
     console.log(`[Email Fallback] View preview at: ${nodemailer.getTestMessageUrl(info)}`);
-    return { success: true, previewUrl: nodemailer.getTestMessageUrl(info) };
+    return { success: true, previewUrl: nodemailer.getTestMessageUrl(info), emailDebug };
   } catch (error) {
     console.error(`[Email Fallback] Failed to send email: ${error.message}`);
+    error.emailDebug = emailDebug;
     throw error;
   }
 };
@@ -183,13 +187,16 @@ const sendEtherealEmail = async ({ to, subject, html }) => {
  * Sends email using Azure Communication Services Email SDK (production).
  */
 const sendAzureEmail = async ({ to, name, subject, html }) => {
+  const emailDebug = buildEmailDebug({ to, subject, html });
   const senderAddress = process.env.AZURE_ACS_SENDER_ADDRESS;
   if (!senderAddress) {
-    throw new Error('AZURE_ACS_SENDER_ADDRESS is not set in environment variables.');
+    const error = new Error('AZURE_ACS_SENDER_ADDRESS is not set in environment variables.');
+    error.emailDebug = emailDebug;
+    throw error;
   }
 
   try {
-    logEmailToConsole({ to, subject, html });
+    logEmailToConsole(emailDebug);
     const message = {
       senderAddress: senderAddress,
       content: {
@@ -210,9 +217,10 @@ const sendAzureEmail = async ({ to, name, subject, html }) => {
     const poller = await emailClient.beginSend(message);
     const response = await poller.pollUntilDone();
     console.log(`[Azure ACS] Email sent successfully. MessageId: ${response.id}`);
-    return { success: true, messageId: response.id };
+    return { success: true, messageId: response.id, emailDebug };
   } catch (error) {
     console.error(`[Azure ACS] Failed to send email to ${to}: ${error.message}`);
+    error.emailDebug = emailDebug;
     throw error;
   }
 };

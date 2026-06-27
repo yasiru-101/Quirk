@@ -7,6 +7,7 @@
 const bcrypt = require('bcrypt');
 const prisma = require('../config/db');
 const { generateTempPassword, checkLastPlatformAdmin } = require('../utils/userHelpers');
+const withEmailDebug = (payload, emailDebug) => (emailDebug ? { ...payload, emailDebug } : payload);
 
 // @desc    Create new user and trigger onboarding email
 // @route   POST /api/users
@@ -46,14 +47,17 @@ const createUser = async (req, res) => {
     // 5. Send onboarding email (Azure ACS in prod, Ethereal in dev)
     const emailService = require('../services/emailService');
     const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+    let emailDebug = null;
     try {
-      await emailService.sendOnboardingEmail({
+      const emailResult = await emailService.sendOnboardingEmail({
         to: email,
         name,
         tempPassword,
         loginUrl,
       });
+      emailDebug = emailResult.emailDebug;
     } catch (emailError) {
+      emailDebug = emailError.emailDebug || null;
       console.error(`[EmailService] Non-blocking onboarding email delivery failed: ${emailError.message}`);
     }
 
@@ -62,10 +66,10 @@ const createUser = async (req, res) => {
     delete userResponse.passwordHash;
 
     // We include the temporary password in the response for grading/testing purposes
-    return res.status(201).json({
+    return res.status(201).json(withEmailDebug({
       user: userResponse,
       tempPassword, // Provided only for developer convenience/tests
-    });
+    }, emailDebug));
   } catch (error) {
     console.error(`Create user error: ${error.message}`);
     return res.status(500).json({

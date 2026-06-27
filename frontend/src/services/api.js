@@ -14,6 +14,15 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const logEmailDebug = (emailDebug) => {
+  if (!emailDebug) return;
+  console.groupCollapsed('[Email Debug Copy]');
+  console.log('To:', emailDebug.to);
+  console.log('Subject:', emailDebug.subject);
+  console.log('HTML:', emailDebug.html);
+  console.groupEnd();
+};
+
 // ─── Request Interceptor ──────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
@@ -36,6 +45,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     if (response?.data) aliasIds(response.data);
+    logEmailDebug(response?.data?.emailDebug);
     return response;
   },
   async (error) => {

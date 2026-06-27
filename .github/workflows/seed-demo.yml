@@ -1,0 +1,29 @@
+name: Seed Demo Data
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed-demo:
+    name: Seed demo data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Run non-destructive demo seed
+        run: |
+          cd backend
+          npm run seed:demo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

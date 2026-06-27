@@ -34,61 +34,6 @@ purposes, invitation status, task priority, project status, notification type,
 and conversation type. Membership roles remain strings so the existing
 `Project Manager` value and legacy `Owner` rows stay compatible.
 
-A class-diagram view of the same domain is in
-[DIAGRAMS.md](./DIAGRAMS.md#1-domain-class-diagram).
-
-## Entity-relationship diagram
-
-```mermaid
-erDiagram
-    User ||--o{ Workspace : "owns (ownerId)"
-    User ||--o{ WorkspaceMember : "is member"
-    User ||--o{ Invitation : "invites (invitedBy)"
-    User ||--o{ OtpCode : "has codes"
-    User ||--o{ ProjectMember : "is member"
-    User ||--o{ Task : "creates (createdBy)"
-    User ||--o{ TaskAssignment : "assignee"
-    User ||--o{ Comment : "authors"
-    User ||--o{ Attachment : "uploads"
-    User ||--o{ Notification : "receives"
-    User ||--o{ TimeLog : "logs"
-    User ||--o{ ActivityLog : "generates"
-    User ||--o{ ConversationParticipant : "participates"
-    User ||--o{ ChatMessage : "sends"
-
-    Workspace ||--o{ WorkspaceMember : "has"
-    Workspace ||--o{ Invitation : "has"
-    Workspace ||--o{ Project : "contains"
-    Workspace ||--o{ Conversation : "scopes"
-
-    ProjectTemplate ||--o{ ProjectTemplateColumn : "defines"
-    ProjectTemplate ||--o{ Project : "seeds"
-
-    Project ||--o{ ProjectMember : "has"
-    Project ||--o{ KanbanColumn : "has"
-    Project ||--o{ Epic : "has"
-    Project ||--o{ Task : "contains"
-    Project |o--o| Conversation : "project chat"
-
-    KanbanColumn ||--o{ Task : "holds (status)"
-    Epic ||--o{ Task : "groups"
-
-    Task ||--o{ Task : "subtasks (parentTaskId)"
-    Task ||--o{ TaskAssignment : "assigned to"
-    Task ||--o{ TaskDependency : "blocking (blockingTaskId)"
-    Task ||--o{ TaskDependency : "blocked by (blockedTaskId)"
-    Task ||--o{ Comment : "has"
-    Task ||--o{ Attachment : "has"
-    Task ||--o{ TimeLog : "tracks"
-    Task ||--o{ ActivityLog : "audits"
-    Task ||--o{ Notification : "related to"
-
-    Comment ||--o{ Attachment : "has"
-
-    Conversation ||--o{ ConversationParticipant : "has"
-    Conversation ||--o{ ChatMessage : "contains"
-```
-
 ## Models
 
 ### Identity & tenancy
